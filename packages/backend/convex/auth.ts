@@ -25,7 +25,9 @@ export const { auth, signIn, signOut, store } = convexAuth({
 				const existingUser = await ctx.db
 					.query("users")
 					// @ts-expect-error
-					.withIndex("by_email", (q) => q.eq("email", args.profile.email as string))
+					.withIndex("by_email", (q) =>
+						q.eq("email", args.profile.email as string),
+					)
 					.first();
 
 				if (existingUser) {

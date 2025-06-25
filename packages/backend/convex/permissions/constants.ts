@@ -33,7 +33,7 @@ export const ORGANIZATIONAL_POSITIONS = {
 
 export const ROLE_DISPLAY_NAMES: Record<string, string> = {
 	[SYSTEM_ROLES.OWNER]: "Владелец",
-	[SYSTEM_ROLES.CEO]: "Генеральный директор",
+	[SYSTEM_ROLES.CEO]: "Генераьный директолр",
 	[SYSTEM_ROLES.CHIEF_ENGINEER]: "Главный инженер проекта",
 	[SYSTEM_ROLES.DEPARTMENT_HEAD]: "Руководитель отдела",
 	[SYSTEM_ROLES.PROJECT_MANAGER]: "Руководитель проекта",

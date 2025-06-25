@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import type { Id } from "@stroika/backend";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import type { Id } from "../../../../../packages/backend/convex/_generated/dataModel";
 
 interface ConstructionProjectCreateDialogProps {
 	open: boolean;

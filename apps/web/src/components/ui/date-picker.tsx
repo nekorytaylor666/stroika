@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
 import * as React from "react";
 
 interface DatePickerProps {
@@ -28,31 +28,37 @@ export function DatePicker({
 	className,
 	disabled = false,
 }: DatePickerProps) {
+	const [open, setOpen] = React.useState(false);
+
 	return (
-		<Popover>
+		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
 					variant={"outline"}
 					className={cn(
-						"w-full justify-start text-left font-normal",
+						"w-full justify-between font-normal",
 						!date && "text-muted-foreground",
 						className,
 					)}
 					disabled={disabled}
 				>
-					<CalendarIcon className="mr-2 h-4 w-4" />
 					{date ? (
 						format(date, "PPP", { locale: ru })
 					) : (
 						<span>{placeholder}</span>
 					)}
+					<ChevronDownIcon className="h-4 w-4" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-auto p-0" align="start">
+			<PopoverContent className="w-auto overflow-hidden p-0" align="start">
 				<Calendar
 					mode="single"
 					selected={date}
-					onSelect={onDateChange}
+					captionLayout="dropdown"
+					onSelect={(date) => {
+						onDateChange?.(date);
+						setOpen(false);
+					}}
 					initialFocus
 					locale={ru}
 				/>

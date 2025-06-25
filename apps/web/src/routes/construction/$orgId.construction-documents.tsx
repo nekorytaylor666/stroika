@@ -1,4 +1,6 @@
 import { ConstructionDocuments } from "@/components/common/construction/construction-documents";
+import Header from "@/components/header";
+import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -8,5 +10,9 @@ export const Route = createFileRoute(
 });
 
 function ConstructionDocumentsPage() {
-	return <ConstructionDocuments />;
+	return (
+		<MainLayout header={<Header />}>
+			<ConstructionDocuments />
+		</MainLayout>
+	);
 }

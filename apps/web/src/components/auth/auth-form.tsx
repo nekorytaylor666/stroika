@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function AuthForm() {
 	const { signIn } = useAuthActions();
+	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
 
 	const handleSubmit = async (
@@ -29,7 +31,14 @@ export function AuthForm() {
 
 		try {
 			await signIn("password", formData);
-			toast.success(flow === "signIn" ? "Вход выполнен" : "Регистрация успешна");
+			toast.success(
+				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
+			);
+			// Redirect to construction tasks after successful authentication
+			navigate({
+				to: "/construction/$orgId/construction-tasks",
+				params: { orgId: "lndev-ui" },
+			});
 		} catch (error) {
 			toast.error(
 				error instanceof Error

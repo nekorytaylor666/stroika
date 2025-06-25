@@ -114,3 +114,67 @@ export const removeAttachment = mutation({
 		});
 	},
 });
+
+// Issue attachment functions
+export const attachToIssue = mutation({
+	args: {
+		issueId: v.id("issues"),
+		storageId: v.id("_storage"),
+		fileName: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+	},
+	handler: async (ctx, args) => {
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
+
+		// For now, use a default user ID or skip user tracking
+		const users = await ctx.db.query("users").take(1);
+		const user = users[0];
+		if (!user) throw new Error("No users found in database");
+
+		await ctx.db.insert("issueAttachments", {
+			issueId: args.issueId,
+			fileName: args.fileName,
+			fileUrl: args.storageId,
+			fileSize: args.fileSize,
+			mimeType: args.mimeType,
+			uploadedBy: user._id,
+			uploadedAt: Date.now(),
+		});
+	},
+});
+
+export const getIssueAttachments = query({
+	args: { issueId: v.id("issues") },
+	handler: async (ctx, args) => {
+		const attachments = await ctx.db
+			.query("issueAttachments")
+			.withIndex("by_issue", (q) => q.eq("issueId", args.issueId))
+			.collect();
+
+		const attachmentsWithUsers = await Promise.all(
+			attachments.map(async (attachment) => {
+				const uploader = await ctx.db.get(attachment.uploadedBy);
+				return { ...attachment, uploader };
+			}),
+		);
+
+		return attachmentsWithUsers;
+	},
+});
+
+export const removeIssueAttachment = mutation({
+	args: { attachmentId: v.id("issueAttachments") },
+	handler: async (ctx, args) => {
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
+
+		const attachment = await ctx.db.get(args.attachmentId);
+		if (!attachment) throw new Error("Attachment not found");
+
+		await ctx.db.delete(args.attachmentId);
+	},
+});

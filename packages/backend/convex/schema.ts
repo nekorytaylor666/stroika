@@ -415,4 +415,15 @@ export default defineSchema({
 		.index("by_document", ["documentId"])
 		.index("by_task", ["taskId"])
 		.index("by_type", ["relationshipType"]),
+
+	// Issue attachments
+	issueAttachments: defineTable({
+		issueId: v.id("issues"),
+		fileName: v.string(),
+		fileUrl: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+		uploadedBy: v.id("users"),
+		uploadedAt: v.number(),
+	}).index("by_issue", ["issueId"]),
 });

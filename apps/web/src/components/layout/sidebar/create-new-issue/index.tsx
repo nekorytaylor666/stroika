@@ -13,11 +13,14 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { RiEditLine } from "@remixicon/react";
+import { api } from "@stroika/backend";
+import type { Id } from "@stroika/backend";
+import { useMutation } from "convex/react";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { AssigneeSelector } from "./assignee-selector";
+import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
 import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
@@ -35,6 +38,7 @@ interface ConstructionTaskForm {
 	projectId: Id<"projects"> | null;
 	rank: string;
 	dueDate?: string;
+	attachments?: UploadedAttachment[];
 }
 
 export function CreateNewIssue() {
@@ -51,6 +55,8 @@ export function CreateNewIssue() {
 		tasks,
 		isLoading,
 	} = useConstructionData();
+
+	const attachToIssue = useMutation(api.files.attachToIssue);
 
 	const generateUniqueIdentifier = useCallback(() => {
 		const identifiers = tasks?.map((task) => task.identifier) || [];
@@ -84,6 +90,7 @@ export function CreateNewIssue() {
 			cycleId: "cycle-1",
 			projectId: null,
 			rank: `rank-${Date.now()}`,
+			attachments: [],
 		};
 	}, [defaultStatus, generateUniqueIdentifier, statuses, priorities]);
 
@@ -107,7 +114,7 @@ export function CreateNewIssue() {
 		}
 
 		try {
-			await createTask({
+			const taskId = await createTask({
 				identifier: addTaskForm.identifier,
 				title: addTaskForm.title.trim(),
 				description: addTaskForm.description.trim(),
@@ -120,6 +127,19 @@ export function CreateNewIssue() {
 				rank: addTaskForm.rank,
 				dueDate: addTaskForm.dueDate,
 			});
+
+			// Attach files if any
+			if (addTaskForm.attachments && addTaskForm.attachments.length > 0) {
+				for (const attachment of addTaskForm.attachments) {
+					await attachToIssue({
+						issueId: taskId as Id<"issues">,
+						storageId: attachment.storageId,
+						fileName: attachment.fileName,
+						fileSize: attachment.fileSize,
+						mimeType: attachment.mimeType,
+					});
+				}
+			}
 
 			toast.success("Задача создана");
 
@@ -238,6 +258,13 @@ export function CreateNewIssue() {
 							}
 						/>
 					</div>
+
+					<AttachmentUpload
+						onAttachmentsChange={(attachments) =>
+							setAddTaskForm({ ...addTaskForm, attachments })
+						}
+						className="px-1"
+					/>
 				</div>
 				<div className="flex w-full items-center justify-between border-t px-4 py-2.5">
 					<div className="flex items-center gap-2">

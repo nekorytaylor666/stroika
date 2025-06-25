@@ -1,5 +1,3 @@
-import { useCurrentUser } from "@/hooks/use-current-user";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +8,10 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, User } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { Link } from "@tanstack/react-router";
+import { LogOut, Settings, User } from "lucide-react";
 
 export function UserProfile() {
 	const user = useCurrentUser();
@@ -36,15 +36,15 @@ export function UserProfile() {
 					</Avatar>
 					<div className="flex flex-col items-start text-sm">
 						<span className="font-medium">{user.name}</span>
-						<span className="text-xs text-muted-foreground">{user.email}</span>
+						<span className="text-muted-foreground text-xs">{user.email}</span>
 					</div>
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent className="w-56" align="end" forceMount>
 				<DropdownMenuLabel className="font-normal">
 					<div className="flex flex-col space-y-1">
-						<p className="text-sm font-medium leading-none">{user.name}</p>
-						<p className="text-xs leading-none text-muted-foreground">
+						<p className="font-medium text-sm leading-none">{user.name}</p>
+						<p className="text-muted-foreground text-xs leading-none">
 							{user.email}
 						</p>
 					</div>
