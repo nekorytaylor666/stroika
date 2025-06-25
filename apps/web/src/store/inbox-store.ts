@@ -1,9 +1,9 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface InboxState {
-    unreadCount: number;
+	unreadCount: number;
 }
 
 export const useInboxStore = create<InboxState>(() => ({
-    unreadCount: 5,
-})); 
+	unreadCount: 5,
+}));

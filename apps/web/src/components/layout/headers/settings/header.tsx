@@ -1,9 +1,9 @@
-import HeaderNav from './header-nav';
+import HeaderNav from "./header-nav";
 
 export default function Header() {
-   return (
-      <div className="w-full flex flex-col items-center">
-         <HeaderNav />
-      </div>
-   );
+	return (
+		<div className="flex w-full flex-col items-center">
+			<HeaderNav />
+		</div>
+	);
 }

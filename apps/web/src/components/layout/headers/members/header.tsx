@@ -1,11 +1,11 @@
-import HeaderNav from './header-nav';
-import HeaderOptions from './header-options';
+import HeaderNav from "./header-nav";
+import HeaderOptions from "./header-options";
 
 export default function Header() {
-   return (
-      <div className="w-full flex flex-col items-center">
-         <HeaderNav />
-         <HeaderOptions />
-      </div>
-   );
+	return (
+		<div className="flex w-full flex-col items-center">
+			<HeaderNav />
+			<HeaderOptions />
+		</div>
+	);
 }

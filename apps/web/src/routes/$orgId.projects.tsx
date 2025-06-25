@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
-import MainLayout from "@/components/layout/main-layout";
-import Header from "@/components/layout/headers/projects/header";
 import Projects from "@/components/common/projects/projects";
+import Header from "@/components/layout/headers/projects/header";
+import MainLayout from "@/components/layout/main-layout";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$orgId/projects")({
-    component: ProjectsPage,
+	component: ProjectsPage,
 });
 
 function ProjectsPage() {
-    return (
-        <MainLayout header={<Header />}>
-            <Projects />
-        </MainLayout>
-    );
-} 
+	return (
+		<MainLayout header={<Header />}>
+			<Projects />
+		</MainLayout>
+	);
+}

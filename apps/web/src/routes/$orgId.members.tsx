@@ -1,16 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
 import Members from "@/components/common/members/members";
 import Header from "@/components/layout/headers/members/header";
 import MainLayout from "@/components/layout/main-layout";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$orgId/members")({
-    component: MembersPage,
+	component: MembersPage,
 });
 
 function MembersPage() {
-    return (
-        <MainLayout header={<Header />}>
-            <Members />
-        </MainLayout>
-    );
-} 
+	return (
+		<MainLayout header={<Header />}>
+			<Members />
+		</MainLayout>
+	);
+}

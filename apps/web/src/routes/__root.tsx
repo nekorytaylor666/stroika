@@ -1,22 +1,22 @@
-import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/layout/theme-provider";
-import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { Toaster } from "@/components/ui/sonner";
 import type { QueryClient } from "@tanstack/react-query";
+import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 export interface RouterAppContext {
-  queryClient: QueryClient;
+	queryClient: QueryClient;
 }
 
 export const Route = createRootRoute({
-  component: RootComponent,
+	component: RootComponent,
 });
 
 function RootComponent() {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <Outlet />
-      <Toaster richColors />
-    </ThemeProvider>
-  );
+	return (
+		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+			<Outlet />
+			<Toaster richColors />
+		</ThemeProvider>
+	);
 }
