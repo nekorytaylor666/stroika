@@ -1,6 +1,11 @@
 {
   "name": "@stroika/backend",
   "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "scripts": {
     "dev": "convex dev",
     "setup": "convex dev --configure --until-success"

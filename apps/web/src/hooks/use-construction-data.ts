@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../../../packages/backend/convex/_generated/api";
 import { useMemo } from "react";
-import type { Id } from "../../../../packages/backend/convex/_generated/dataModel";
+import { api } from "@stroika/backend";
+import type { Id } from "@stroika/backend";
 
 export const useConstructionData = () => {
     // Queries

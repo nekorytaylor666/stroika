@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as OrgIdRouteImport } from './routes/$orgId'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgIdTeamsRouteImport } from './routes/$orgId.teams'
-import { Route as OrgIdSettingsRouteImport } from './routes/$orgId.settings'
 import { Route as OrgIdProjectsRouteImport } from './routes/$orgId.projects'
 import { Route as OrgIdMembersRouteImport } from './routes/$orgId.members'
 import { Route as ConstructionOrgIdConstructionTeamsRouteImport } from './routes/construction/$orgId.construction-teams'
@@ -20,6 +19,7 @@ import { Route as ConstructionOrgIdConstructionTasksRouteImport } from './routes
 import { Route as ConstructionOrgIdConstructionProjectsRouteImport } from './routes/construction/$orgId.construction-projects'
 import { Route as ConstructionOrgIdConstructionDashboardRouteImport } from './routes/construction/$orgId.construction-dashboard'
 import { Route as OrgIdTeamTeamIdRouteImport } from './routes/$orgId.team.$teamId'
+import { Route as OrgIdSettingsAdminRouteImport } from './routes/$orgId/settings/admin'
 import { Route as OrgIdTeamTeamIdAllRouteImport } from './routes/$orgId.team.$teamId.all'
 
 const OrgIdRoute = OrgIdRouteImport.update({
@@ -35,11 +35,6 @@ const IndexRoute = IndexRouteImport.update({
 const OrgIdTeamsRoute = OrgIdTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
-  getParentRoute: () => OrgIdRoute,
-} as any)
-const OrgIdSettingsRoute = OrgIdSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
   getParentRoute: () => OrgIdRoute,
 } as any)
 const OrgIdProjectsRoute = OrgIdProjectsRouteImport.update({
@@ -81,6 +76,11 @@ const OrgIdTeamTeamIdRoute = OrgIdTeamTeamIdRouteImport.update({
   path: '/team/$teamId',
   getParentRoute: () => OrgIdRoute,
 } as any)
+const OrgIdSettingsAdminRoute = OrgIdSettingsAdminRouteImport.update({
+  id: '/settings/admin',
+  path: '/settings/admin',
+  getParentRoute: () => OrgIdRoute,
+} as any)
 const OrgIdTeamTeamIdAllRoute = OrgIdTeamTeamIdAllRouteImport.update({
   id: '/all',
   path: '/all',
@@ -92,8 +92,8 @@ export interface FileRoutesByFullPath {
   '/$orgId': typeof OrgIdRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
+  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
@@ -106,8 +106,8 @@ export interface FileRoutesByTo {
   '/$orgId': typeof OrgIdRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
+  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
@@ -121,8 +121,8 @@ export interface FileRoutesById {
   '/$orgId': typeof OrgIdRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
+  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
@@ -137,8 +137,8 @@ export interface FileRouteTypes {
     | '/$orgId'
     | '/$orgId/members'
     | '/$orgId/projects'
-    | '/$orgId/settings'
     | '/$orgId/teams'
+    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-projects'
@@ -151,8 +151,8 @@ export interface FileRouteTypes {
     | '/$orgId'
     | '/$orgId/members'
     | '/$orgId/projects'
-    | '/$orgId/settings'
     | '/$orgId/teams'
+    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-projects'
@@ -165,8 +165,8 @@ export interface FileRouteTypes {
     | '/$orgId'
     | '/$orgId/members'
     | '/$orgId/projects'
-    | '/$orgId/settings'
     | '/$orgId/teams'
+    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-projects'
@@ -205,13 +205,6 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/$orgId/teams'
       preLoaderRoute: typeof OrgIdTeamsRouteImport
-      parentRoute: typeof OrgIdRoute
-    }
-    '/$orgId/settings': {
-      id: '/$orgId/settings'
-      path: '/settings'
-      fullPath: '/$orgId/settings'
-      preLoaderRoute: typeof OrgIdSettingsRouteImport
       parentRoute: typeof OrgIdRoute
     }
     '/$orgId/projects': {
@@ -263,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgIdTeamTeamIdRouteImport
       parentRoute: typeof OrgIdRoute
     }
+    '/$orgId/settings/admin': {
+      id: '/$orgId/settings/admin'
+      path: '/settings/admin'
+      fullPath: '/$orgId/settings/admin'
+      preLoaderRoute: typeof OrgIdSettingsAdminRouteImport
+      parentRoute: typeof OrgIdRoute
+    }
     '/$orgId/team/$teamId/all': {
       id: '/$orgId/team/$teamId/all'
       path: '/all'
@@ -288,16 +288,16 @@ const OrgIdTeamTeamIdRouteWithChildren = OrgIdTeamTeamIdRoute._addFileChildren(
 interface OrgIdRouteChildren {
   OrgIdMembersRoute: typeof OrgIdMembersRoute
   OrgIdProjectsRoute: typeof OrgIdProjectsRoute
-  OrgIdSettingsRoute: typeof OrgIdSettingsRoute
   OrgIdTeamsRoute: typeof OrgIdTeamsRoute
+  OrgIdSettingsAdminRoute: typeof OrgIdSettingsAdminRoute
   OrgIdTeamTeamIdRoute: typeof OrgIdTeamTeamIdRouteWithChildren
 }
 
 const OrgIdRouteChildren: OrgIdRouteChildren = {
   OrgIdMembersRoute: OrgIdMembersRoute,
   OrgIdProjectsRoute: OrgIdProjectsRoute,
-  OrgIdSettingsRoute: OrgIdSettingsRoute,
   OrgIdTeamsRoute: OrgIdTeamsRoute,
+  OrgIdSettingsAdminRoute: OrgIdSettingsAdminRoute,
   OrgIdTeamTeamIdRoute: OrgIdTeamTeamIdRouteWithChildren,
 }
 

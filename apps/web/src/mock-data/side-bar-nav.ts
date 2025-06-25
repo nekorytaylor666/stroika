@@ -17,6 +17,7 @@ import {
    BarChart,
    LifeBuoy,
    Package,
+   Shield,
 } from 'lucide-react';
 
 export const inboxItems: unknown[] = [];
@@ -63,4 +64,5 @@ export const settingsItems = [
    { name: 'Участники', url: '/members', icon: Users },
    { name: 'Команды', url: '/teams', icon: Users },
    { name: 'Общие', url: '/settings', icon: Settings },
+   { name: 'Администрирование', url: '/settings/admin', icon: Shield },
 ];

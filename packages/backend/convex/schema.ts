@@ -13,12 +13,18 @@ export default defineSchema({
     email: v.string(),
     avatarUrl: v.string(),
     status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
-    role: v.string(),
+    roleId: v.optional(v.id("roles")), // Changed from string to reference roles table
     joinedDate: v.string(),
     teamIds: v.array(v.string()),
     position: v.optional(v.string()),
     workload: v.optional(v.number()),
-  }).index("by_email", ["email"]),
+    // Auth fields
+    authId: v.optional(v.string()), // External auth provider ID
+    isActive: v.optional(v.boolean()), // Account active status
+    lastLogin: v.optional(v.string()), // Last login timestamp
+  }).index("by_email", ["email"])
+    .index("by_auth_id", ["authId"])
+    .index("by_role", ["roleId"]),
 
   // Labels table
   labels: defineTable({
@@ -146,4 +152,94 @@ export default defineSchema({
     .index("by_assignee", ["assigneeId"])
     .index("by_project", ["projectId"])
     .index("by_construction", ["isConstructionTask"]),
+
+  // Roles table
+  roles: defineTable({
+    name: v.string(), // e.g., "admin", "manager", "engineer", "viewer"
+    displayName: v.string(), // e.g., "Administrator", "Project Manager", etc.
+    description: v.optional(v.string()),
+    isSystem: v.boolean(), // System roles cannot be deleted
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  }).index("by_name", ["name"]),
+
+  // Permissions table
+  permissions: defineTable({
+    resource: v.string(), // e.g., "projects", "users", "teams"
+    action: v.string(), // e.g., "create", "read", "update", "delete", "manage"
+    description: v.optional(v.string()),
+    createdAt: v.string(),
+  }).index("by_resource_action", ["resource", "action"]),
+
+  // Role-Permission mapping table
+  rolePermissions: defineTable({
+    roleId: v.id("roles"),
+    permissionId: v.id("permissions"),
+    createdAt: v.string(),
+  }).index("by_role", ["roleId"])
+    .index("by_permission", ["permissionId"])
+    .index("by_role_permission", ["roleId", "permissionId"]),
+
+  // User custom permissions (for specific overrides)
+  userPermissions: defineTable({
+    userId: v.id("users"),
+    permissionId: v.id("permissions"),
+    granted: v.boolean(), // true = grant, false = revoke (override role permission)
+    createdAt: v.string(),
+    expiresAt: v.optional(v.string()), // Optional expiration for temporary permissions
+  }).index("by_user", ["userId"])
+    .index("by_permission", ["permissionId"])
+    .index("by_user_permission", ["userId", "permissionId"]),
+
+  // Audit log for permission changes
+  permissionAuditLog: defineTable({
+    userId: v.id("users"), // Who made the change
+    targetUserId: v.optional(v.id("users")), // User affected (if applicable)
+    targetRoleId: v.optional(v.id("roles")), // Role affected (if applicable)
+    action: v.string(), // e.g., "role_assigned", "permission_granted", "role_created"
+    details: v.optional(v.string()), // JSON string with additional details
+    createdAt: v.string(),
+  }).index("by_user", ["userId"])
+    .index("by_target_user", ["targetUserId"])
+    .index("by_created_at", ["createdAt"]),
+
+  // Departments table - hierarchical structure
+  departments: defineTable({
+    name: v.string(), // e.g., "Engineering", "Design", "Construction"
+    displayName: v.string(), // Display name in Russian
+    description: v.optional(v.string()),
+    parentId: v.optional(v.id("departments")), // Parent department for hierarchy
+    level: v.number(), // Hierarchy level (0 = root, 1 = first level, etc.)
+    headUserId: v.optional(v.id("users")), // Department head
+    isActive: v.boolean(),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  }).index("by_parent", ["parentId"])
+    .index("by_level", ["level"])
+    .index("by_head", ["headUserId"]),
+
+  // Organizational positions - defines hierarchy levels
+  organizationalPositions: defineTable({
+    name: v.string(), // e.g., "owner", "ceo", "chief_engineer"
+    displayName: v.string(), // e.g., "Владелец", "Генеральный директор", "ГИП"
+    level: v.number(), // 0 = highest (owner), higher numbers = lower in hierarchy
+    canManageLevelsBelow: v.boolean(), // Can manage all positions below
+    isUnique: v.boolean(), // Only one person can hold this position
+    createdAt: v.string(),
+  }).index("by_level", ["level"])
+    .index("by_name", ["name"]),
+
+  // User department assignments
+  userDepartments: defineTable({
+    userId: v.id("users"),
+    departmentId: v.id("departments"),
+    positionId: v.optional(v.id("organizationalPositions")), // Organizational position
+    isPrimary: v.boolean(), // Primary department assignment
+    startDate: v.string(),
+    endDate: v.optional(v.string()), // null = current assignment
+    createdAt: v.string(),
+  }).index("by_user", ["userId"])
+    .index("by_department", ["departmentId"])
+    .index("by_position", ["positionId"])
+    .index("by_user_primary", ["userId", "isPrimary"]),
 });

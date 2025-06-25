@@ -25,6 +25,25 @@ export const getByEmail = query({
     },
 });
 
+export const getUsersWithRoles = query({
+    handler: async (ctx) => {
+        const users = await ctx.db.query("users").collect();
+        
+        const usersWithRoles = await Promise.all(
+            users.map(async (user) => {
+                const role = user.roleId ? await ctx.db.get(user.roleId) : null;
+                return {
+                    ...user,
+                    role: role ? role.displayName : null,
+                    roleName: role ? role.name : null,
+                };
+            })
+        );
+        
+        return usersWithRoles;
+    },
+});
+
 export const getByStatus = query({
     args: {
         status: v.union(v.literal("online"), v.literal("offline"), v.literal("away"))
@@ -46,8 +65,7 @@ export const searchUsers = query({
         return allUsers.filter(user =>
             user.name.toLowerCase().includes(searchTerm) ||
             user.email.toLowerCase().includes(searchTerm) ||
-            (user.position && user.position.toLowerCase().includes(searchTerm)) ||
-            user.role.toLowerCase().includes(searchTerm)
+            (user.position && user.position.toLowerCase().includes(searchTerm))
         );
     },
 });
@@ -59,14 +77,19 @@ export const create = mutation({
         email: v.string(),
         avatarUrl: v.string(),
         status: v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
-        role: v.string(),
+        roleId: v.optional(v.id("roles")),
         joinedDate: v.string(),
         teamIds: v.array(v.string()),
         position: v.optional(v.string()),
         workload: v.optional(v.number()),
+        authId: v.optional(v.string()),
+        isActive: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
-        return await ctx.db.insert("users", args);
+        return await ctx.db.insert("users", {
+            ...args,
+            isActive: args.isActive ?? true,
+        });
     },
 });
 
@@ -76,10 +99,11 @@ export const update = mutation({
         name: v.optional(v.string()),
         avatarUrl: v.optional(v.string()),
         status: v.optional(v.union(v.literal("online"), v.literal("offline"), v.literal("away"))),
-        role: v.optional(v.string()),
+        roleId: v.optional(v.id("roles")),
         teamIds: v.optional(v.array(v.string())),
         position: v.optional(v.string()),
         workload: v.optional(v.number()),
+        isActive: v.optional(v.boolean()),
     },
     handler: async (ctx, args) => {
         const { id, ...updates } = args;

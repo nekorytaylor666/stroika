@@ -12,6 +12,7 @@ import {
     MapPin,
     Truck,
     CheckSquare,
+    Shield,
 } from 'lucide-react';
 
 export const constructionMainItems = [
@@ -101,5 +102,11 @@ export const constructionSettingsItems = [
         url: '/construction/lndev-ui/settings/reports',
         icon: FileText,
         description: 'Настройка отчетности'
+    },
+    {
+        name: 'Администрирование',
+        url: '/lndev-ui/settings/admin',
+        icon: Shield,
+        description: 'Роли и разрешения'
     },
 ]; 
