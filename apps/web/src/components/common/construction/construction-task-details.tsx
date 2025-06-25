@@ -1,5 +1,6 @@
 "use client";
 
+import { DocumentDetailsModal } from "@/components/documents/document-details-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
@@ -37,6 +38,7 @@ import { useEffect, useState } from "react";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionStatusSelector } from "./construction-status-selector";
+import { ConstructionTaskDocuments } from "./construction-task-documents";
 import type { ConstructionTask } from "./construction-tasks";
 
 interface ConstructionTaskDetailsProps {
@@ -99,334 +101,356 @@ export function ConstructionTaskDetails({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent
-				className="!max-w-6xl flex h-[85vh] w-full flex-col gap-0 overflow-hidden p-0"
-				hideCloseButton
-			>
-				{/* Header */}
-				<div className="flex flex-shrink-0 items-center justify-between border-b px-6 py-3">
-					<div className="flex items-center gap-3">
-						<motion.div
-							initial={{ scale: 0 }}
-							animate={{ scale: 1 }}
-							transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						>
-							{priority && (
-								<ConstructionPrioritySelector
-									priority={priority}
-									issueId={task._id}
-								/>
-							)}
-						</motion.div>
-						<span className="font-mono text-muted-foreground text-sm">
-							{task.identifier}
-						</span>
-					</div>
-					<div className="flex items-center gap-1">
-						<Button variant="ghost" size="sm" onClick={handleCopyLink}>
-							<Link2 className="h-4 w-4" />
-						</Button>
-						<Button variant="ghost" size="sm">
-							<Copy className="h-4 w-4" />
-						</Button>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="sm">
-									<MoreHorizontal className="h-4 w-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem>Дублировать</DropdownMenuItem>
-								<DropdownMenuItem>Переместить</DropdownMenuItem>
-								<DropdownMenuItem className="text-red-600">
-									Удалить
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => onOpenChange(false)}
-						>
-							<X className="h-4 w-4" />
-						</Button>
-					</div>
-				</div>
-
-				<div className="flex flex-1 overflow-hidden">
-					{/* Main Content */}
-					<div className="flex-1 overflow-y-auto">
-						<div className="space-y-6 p-6">
-							{/* Title */}
-							<div>
-								{isEditingTitle ? (
-									<Input
-										value={title}
-										onChange={(e) => setTitle(e.target.value)}
-										onBlur={handleTitleSave}
-										onKeyDown={(e) => {
-											if (e.key === "Enter") handleTitleSave();
-											if (e.key === "Escape") {
-												setTitle(task.title);
-												setIsEditingTitle(false);
-											}
-										}}
-										className="h-auto border-none px-0 font-semibold text-2xl"
-										autoFocus
+		<>
+			<Dialog open={open} onOpenChange={onOpenChange}>
+				<DialogContent
+					className="!max-w-6xl flex h-[85vh] w-full flex-col gap-0 overflow-hidden p-0"
+					hideCloseButton
+				>
+					{/* Header */}
+					<div className="flex flex-shrink-0 items-center justify-between border-b px-6 py-3">
+						<div className="flex items-center gap-3">
+							<motion.div
+								initial={{ scale: 0 }}
+								animate={{ scale: 1 }}
+								transition={{ type: "spring", stiffness: 500, damping: 30 }}
+							>
+								{priority && (
+									<ConstructionPrioritySelector
+										priority={priority}
+										issueId={task._id}
 									/>
-								) : (
-									<h2
-										className="-mx-2 cursor-text rounded px-2 py-1 font-semibold text-2xl hover:bg-muted/50"
-										onClick={() => setIsEditingTitle(true)}
-									>
-										{title}
-									</h2>
 								)}
-							</div>
+							</motion.div>
+							<span className="font-mono text-muted-foreground text-sm">
+								{task.identifier}
+							</span>
+						</div>
+						<div className="flex items-center gap-1">
+							<Button variant="ghost" size="sm" onClick={handleCopyLink}>
+								<Link2 className="h-4 w-4" />
+							</Button>
+							<Button variant="ghost" size="sm">
+								<Copy className="h-4 w-4" />
+							</Button>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="sm">
+										<MoreHorizontal className="h-4 w-4" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									<DropdownMenuItem>Дублировать</DropdownMenuItem>
+									<DropdownMenuItem>Переместить</DropdownMenuItem>
+									<DropdownMenuItem className="text-red-600">
+										Удалить
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => onOpenChange(false)}
+							>
+								<X className="h-4 w-4" />
+							</Button>
+						</div>
+					</div>
 
-							{/* Description */}
-							<div>
-								<div className="mb-2 flex items-center gap-2">
-									<FileText className="h-4 w-4 text-muted-foreground" />
-									<span className="font-medium text-sm">Описание</span>
-								</div>
-								{isEditingDescription ? (
-									<div className="space-y-2">
-										<Textarea
-											value={description}
-											onChange={(e) => setDescription(e.target.value)}
-											className="min-h-[100px] resize-none"
-											placeholder="Добавьте описание..."
+					<div className="flex flex-1 overflow-hidden">
+						{/* Main Content */}
+						<div className="flex-1 overflow-y-auto">
+							<div className="space-y-6 p-6">
+								{/* Title */}
+								<div>
+									{isEditingTitle ? (
+										<Input
+											value={title}
+											onChange={(e) => setTitle(e.target.value)}
+											onBlur={handleTitleSave}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") handleTitleSave();
+												if (e.key === "Escape") {
+													setTitle(task.title);
+													setIsEditingTitle(false);
+												}
+											}}
+											className="h-auto border-none px-0 font-semibold text-2xl"
 											autoFocus
 										/>
-										<div className="flex gap-2">
-											<Button size="sm" onClick={handleDescriptionSave}>
-												Сохранить
-											</Button>
-											<Button
-												size="sm"
-												variant="ghost"
-												onClick={() => {
-													setDescription(task.description);
-													setIsEditingDescription(false);
-												}}
-											>
-												Отмена
-											</Button>
-										</div>
-									</div>
-								) : (
-									<div
-										className="min-h-[60px] cursor-text rounded p-3 hover:bg-muted/50"
-										onClick={() => setIsEditingDescription(true)}
-									>
-										{description || (
-											<span className="text-muted-foreground">
-												Нажмите для добавления описания...
-											</span>
-										)}
-									</div>
-								)}
-							</div>
-
-							<Separator />
-
-							{/* Comments Section */}
-							<div>
-								<div className="mb-4 flex items-center gap-2">
-									<MessageSquare className="h-4 w-4 text-muted-foreground" />
-									<span className="font-medium text-sm">Комментарии</span>
+									) : (
+										<h2
+											className="-mx-2 cursor-text rounded px-2 py-1 font-semibold text-2xl hover:bg-muted/50"
+											onClick={() => setIsEditingTitle(true)}
+										>
+											{title}
+										</h2>
+									)}
 								</div>
 
-								{/* Comment Input */}
-								<div className="mb-4 flex gap-3">
-									<Avatar className="h-8 w-8">
-										<AvatarImage src="/api/placeholder/32/32" />
-										<AvatarFallback>ME</AvatarFallback>
-									</Avatar>
-									<div className="flex-1">
-										<Textarea
-											value={comment}
-											onChange={(e) => setComment(e.target.value)}
-											placeholder="Написать комментарий..."
-											className="min-h-[80px] resize-none"
-										/>
-										{comment && (
-											<div className="mt-2 flex justify-end gap-2">
+								{/* Description */}
+								<div>
+									<div className="mb-2 flex items-center gap-2">
+										<FileText className="h-4 w-4 text-muted-foreground" />
+										<span className="font-medium text-sm">Описание</span>
+									</div>
+									{isEditingDescription ? (
+										<div className="space-y-2">
+											<Textarea
+												value={description}
+												onChange={(e) => setDescription(e.target.value)}
+												className="min-h-[100px] resize-none"
+												placeholder="Добавьте описание..."
+												autoFocus
+											/>
+											<div className="flex gap-2">
+												<Button size="sm" onClick={handleDescriptionSave}>
+													Сохранить
+												</Button>
 												<Button
 													size="sm"
 													variant="ghost"
-													onClick={() => setComment("")}
+													onClick={() => {
+														setDescription(task.description);
+														setIsEditingDescription(false);
+													}}
 												>
 													Отмена
 												</Button>
-												<Button size="sm">
-													<Send className="mr-1 h-3 w-3" />
-													Отправить
-												</Button>
 											</div>
-										)}
-									</div>
+										</div>
+									) : (
+										<div
+											className="min-h-[60px] cursor-text rounded p-3 hover:bg-muted/50"
+											onClick={() => setIsEditingDescription(true)}
+										>
+											{description || (
+												<span className="text-muted-foreground">
+													Нажмите для добавления описания...
+												</span>
+											)}
+										</div>
+									)}
 								</div>
 
-								{/* Comments List */}
-								<div className="space-y-4">
-									<motion.div
-										initial={{ opacity: 0, y: 10 }}
-										animate={{ opacity: 1, y: 0 }}
-										className="flex gap-3"
-									>
+								<Separator />
+
+								{/* Comments Section */}
+								<div>
+									<div className="mb-4 flex items-center gap-2">
+										<MessageSquare className="h-4 w-4 text-muted-foreground" />
+										<span className="font-medium text-sm">Комментарии</span>
+									</div>
+
+									{/* Comment Input */}
+									<div className="mb-4 flex gap-3">
 										<Avatar className="h-8 w-8">
 											<AvatarImage src="/api/placeholder/32/32" />
-											<AvatarFallback>АИ</AvatarFallback>
+											<AvatarFallback>ME</AvatarFallback>
 										</Avatar>
 										<div className="flex-1">
-											<div className="mb-1 flex items-center gap-2">
-												<span className="font-medium text-sm">
-													Александр Иванов
-												</span>
-												<span className="text-muted-foreground text-xs">
-													2 часа назад
-												</span>
-											</div>
-											<p className="text-sm">Начал работу над задачей</p>
+											<Textarea
+												value={comment}
+												onChange={(e) => setComment(e.target.value)}
+												placeholder="Написать комментарий..."
+												className="min-h-[80px] resize-none"
+											/>
+											{comment && (
+												<div className="mt-2 flex justify-end gap-2">
+													<Button
+														size="sm"
+														variant="ghost"
+														onClick={() => setComment("")}
+													>
+														Отмена
+													</Button>
+													<Button size="sm">
+														<Send className="mr-1 h-3 w-3" />
+														Отправить
+													</Button>
+												</div>
+											)}
 										</div>
-									</motion.div>
+									</div>
+
+									{/* Comments List */}
+									<div className="space-y-4">
+										<motion.div
+											initial={{ opacity: 0, y: 10 }}
+											animate={{ opacity: 1, y: 0 }}
+											className="flex gap-3"
+										>
+											<Avatar className="h-8 w-8">
+												<AvatarImage src="/api/placeholder/32/32" />
+												<AvatarFallback>АИ</AvatarFallback>
+											</Avatar>
+											<div className="flex-1">
+												<div className="mb-1 flex items-center gap-2">
+													<span className="font-medium text-sm">
+														Александр Иванов
+													</span>
+													<span className="text-muted-foreground text-xs">
+														2 часа назад
+													</span>
+												</div>
+												<p className="text-sm">Начал работу над задачей</p>
+											</div>
+										</motion.div>
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
 
-					{/* Sidebar */}
-					<div className="w-80 space-y-4 overflow-y-auto border-l bg-muted/30 p-4">
-						{/* Status */}
-						<div>
-							<label className="mb-1 block font-medium text-muted-foreground text-xs">
-								Статус
-							</label>
-							<ConstructionStatusSelector
-								statusId={task.statusId}
-								issueId={task._id}
-							/>
-						</div>
-
-						{/* Assignee */}
-						<div>
-							<label className="mb-1 block font-medium text-muted-foreground text-xs">
-								Исполнитель
-							</label>
-							<Button variant="ghost" className="h-8 w-full justify-start px-2">
-								{assignee ? (
-									<>
-										<ConstructionAssigneeUser user={assignee} />
-										<span className="ml-2 text-sm">{assignee.name}</span>
-									</>
-								) : (
-									<>
-										<User className="mr-2 h-4 w-4" />
-										<span className="text-muted-foreground text-sm">
-											Не назначен
-										</span>
-									</>
-								)}
-							</Button>
-						</div>
-
-						{/* Priority */}
-						<div>
-							<label className="mb-1 block font-medium text-muted-foreground text-xs">
-								Приоритет
-							</label>
-							<Button variant="ghost" className="h-8 w-full justify-start px-2">
-								{priority && (
-									<>
-										<ConstructionPrioritySelector
-											priority={priority}
-											issueId={task._id}
-										/>
-										<span className="ml-2 text-sm">{priority.name}</span>
-									</>
-								)}
-							</Button>
-						</div>
-
-						{/* Due Date */}
-						<div>
-							<label className="mb-1 block font-medium text-muted-foreground text-xs">
-								Срок выполнения
-							</label>
-							<Button variant="ghost" className="h-8 w-full justify-start px-2">
-								<Calendar className="mr-2 h-4 w-4" />
-								<span className="text-sm">
-									{task.dueDate
-										? format(new Date(task.dueDate), "d MMM", { locale: ru })
-										: "Не указан"}
-								</span>
-							</Button>
-						</div>
-
-						{/* Labels */}
-						<div>
-							<label className="mb-1 block font-medium text-muted-foreground text-xs">
-								Метки
-							</label>
-							<div className="flex flex-wrap gap-1">
-								{taskLabels.map((label: any) => (
-									<span
-										key={label._id}
-										className="inline-flex items-center rounded px-2 py-1 text-xs"
-										style={{
-											backgroundColor: `${label.color}20`,
-											color: label.color,
-										}}
-									>
-										{label.name}
-									</span>
-								))}
-								<Button variant="ghost" size="sm" className="h-6 px-2">
-									<Plus className="h-3 w-3" />
-								</Button>
-							</div>
-						</div>
-
-						{/* Project */}
-						{project && (
+						{/* Sidebar */}
+						<div className="w-80 space-y-4 overflow-y-auto border-l bg-muted/30 p-4">
+							{/* Status */}
 							<div>
 								<label className="mb-1 block font-medium text-muted-foreground text-xs">
-									Проект
+									Статус
+								</label>
+								<ConstructionStatusSelector
+									statusId={task.statusId}
+									issueId={task._id}
+								/>
+							</div>
+
+							{/* Assignee */}
+							<div>
+								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+									Исполнитель
 								</label>
 								<Button
 									variant="ghost"
 									className="h-8 w-full justify-start px-2"
 								>
-									<span className="text-sm">{project.name}</span>
+									{assignee ? (
+										<>
+											<ConstructionAssigneeUser user={assignee} />
+											<span className="ml-2 text-sm">{assignee.name}</span>
+										</>
+									) : (
+										<>
+											<User className="mr-2 h-4 w-4" />
+											<span className="text-muted-foreground text-sm">
+												Не назначен
+											</span>
+										</>
+									)}
 								</Button>
 							</div>
-						)}
 
-						<Separator />
+							{/* Priority */}
+							<div>
+								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+									Приоритет
+								</label>
+								<Button
+									variant="ghost"
+									className="h-8 w-full justify-start px-2"
+								>
+									{priority && (
+										<>
+											<ConstructionPrioritySelector
+												priority={priority}
+												issueId={task._id}
+											/>
+											<span className="ml-2 text-sm">{priority.name}</span>
+										</>
+									)}
+								</Button>
+							</div>
 
-						{/* Activity */}
-						<div>
-							<label className="mb-2 block font-medium text-muted-foreground text-xs">
-								Активность
-							</label>
-							<div className="space-y-3">
-								<div className="flex items-center gap-2 text-xs">
-									<Clock className="h-3 w-3 text-muted-foreground" />
-									<span className="text-muted-foreground">Создано</span>
-									<span>
-										{format(new Date(task.createdAt), "d MMM yyyy", {
-											locale: ru,
-										})}
+							{/* Due Date */}
+							<div>
+								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+									Срок выполнения
+								</label>
+								<Button
+									variant="ghost"
+									className="h-8 w-full justify-start px-2"
+								>
+									<Calendar className="mr-2 h-4 w-4" />
+									<span className="text-sm">
+										{task.dueDate
+											? format(new Date(task.dueDate), "d MMM", { locale: ru })
+											: "Не указан"}
 									</span>
+								</Button>
+							</div>
+
+							{/* Labels */}
+							<div>
+								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+									Метки
+								</label>
+								<div className="flex flex-wrap gap-1">
+									{taskLabels.map((label: any) => (
+										<span
+											key={label._id}
+											className="inline-flex items-center rounded px-2 py-1 text-xs"
+											style={{
+												backgroundColor: `${label.color}20`,
+												color: label.color,
+											}}
+										>
+											{label.name}
+										</span>
+									))}
+									<Button variant="ghost" size="sm" className="h-6 px-2">
+										<Plus className="h-3 w-3" />
+									</Button>
+								</div>
+							</div>
+
+							{/* Project */}
+							{project && (
+								<div>
+									<label className="mb-1 block font-medium text-muted-foreground text-xs">
+										Проект
+									</label>
+									<Button
+										variant="ghost"
+										className="h-8 w-full justify-start px-2"
+									>
+										<span className="text-sm">{project.name}</span>
+									</Button>
+								</div>
+							)}
+
+							<Separator />
+
+							{/* Documents */}
+							<div>
+								<label className="mb-2 block font-medium text-muted-foreground text-xs">
+									Документы
+								</label>
+								<ConstructionTaskDocuments taskId={task._id} />
+							</div>
+
+							<Separator />
+
+							{/* Activity */}
+							<div>
+								<label className="mb-2 block font-medium text-muted-foreground text-xs">
+									Активность
+								</label>
+								<div className="space-y-3">
+									<div className="flex items-center gap-2 text-xs">
+										<Clock className="h-3 w-3 text-muted-foreground" />
+										<span className="text-muted-foreground">Создано</span>
+										<span>
+											{format(new Date(task.createdAt), "d MMM yyyy", {
+												locale: ru,
+											})}
+										</span>
+									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-				</div>
-			</DialogContent>
-		</Dialog>
+				</DialogContent>
+			</Dialog>
+			<DocumentDetailsModal />
+		</>
 	);
 }

@@ -2,17 +2,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
-import {
-	Building,
-	Building2,
-	Car,
-	Factory,
-	Home,
-	Hospital,
-	School,
-	Warehouse,
-} from "lucide-react";
+import { Building, Building2, Car, Factory, Home } from "lucide-react";
+import { useState } from "react";
 import { AssigneeUser } from "../issues/assignee-user";
+import { ConstructionProjectDetails } from "./construction-project-details";
 
 interface ConstructionProjectLineProps {
 	project: ConstructionProject;
@@ -21,6 +14,7 @@ interface ConstructionProjectLineProps {
 export function ConstructionProjectLine({
 	project,
 }: ConstructionProjectLineProps) {
+	const [detailsOpen, setDetailsOpen] = useState(false);
 	const { getUserById, getStatusById, getPriorityById } = useConstructionData();
 
 	// Populate relationships from store
@@ -71,75 +65,88 @@ export function ConstructionProjectLine({
 	const IconComponent = getProjectTypeIcon(project.projectType);
 
 	return (
-		<div className="flex w-full items-center gap-4 border-muted-foreground/5 border-b px-6 py-3 text-sm hover:bg-sidebar/50">
-			<div className="flex w-[35%] min-w-[300px] items-center gap-3 md:w-[30%] lg:w-[25%]">
-				<div className="relative">
-					<div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-muted/50">
-						<IconComponent className="size-4 text-muted-foreground" />
+		<>
+			<div
+				className="flex w-full cursor-pointer items-center gap-4 border-muted-foreground/5 border-b px-6 py-3 text-sm hover:bg-sidebar/50"
+				onClick={() => setDetailsOpen(true)}
+			>
+				<div className="flex w-[35%] min-w-[300px] items-center gap-3 md:w-[30%] lg:w-[25%]">
+					<div className="relative">
+						<div className="inline-flex size-8 shrink-0 items-center justify-center rounded bg-muted/50">
+							<IconComponent className="size-4 text-muted-foreground" />
+						</div>
+					</div>
+					<div className="flex flex-col items-start overflow-hidden">
+						<span className="w-full truncate font-medium">{project.name}</span>
+						<div className="mt-1 flex items-center gap-2">
+							<Badge variant="outline" className="text-xs">
+								{project.projectType === "residential"
+									? "Жилое"
+									: project.projectType === "commercial"
+										? "Коммерческое"
+										: project.projectType === "industrial"
+											? "Промышленное"
+											: "Инфраструктура"}
+							</Badge>
+							<Badge className={`text-xs ${getHealthColor(project.healthId)}`}>
+								{project.healthName}
+							</Badge>
+						</div>
 					</div>
 				</div>
-				<div className="flex flex-col items-start overflow-hidden">
-					<span className="w-full truncate font-medium">{project.name}</span>
-					<div className="mt-1 flex items-center gap-2">
+
+				<div className="w-[20%] text-sm md:w-[15%] lg:w-[15%]">
+					<div className="truncate">{project.client}</div>
+					<div className="text-muted-foreground text-xs">
+						{project.location}
+					</div>
+				</div>
+
+				<div className="w-[15%] md:w-[10%] lg:w-[10%]">
+					<div className="font-medium text-sm">{project.percentComplete}%</div>
+					<Progress value={project.percentComplete} className="mt-1 h-1.5" />
+				</div>
+
+				<div className="w-[15%] text-sm md:w-[15%] lg:w-[15%]">
+					<div className="font-semibold text-green-600">
+						{formatCurrency(project.contractValue)}
+					</div>
+					<div className="text-muted-foreground text-xs">
+						{project.startDate &&
+							new Date(project.startDate).toLocaleDateString("ru-RU")}
+					</div>
+				</div>
+
+				<div className="hidden lg:block lg:w-[10%]">
+					{priority && (
 						<Badge variant="outline" className="text-xs">
-							{project.projectType === "residential"
-								? "Жилое"
-								: project.projectType === "commercial"
-									? "Коммерческое"
-									: project.projectType === "industrial"
-										? "Промышленное"
-										: "Инфраструктура"}
+							{priority.name}
 						</Badge>
-						<Badge className={`text-xs ${getHealthColor(project.healthId)}`}>
-							{project.healthName}
+					)}
+				</div>
+
+				<div className="hidden lg:block lg:w-[10%]">
+					{status && (
+						<Badge
+							variant="outline"
+							className="text-xs"
+							style={{ color: status.color }}
+						>
+							{status.name}
 						</Badge>
-					</div>
+					)}
+				</div>
+
+				<div className="w-[15%] md:w-[15%] lg:w-[15%]">
+					{lead && <AssigneeUser user={lead as any} />}
 				</div>
 			</div>
 
-			<div className="w-[20%] text-sm md:w-[15%] lg:w-[15%]">
-				<div className="truncate">{project.client}</div>
-				<div className="text-muted-foreground text-xs">{project.location}</div>
-			</div>
-
-			<div className="w-[15%] md:w-[10%] lg:w-[10%]">
-				<div className="font-medium text-sm">{project.percentComplete}%</div>
-				<Progress value={project.percentComplete} className="mt-1 h-1.5" />
-			</div>
-
-			<div className="w-[15%] text-sm md:w-[15%] lg:w-[15%]">
-				<div className="font-semibold text-green-600">
-					{formatCurrency(project.contractValue)}
-				</div>
-				<div className="text-muted-foreground text-xs">
-					{project.startDate &&
-						new Date(project.startDate).toLocaleDateString("ru-RU")}
-				</div>
-			</div>
-
-			<div className="hidden lg:block lg:w-[10%]">
-				{priority && (
-					<Badge variant="outline" className="text-xs">
-						{priority.name}
-					</Badge>
-				)}
-			</div>
-
-			<div className="hidden lg:block lg:w-[10%]">
-				{status && (
-					<Badge
-						variant="outline"
-						className="text-xs"
-						style={{ color: status.color }}
-					>
-						{status.name}
-					</Badge>
-				)}
-			</div>
-
-			<div className="w-[15%] md:w-[15%] lg:w-[15%]">
-				<AssigneeUser user={lead} />
-			</div>
-		</div>
+			<ConstructionProjectDetails
+				project={project}
+				open={detailsOpen}
+				onOpenChange={setDetailsOpen}
+			/>
+		</>
 	);
 }

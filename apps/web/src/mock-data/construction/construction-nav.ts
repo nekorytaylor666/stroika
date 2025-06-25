@@ -40,6 +40,12 @@ export const constructionMainItems = [
 		icon: CheckSquare,
 		description: "Управление задачами и поручениями",
 	},
+	{
+		name: "Документы",
+		url: "/construction/lndev-ui/construction-documents",
+		icon: FileText,
+		description: "Проектная документация и чертежи",
+	},
 ];
 
 export const constructionAnalyticsItems = [

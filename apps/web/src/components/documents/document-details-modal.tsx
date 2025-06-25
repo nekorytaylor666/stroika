@@ -7,7 +7,6 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useDocumentsStore } from "@/store/documents-store";
 import { useMutation, useQuery } from "convex/react";
@@ -17,21 +16,22 @@ import {
 	ChevronDown,
 	Clock,
 	FileText,
+	Hash,
 	History,
 	MessageSquare,
 	Paperclip,
 	Save,
+	Upload,
 	User,
 	X,
-	Upload,
-	Hash,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { DocumentUpload } from "./document-upload";
-import { DocumentViewer } from "./document-viewer";
+import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { DocumentComments } from "./document-comments";
 import { DocumentTasks } from "./document-tasks";
+import { DocumentUpload } from "./document-upload";
+import { DocumentViewer } from "./document-viewer";
 
 const statusOptions = [
 	{ value: "draft", label: "Draft", color: "bg-gray-100 text-gray-700" },
@@ -59,7 +59,6 @@ export function DocumentDetailsModal() {
 		api.documents.getVersionHistory,
 		selectedDocumentId ? { documentId: selectedDocumentId as any } : "skip",
 	);
-
 
 	const handleStatusChange = async (status: string) => {
 		if (!selectedDocumentId) return;
@@ -146,11 +145,15 @@ export function DocumentDetailsModal() {
 
 						{/* Content area */}
 						<div className="flex-1 overflow-y-auto p-6">
-							<div className="h-full flex items-center justify-center text-gray-500">
+							<div className="flex h-full items-center justify-center text-gray-500">
 								<div className="text-center">
-									<FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-									<p className="text-lg font-medium mb-2">Document Management</p>
-									<p className="text-sm">Upload files and collaborate with comments</p>
+									<FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
+									<p className="mb-2 font-medium text-lg">
+										Document Management
+									</p>
+									<p className="text-sm">
+										Upload files and collaborate with comments
+									</p>
 								</div>
 							</div>
 						</div>
@@ -197,7 +200,10 @@ export function DocumentDetailsModal() {
 								</TabsTrigger>
 							</TabsList>
 
-							<TabsContent value="comments" className="flex-1 overflow-y-auto p-4">
+							<TabsContent
+								value="comments"
+								className="flex-1 overflow-y-auto p-4"
+							>
 								<DocumentComments documentId={selectedDocumentId as any} />
 							</TabsContent>
 

@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as constructionProjects from "../constructionProjects.js";
 import type * as constructionTasks from "../constructionTasks.js";
@@ -24,6 +25,7 @@ import type * as documentTasks from "../documentTasks.js";
 import type * as documents from "../documents.js";
 import type * as files from "../files.js";
 import type * as healthCheck from "../healthCheck.js";
+import type * as http from "../http.js";
 import type * as metadata from "../metadata.js";
 import type * as migrations_cleanupUsers from "../migrations/cleanupUsers.js";
 import type * as migrations_migrateUsersToRoleId from "../migrations/migrateUsersToRoleId.js";
@@ -46,6 +48,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
   comments: typeof comments;
   constructionProjects: typeof constructionProjects;
   constructionTasks: typeof constructionTasks;
@@ -57,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   documents: typeof documents;
   files: typeof files;
   healthCheck: typeof healthCheck;
+  http: typeof http;
   metadata: typeof metadata;
   "migrations/cleanupUsers": typeof migrations_cleanupUsers;
   "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;

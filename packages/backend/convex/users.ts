@@ -1,5 +1,20 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { auth } from "./auth";
+
+// Get current authenticated user
+export const viewer = query({
+	handler: async (ctx) => {
+		const userId = await auth.getUserId(ctx);
+		if (!userId) {
+			return null;
+		}
+
+		// Get user by ID
+		const user = await ctx.db.get(userId);
+		return user;
+	},
+});
 
 // Queries
 export const getAll = query({

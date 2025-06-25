@@ -19,7 +19,6 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { useDocumentsStore } from "@/store/documents-store";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
@@ -28,6 +27,7 @@ import { FileText, Hash, X } from "lucide-react";
 import { CalendarIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
+import { api } from "../../../../../packages/backend/convex/_generated/api";
 
 export function CreateDocumentModal() {
 	const { isCreateModalOpen, setIsCreateModalOpen, selectedParentId } =
@@ -117,7 +117,6 @@ export function CreateDocumentModal() {
 								autoFocus
 							/>
 						</div>
-
 
 						<div className="grid grid-cols-2 gap-4">
 							<div>

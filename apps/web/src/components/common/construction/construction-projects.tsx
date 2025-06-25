@@ -1,10 +1,15 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { Plus } from "lucide-react";
+import { useState } from "react";
+import { ConstructionProjectCreateDialog } from "./construction-project-create-dialog";
 import { ConstructionProjectLine } from "./construction-project-line";
 
 export default function ConstructionProjects() {
 	const { projects, isLoading } = useConstructionData();
+	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
 	if (isLoading) {
 		return (
@@ -18,6 +23,18 @@ export default function ConstructionProjects() {
 
 	return (
 		<div className="w-full">
+			<div className="flex items-center justify-between border-b px-6 py-4">
+				<h2 className="font-semibold text-lg">Строительные проекты</h2>
+				<Button
+					onClick={() => setCreateDialogOpen(true)}
+					size="sm"
+					className="gap-2"
+				>
+					<Plus className="h-4 w-4" />
+					Новый проект
+				</Button>
+			</div>
+
 			<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
 				<div className="w-[35%] md:w-[30%] lg:w-[25%]">Название проекта</div>
 				<div className="w-[20%] md:w-[15%] lg:w-[15%]">Заказчик</div>
@@ -33,6 +50,11 @@ export default function ConstructionProjects() {
 					<ConstructionProjectLine key={project._id} project={project} />
 				))}
 			</div>
+
+			<ConstructionProjectCreateDialog
+				open={createDialogOpen}
+				onOpenChange={setCreateDialogOpen}
+			/>
 		</div>
 	);
 }

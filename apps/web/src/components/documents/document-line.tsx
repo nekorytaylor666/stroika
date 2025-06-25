@@ -9,8 +9,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { api } from "../../../../../packages/backend/convex/_generated/api";
-import type { Id } from "../../../../../packages/backend/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { useDocumentsStore } from "@/store/documents-store";
 import { useMutation } from "convex/react";
@@ -28,6 +26,8 @@ import {
 	User,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { api } from "../../../../../packages/backend/convex/_generated/api";
+import type { Id } from "../../../../../packages/backend/convex/_generated/dataModel";
 
 interface DocumentLineProps {
 	document: any;

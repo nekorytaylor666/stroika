@@ -18,12 +18,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useConstructionCreateIssueStore } from "@/store/construction/construction-create-issue-store";
+import { useMutation } from "convex/react";
 import { useEffect, useState } from "react";
+import { api } from "../../../../../../packages/backend/convex/_generated/api";
+import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
+import { ConstructionDocumentSelector } from "./construction-document-selector";
 
 export function ConstructionCreateIssueModal() {
 	const { isOpen, defaultStatus, closeModal } =
 		useConstructionCreateIssueStore();
 	const { createTask, priorities, statuses, isLoading } = useConstructionData();
+	const linkToTask = useMutation(api.documentTasks.linkToTask);
 
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
@@ -32,6 +37,9 @@ export function ConstructionCreateIssueModal() {
 	const [priority, setPriority] = useState<any>(null);
 	const [issueStatus, setIssueStatus] = useState<any>(null);
 	const [project, setProject] = useState<any>(undefined);
+	const [selectedDocuments, setSelectedDocuments] = useState<
+		Array<{ _id: Id<"documents">; title: string }>
+	>([]);
 
 	// Set default values when data is loaded
 	useEffect(() => {
@@ -53,7 +61,7 @@ export function ConstructionCreateIssueModal() {
 		if (!title.trim() || !priority || !issueStatus) return;
 
 		try {
-			await createTask({
+			const taskId = await createTask({
 				identifier: `CONST-${Date.now()}`,
 				title: title.trim(),
 				description: description.trim(),
@@ -67,11 +75,23 @@ export function ConstructionCreateIssueModal() {
 				dueDate: undefined,
 			});
 
+			// Link selected documents to the task
+			if (taskId && selectedDocuments.length > 0) {
+				for (const document of selectedDocuments) {
+					await linkToTask({
+						taskId: taskId as Id<"issues">,
+						documentId: document._id,
+						linkType: "attachment",
+					});
+				}
+			}
+
 			// Reset form
 			setTitle("");
 			setDescription("");
 			setAssignee(null);
 			setSelectedLabels([]);
+			setSelectedDocuments([]);
 			setPriority(
 				priorities?.find((p) => p.name === "Средний") || priorities?.[0],
 			);
@@ -149,6 +169,14 @@ export function ConstructionCreateIssueModal() {
 						<LabelSelector
 							selectedLabels={selectedLabels}
 							onChange={setSelectedLabels}
+						/>
+					</div>
+
+					<div className="grid gap-2">
+						<Label>Документы</Label>
+						<ConstructionDocumentSelector
+							selectedDocuments={selectedDocuments}
+							onChange={setSelectedDocuments}
 						/>
 					</div>
 				</div>

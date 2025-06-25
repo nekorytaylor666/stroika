@@ -1,10 +1,10 @@
 "use client";
 
-import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { useDocumentsStore } from "@/store/documents-store";
 import { useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { CreateDocumentModal } from "./create-document-modal";
 import { DocumentBoard } from "./document-board";
 import { DocumentDetailsModal } from "./document-details-modal";

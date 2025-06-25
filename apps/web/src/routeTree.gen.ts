@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OrgIdRouteImport } from './routes/$orgId'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrgIdTeamsRouteImport } from './routes/$orgId.teams'
@@ -17,11 +18,17 @@ import { Route as OrgIdMembersRouteImport } from './routes/$orgId.members'
 import { Route as ConstructionOrgIdConstructionTeamsRouteImport } from './routes/construction/$orgId.construction-teams'
 import { Route as ConstructionOrgIdConstructionTasksRouteImport } from './routes/construction/$orgId.construction-tasks'
 import { Route as ConstructionOrgIdConstructionProjectsRouteImport } from './routes/construction/$orgId.construction-projects'
+import { Route as ConstructionOrgIdConstructionDocumentsRouteImport } from './routes/construction/$orgId.construction-documents'
 import { Route as ConstructionOrgIdConstructionDashboardRouteImport } from './routes/construction/$orgId.construction-dashboard'
 import { Route as OrgIdTeamTeamIdRouteImport } from './routes/$orgId.team.$teamId'
 import { Route as OrgIdSettingsAdminRouteImport } from './routes/$orgId/settings/admin'
 import { Route as OrgIdTeamTeamIdAllRouteImport } from './routes/$orgId.team.$teamId.all'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrgIdRoute = OrgIdRouteImport.update({
   id: '/$orgId',
   path: '/$orgId',
@@ -65,6 +72,12 @@ const ConstructionOrgIdConstructionProjectsRoute =
     path: '/construction/$orgId/construction-projects',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ConstructionOrgIdConstructionDocumentsRoute =
+  ConstructionOrgIdConstructionDocumentsRouteImport.update({
+    id: '/construction/$orgId/construction-documents',
+    path: '/construction/$orgId/construction-documents',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ConstructionOrgIdConstructionDashboardRoute =
   ConstructionOrgIdConstructionDashboardRouteImport.update({
     id: '/construction/$orgId/construction-dashboard',
@@ -90,12 +103,14 @@ const OrgIdTeamTeamIdAllRoute = OrgIdTeamTeamIdAllRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$orgId': typeof OrgIdRouteWithChildren
+  '/auth': typeof AuthRoute
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
   '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
+  '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
@@ -104,12 +119,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$orgId': typeof OrgIdRouteWithChildren
+  '/auth': typeof AuthRoute
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
   '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
+  '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
@@ -119,12 +136,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$orgId': typeof OrgIdRouteWithChildren
+  '/auth': typeof AuthRoute
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
   '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
+  '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
   '/construction/$orgId/construction-projects': typeof ConstructionOrgIdConstructionProjectsRoute
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
@@ -135,12 +154,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$orgId'
+    | '/auth'
     | '/$orgId/members'
     | '/$orgId/projects'
     | '/$orgId/teams'
     | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
+    | '/construction/$orgId/construction-documents'
     | '/construction/$orgId/construction-projects'
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
@@ -149,12 +170,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$orgId'
+    | '/auth'
     | '/$orgId/members'
     | '/$orgId/projects'
     | '/$orgId/teams'
     | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
+    | '/construction/$orgId/construction-documents'
     | '/construction/$orgId/construction-projects'
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
@@ -163,12 +186,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$orgId'
+    | '/auth'
     | '/$orgId/members'
     | '/$orgId/projects'
     | '/$orgId/teams'
     | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
     | '/construction/$orgId/construction-dashboard'
+    | '/construction/$orgId/construction-documents'
     | '/construction/$orgId/construction-projects'
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
@@ -178,7 +203,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OrgIdRoute: typeof OrgIdRouteWithChildren
+  AuthRoute: typeof AuthRoute
   ConstructionOrgIdConstructionDashboardRoute: typeof ConstructionOrgIdConstructionDashboardRoute
+  ConstructionOrgIdConstructionDocumentsRoute: typeof ConstructionOrgIdConstructionDocumentsRoute
   ConstructionOrgIdConstructionProjectsRoute: typeof ConstructionOrgIdConstructionProjectsRoute
   ConstructionOrgIdConstructionTasksRoute: typeof ConstructionOrgIdConstructionTasksRoute
   ConstructionOrgIdConstructionTeamsRoute: typeof ConstructionOrgIdConstructionTeamsRoute
@@ -186,6 +213,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$orgId': {
       id: '/$orgId'
       path: '/$orgId'
@@ -240,6 +274,13 @@ declare module '@tanstack/react-router' {
       path: '/construction/$orgId/construction-projects'
       fullPath: '/construction/$orgId/construction-projects'
       preLoaderRoute: typeof ConstructionOrgIdConstructionProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/construction/$orgId/construction-documents': {
+      id: '/construction/$orgId/construction-documents'
+      path: '/construction/$orgId/construction-documents'
+      fullPath: '/construction/$orgId/construction-documents'
+      preLoaderRoute: typeof ConstructionOrgIdConstructionDocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/construction/$orgId/construction-dashboard': {
@@ -306,8 +347,11 @@ const OrgIdRouteWithChildren = OrgIdRoute._addFileChildren(OrgIdRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OrgIdRoute: OrgIdRouteWithChildren,
+  AuthRoute: AuthRoute,
   ConstructionOrgIdConstructionDashboardRoute:
     ConstructionOrgIdConstructionDashboardRoute,
+  ConstructionOrgIdConstructionDocumentsRoute:
+    ConstructionOrgIdConstructionDocumentsRoute,
   ConstructionOrgIdConstructionProjectsRoute:
     ConstructionOrgIdConstructionProjectsRoute,
   ConstructionOrgIdConstructionTasksRoute:

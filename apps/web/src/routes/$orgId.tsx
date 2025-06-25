@@ -1,3 +1,4 @@
+import { AuthGuard } from "@/components/auth/auth-guard";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$orgId")({
@@ -5,5 +6,9 @@ export const Route = createFileRoute("/$orgId")({
 });
 
 function OrgLayout() {
-	return <Outlet />;
+	return (
+		<AuthGuard>
+			<Outlet />
+		</AuthGuard>
+	);
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { useDocumentsStore } from "@/store/documents-store";
 import { DndContext, type DragEndEvent, closestCenter } from "@dnd-kit/core";
 import {
@@ -11,6 +10,7 @@ import {
 import { useMutation } from "convex/react";
 import { Plus } from "lucide-react";
 import { motion } from "motion/react";
+import { api } from "../../../../../packages/backend/convex/_generated/api";
 import { DocumentBoardCard } from "./document-board-card";
 
 interface DocumentBoardProps {

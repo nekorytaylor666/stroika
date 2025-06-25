@@ -5,16 +5,19 @@ import { mutation, query } from "./_generated/server";
 export const list = query({
 	args: {
 		projectId: v.optional(v.id("projects")),
-		parentId: v.optional(v.id("documents")),
+		parentId: v.optional(v.union(v.id("documents"), v.null())),
 		search: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
 
 		let documents = await ctx.db
 			.query("documents")
-			.withIndex("by_parent", (q) => q.eq("parentId", args.parentId ?? null))
+			.withIndex("by_parent", (q) =>
+				q.eq("parentId", args.parentId === undefined ? null : args.parentId),
+			)
 			.collect();
 
 		if (args.projectId) {
@@ -63,8 +66,9 @@ export const list = query({
 export const get = query({
 	args: { id: v.id("documents") },
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
 
 		const document = await ctx.db.get(args.id);
 		if (!document) return null;

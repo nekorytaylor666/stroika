@@ -12,6 +12,7 @@ import { NavFeatures } from "@/components/layout/sidebar/nav-features";
 import { NavInbox } from "@/components/layout/sidebar/nav-inbox";
 import { NavTeamsSettings } from "@/components/layout/sidebar/nav-teams-settings";
 import { OrgSwitcher } from "@/components/layout/sidebar/org-switcher";
+import { UserProfile } from "@/components/layout/sidebar/user-profile";
 import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
@@ -49,6 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			</SidebarContent>
 			<SidebarFooter>
 				<div className="flex w-full flex-col gap-2">
+					<UserProfile />
 					<div className="flex w-full items-center justify-between">
 						<HelpButton />
 						<Button size="icon" variant="secondary" asChild>
