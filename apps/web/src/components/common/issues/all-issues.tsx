@@ -54,7 +54,7 @@ const FilteredIssuesView: FC<{
 
       // Filter by status
       if (filters.status && filters.status.length > 0) {
-         result = result.filter((issue) =>
+         result = result.filter((issuesdf) =>
             filters.status.includes(issue.status.id)
          );
       }

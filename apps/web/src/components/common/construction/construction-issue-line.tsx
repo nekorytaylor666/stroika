@@ -12,6 +12,7 @@ import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { IssueContextMenu } from '../issues/issue-context-menu';
 import { useConstructionData } from '@/hooks/use-construction-data';
 import { useState, useEffect } from 'react';
+import { useConstructionTaskDetailsStore } from '@/store/construction/construction-task-details-store';
 
 interface ConstructionIssueLineProps {
     issue: ConstructionTask;
@@ -20,6 +21,7 @@ interface ConstructionIssueLineProps {
 
 export function ConstructionIssueLine({ issue, layoutId = false }: ConstructionIssueLineProps) {
     const { users, labels, priorities, projects } = useConstructionData();
+    const { openTaskDetails } = useConstructionTaskDetailsStore();
     const [isStatusChanging, setIsStatusChanging] = useState(false);
     const [prevStatusId, setPrevStatusId] = useState(issue.statusId);
 
@@ -37,6 +39,15 @@ export function ConstructionIssueLine({ issue, layoutId = false }: ConstructionI
             return () => clearTimeout(timer);
         }
     }, [issue.statusId, prevStatusId]);
+
+    const handleClick = (e: React.MouseEvent) => {
+        // Don't open details if clicking on interactive elements
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('[role="combobox"]')) {
+            return;
+        }
+        openTaskDetails(issue);
+    };
 
     // Find related entities
     const assignee = issue.assigneeId ? users?.find(u => u._id === issue.assigneeId) : null;
@@ -60,7 +71,10 @@ export function ConstructionIssueLine({ issue, layoutId = false }: ConstructionI
                         ease: "easeInOut",
                     }}
                 >
-                    <div className="w-full flex items-center justify-start h-11 px-6 hover:bg-sidebar/50">
+                    <div 
+                        className="w-full flex items-center justify-start h-11 px-6 hover:bg-sidebar/50 cursor-pointer"
+                        onClick={handleClick}
+                    >
                         <div className="flex items-center gap-0.5">
                             {priority && (
                                 <ConstructionPrioritySelector priority={priority} issueId={issue._id} />

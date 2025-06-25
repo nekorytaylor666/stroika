@@ -6,13 +6,15 @@ import { useFilterStore } from '@/store/filter-store';
 import { type FC, useMemo } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { CustomDragLayer } from '../issues/issue-grid';
+import { ConstructionCustomDragLayer } from './construction-issue-grid';
 import { cn } from '@/lib/utils';
 import { useConstructionData } from '@/hooks/use-construction-data';
 import { ConstructionGroupIssues } from './construction-group-issues';
 import { SearchIssues } from '../issues/search-issues';
 import { ConstructionCreateIssueModal } from './construction-create-issue-modal';
 import { CreateIssueModalProvider } from '../issues/create-issue-modal-provider';
+import { ConstructionTaskDetails } from './construction-task-details';
+import { useConstructionTaskDetailsStore } from '@/store/construction/construction-task-details-store';
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -43,6 +45,7 @@ export default function ConstructionTasks() {
     const { isSearchOpen, searchQuery } = useSearchStore();
     const { viewType } = useViewStore();
     const { hasActiveFilters } = useFilterStore();
+    const { isOpen, selectedTask, closeTaskDetails } = useConstructionTaskDetailsStore();
 
     const isSearching = isSearchOpen && searchQuery.trim() !== '';
     const isViewTypeGrid = viewType === 'grid';
@@ -61,6 +64,11 @@ export default function ConstructionTasks() {
             </div>
             <ConstructionCreateIssueModal />
             <CreateIssueModalProvider />
+            <ConstructionTaskDetails 
+                task={selectedTask} 
+                open={isOpen} 
+                onOpenChange={closeTaskDetails} 
+            />
         </>
     );
 }
@@ -147,7 +155,7 @@ const FilteredConstructionTasksView: FC<{
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <CustomDragLayer />
+            <ConstructionCustomDragLayer />
             <div className={cn(isViewTypeGrid && 'flex h-full gap-3 px-2 py-2 min-w-max')}>
                 {statuses.map((statusItem) => (
                     <ConstructionGroupIssues
@@ -182,7 +190,7 @@ const GroupConstructionTasksListView: FC<{
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <CustomDragLayer />
+            <ConstructionCustomDragLayer />
             <div className={cn(isViewTypeGrid && 'flex h-full gap-3 px-2 py-2 min-w-max')}>
                 {statuses.map((statusItem) => (
                     <ConstructionGroupIssues
