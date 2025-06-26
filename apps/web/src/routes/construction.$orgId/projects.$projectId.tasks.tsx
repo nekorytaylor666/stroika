@@ -15,5 +15,5 @@ function ProjectTasksPage() {
 	// Convert the string projectId to Convex Id type
 	const convexProjectId = projectId as Id<"constructionProjects">;
 
-	return <ConstructionTasks />
+	return <ConstructionTasks />;
 }

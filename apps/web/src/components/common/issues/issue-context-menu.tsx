@@ -53,7 +53,6 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 	const labels = useQuery(api.metadata.getAllLabels);
 	const projects = useQuery(api.constructionProjects.getAll);
 
-
 	const handleAddLink = () => {
 		toast.success("Link added");
 	};

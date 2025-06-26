@@ -74,13 +74,13 @@ export function ConstructionIssueLine({
 					animate={
 						isStatusChanging
 							? {
-								scale: [1, 1.02, 1],
-								backgroundColor: [
-									"transparent",
-									"rgba(59, 130, 246, 0.1)",
-									"transparent",
-								],
-							}
+									scale: [1, 1.02, 1],
+									backgroundColor: [
+										"transparent",
+										"rgba(59, 130, 246, 0.1)",
+										"transparent",
+									],
+								}
 							: {}
 					}
 					transition={{

@@ -15,6 +15,8 @@ import {
 import { useState } from "react";
 import { AssigneeUser } from "../issues/assignee-user";
 import { ConstructionProjectDetails } from "./construction-project-details";
+import { api } from "@stroika/backend";
+import { useQuery } from "convex/react";
 
 interface ConstructionProjectLineProps {
 	project: ConstructionProject;
@@ -24,18 +26,18 @@ export function ConstructionProjectLine({
 	project,
 }: ConstructionProjectLineProps) {
 	const [detailsOpen, setDetailsOpen] = useState(false);
-	const { getUserById, getStatusById, getPriorityById } = useConstructionData();
 	const navigate = useNavigate();
 	const params = useParams({
 		from: "/construction/$orgId/construction-projects",
 	});
 
-	// Populate relationships from store
-	const lead = project.leadId ? getUserById(project.leadId) : null;
-	const status = project.statusId ? getStatusById(project.statusId) : null;
-	const priority = project.priorityId
-		? getPriorityById(project.priorityId)
-		: null;
+	const lead = useQuery(api.users.getById, { id: project.leadId });
+	const status = useQuery(api.metadata.getStatusById, {
+		id: project.statusId,
+	});
+	const priority = useQuery(api.metadata.getPriorityById, {
+		id: project.priorityId,
+	});
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat("ru-KZ", {
@@ -169,7 +171,7 @@ export function ConstructionProjectLine({
 				</div>
 
 				<div className="flex w-[15%] items-center gap-2 md:w-[15%] lg:w-[15%]">
-					{lead && <AssigneeUser user={lead as any} />}
+					{lead && <AssigneeUser user={lead} />}
 					<Button
 						variant="ghost"
 						size="icon"

@@ -6,12 +6,14 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { ConstructionProjectCreateDialog } from "./construction-project-create-dialog";
 import { ConstructionProjectLine } from "./construction-project-line";
+import { api } from "@stroika/backend";
+import { useQuery } from "convex/react";
 
 export default function ConstructionProjects() {
-	const { projects, isLoading } = useConstructionData();
+	const projects = useQuery(api.constructionProjects.getAll);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-	if (isLoading) {
+	if (!projects) {
 		return (
 			<div className="flex w-full items-center justify-center p-8">
 				<div className="text-muted-foreground text-sm">

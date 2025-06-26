@@ -36,9 +36,6 @@ import {
 	Bar,
 	BarChart,
 	CartesianGrid,
-	Cell,
-	Pie,
-	PieChart,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -116,25 +113,6 @@ export function ConstructionProjectOverview({
 	const StatusIcon =
 		statusStyles[projectData.status?.name as keyof typeof statusStyles]?.icon ||
 		Circle;
-
-	// Data for pie chart
-	const pieData = [
-		{
-			name: "Завершено",
-			value: taskStats.completed,
-			color: "hsl(142, 76%, 36%)",
-		},
-		{
-			name: "В работе",
-			value: taskStats.inProgress,
-			color: "hsl(45, 93%, 47%)",
-		},
-		{
-			name: "Не начато",
-			value: taskStats.notStarted,
-			color: "hsl(var(--muted))",
-		},
-	];
 
 	// Generate progress data from monthly revenue
 	const progressChartData = generateProgressDataFromRevenue(
@@ -346,27 +324,83 @@ export function ConstructionProjectOverview({
 										</Card>
 									</div>
 
-									{/* Pie Chart */}
+									{/* Timeline Chart */}
 									<Card className="p-4">
 										<h3 className="mb-4 font-medium text-sm">
-											Распределение задач
+											Прогресс по времени
 										</h3>
 										<div className="h-[200px]">
 											<ResponsiveContainer width="100%" height="100%">
-												<PieChart>
-													<Pie
-														data={pieData}
-														cx="50%"
-														cy="50%"
-														innerRadius={60}
-														outerRadius={80}
-														paddingAngle={2}
-														dataKey="value"
-													>
-														{pieData.map((entry, index) => (
-															<Cell key={`cell-${index}`} fill={entry.color} />
-														))}
-													</Pie>
+												<AreaChart data={generateTimelineData(projectData)}>
+													<defs>
+														<linearGradient
+															id="colorTotal"
+															x1="0"
+															y1="0"
+															x2="0"
+															y2="1"
+														>
+															<stop
+																offset="5%"
+																stopColor="#E5E7EB"
+																stopOpacity={0.3}
+															/>
+															<stop
+																offset="95%"
+																stopColor="#E5E7EB"
+																stopOpacity={0}
+															/>
+														</linearGradient>
+														<linearGradient
+															id="colorInProgress"
+															x1="0"
+															y1="0"
+															x2="0"
+															y2="1"
+														>
+															<stop
+																offset="5%"
+																stopColor="hsl(45, 93%, 47%)"
+																stopOpacity={0.3}
+															/>
+															<stop
+																offset="95%"
+																stopColor="hsl(45, 93%, 47%)"
+																stopOpacity={0}
+															/>
+														</linearGradient>
+														<linearGradient
+															id="colorCompleted"
+															x1="0"
+															y1="0"
+															x2="0"
+															y2="1"
+														>
+															<stop
+																offset="5%"
+																stopColor="hsl(142, 76%, 36%)"
+																stopOpacity={0.3}
+															/>
+															<stop
+																offset="95%"
+																stopColor="hsl(142, 76%, 36%)"
+																stopOpacity={0}
+															/>
+														</linearGradient>
+													</defs>
+													<XAxis
+														dataKey="date"
+														stroke="hsl(var(--muted-foreground))"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+													/>
+													<YAxis
+														stroke="hsl(var(--muted-foreground))"
+														fontSize={12}
+														tickLine={false}
+														axisLine={false}
+													/>
 													<Tooltip
 														formatter={(value: number) => `${value} задач`}
 														contentStyle={{
@@ -376,24 +410,61 @@ export function ConstructionProjectOverview({
 															fontSize: "12px",
 														}}
 													/>
-												</PieChart>
+													<Area
+														type="monotone"
+														dataKey="notStarted"
+														stroke="#E5E7EB"
+														fillOpacity={1}
+														fill="url(#colorTotal)"
+														strokeWidth={2}
+													/>
+													<Area
+														type="monotone"
+														dataKey="inProgress"
+														stroke="hsl(45, 93%, 47%)"
+														fillOpacity={1}
+														fill="url(#colorInProgress)"
+														strokeWidth={2}
+													/>
+													<Area
+														type="monotone"
+														dataKey="completed"
+														stroke="hsl(142, 76%, 36%)"
+														fillOpacity={1}
+														fill="url(#colorCompleted)"
+														strokeWidth={2}
+													/>
+												</AreaChart>
 											</ResponsiveContainer>
 										</div>
 										<div className="mt-4 flex items-center justify-center gap-4">
-											{pieData.map((item) => (
+											<div className="flex items-center gap-2">
 												<div
-													key={item.name}
-													className="flex items-center gap-2"
-												>
-													<div
-														className="h-3 w-3 rounded-sm"
-														style={{ backgroundColor: item.color }}
-													/>
-													<span className="text-muted-foreground text-xs">
-														{item.name} ({item.value})
-													</span>
-												</div>
-											))}
+													className="h-3 w-3 rounded-sm"
+													style={{ backgroundColor: "#E5E7EB" }}
+												/>
+												<span className="text-muted-foreground text-xs">
+													Не начато
+												</span>
+											</div>
+											<div className="flex items-center gap-2">
+												<div
+													className="h-3 w-3 rounded-sm"
+													style={{ backgroundColor: "hsl(45, 93%, 47%)" }}
+												/>
+												<span className="text-muted-foreground text-xs">
+													В работе
+												</span>
+											</div>
+											<div className="flex items-center gap-2">
+												<div
+													className="h-3 w-3 rounded-sm"
+													style={{ backgroundColor: "hsl(142, 76%, 36%)" }}
+												/>
+												<span className="text-muted-foreground text-xs">
+													Завершено
+												</span>
+											</div>
 										</div>
 									</Card>
 								</div>
@@ -610,7 +681,7 @@ export function ConstructionProjectOverview({
 							<div className="space-y-1.5">
 								<p className="text-muted-foreground text-xs">Участники</p>
 								<div className="-space-x-2 flex">
-									{projectData.teamMembers.slice(0, 5).map((member) => (
+									{projectData.teamMembers.slice(0, 5).map((member) => member && (
 										<Avatar
 											key={member._id}
 											className="h-6 w-6 border-2 border-background"
@@ -727,6 +798,82 @@ function generateProgressDataFromRevenue(
 		planned: item.planned,
 		actual: item.actual,
 	}));
+}
+
+// Helper function to generate timeline data for task completion
+function generateTimelineData(projectData: {
+	startDate: string;
+	targetDate?: string | null;
+	taskStats: {
+		total: number;
+		completed: number;
+		inProgress: number;
+		notStarted: number;
+	};
+}) {
+	const startDate = new Date(projectData.startDate);
+	const targetDate = projectData.targetDate ? new Date(projectData.targetDate) : new Date();
+	const currentDate = new Date();
+	
+	// Generate data points from start to current date
+	const dataPoints = [];
+	const totalDays = differenceInDays(targetDate, startDate);
+	const daysPassed = differenceInDays(currentDate, startDate);
+	const daysToShow = Math.min(daysPassed, totalDays);
+	
+	// Create data points for every 7 days (weekly)
+	for (let i = 0; i <= daysToShow; i += 7) {
+		const date = new Date(startDate);
+		date.setDate(date.getDate() + i);
+		
+		// Calculate expected completion based on linear progress
+		const expectedProgress = (i / totalDays) * projectData.taskStats.total;
+		
+		// For demo purposes, show gradual completion
+		// In real implementation, this would come from historical task data
+		const progressRatio = i / daysToShow;
+		
+		// Simulate task progression over time
+		const completedTasks = Math.min(
+			Math.round(progressRatio * projectData.taskStats.completed),
+			projectData.taskStats.completed
+		);
+		
+		const inProgressTasks = Math.min(
+			Math.round(progressRatio * projectData.taskStats.inProgress),
+			projectData.taskStats.inProgress
+		);
+		
+		// Not started tasks decrease as tasks move to in progress and completed
+		const totalProgressedTasks = completedTasks + inProgressTasks;
+		const notStartedTasks = Math.max(
+			projectData.taskStats.total - totalProgressedTasks,
+			projectData.taskStats.notStarted
+		);
+		
+		dataPoints.push({
+			date: format(date, "d MMM", { locale: ru }),
+			total: projectData.taskStats.total,
+			completed: completedTasks,
+			inProgress: inProgressTasks + completedTasks,
+			notStarted: notStartedTasks + inProgressTasks + completedTasks,
+			expected: Math.round(expectedProgress)
+		});
+	}
+	
+	// Add current state as the last point
+	if (daysToShow > 0) {
+		dataPoints.push({
+			date: format(currentDate, "d MMM", { locale: ru }),
+			total: projectData.taskStats.total,
+			completed: projectData.taskStats.completed,
+			inProgress: projectData.taskStats.completed + projectData.taskStats.inProgress,
+			notStarted: projectData.taskStats.total,
+			expected: Math.round((daysPassed / totalDays) * projectData.taskStats.total)
+		});
+	}
+	
+	return dataPoints;
 }
 
 // Skeleton loader

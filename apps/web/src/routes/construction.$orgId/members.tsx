@@ -8,7 +8,5 @@ export const Route = createFileRoute("/construction/$orgId/members")({
 });
 
 function MembersPage() {
-	return (
-		<Members />
-	);
+	return <Members />;
 }

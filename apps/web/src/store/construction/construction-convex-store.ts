@@ -1,6 +1,6 @@
 import type { Id } from "@stroika/backend";
-import { create } from "../create-store";
 import { devtools } from "zustand/middleware";
+import { create } from "../create-store";
 
 // Types based on Convex schema
 export interface ConstructionTask {

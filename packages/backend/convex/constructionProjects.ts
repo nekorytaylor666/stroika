@@ -118,30 +118,35 @@ export const getProjectWithTasks = query({
 			notStarted: 0,
 		};
 
-		// Count tasks by status (you may need to adjust based on your status names)
+		// Count tasks by status
 		for (const task of tasksWithDetails) {
 			if (!task.status) continue;
 
 			const statusName = task.status.name.toLowerCase();
 			if (
+				statusName.includes("завершена") ||
 				statusName.includes("done") ||
-				statusName.includes("completed") ||
-				statusName.includes("завершено")
+				statusName.includes("completed")
 			) {
 				taskStats.completed++;
 			} else if (
-				statusName.includes("progress") ||
-				statusName.includes("работе")
+				statusName.includes("в работе") ||
+				statusName.includes("на проверке") ||
+				statusName.includes("progress")
 			) {
 				taskStats.inProgress++;
 			} else if (
+				statusName.includes("к выполнению") ||
 				statusName.includes("todo") ||
-				statusName.includes("backlog") ||
-				statusName.includes("сделать")
+				statusName.includes("backlog")
 			) {
 				taskStats.notStarted++;
 			}
 		}
+
+		// Calculate percentage complete based on task stats
+		const percentComplete =
+			taskStats.total > 0 ? (taskStats.completed / taskStats.total) * 100 : 0;
 
 		return {
 			...project,
@@ -152,6 +157,7 @@ export const getProjectWithTasks = query({
 			tasks: tasksWithDetails,
 			teamMembers: teamMembers.filter(Boolean),
 			taskStats,
+			percentComplete,
 		};
 	},
 });
@@ -357,10 +363,9 @@ export const addMonthlyRevenue = mutation({
 				actual: args.actual,
 			});
 			return existing._id;
-		} else {
-			// Create new revenue entry
-			return await ctx.db.insert("monthlyRevenue", args);
 		}
+		// Create new revenue entry
+		return await ctx.db.insert("monthlyRevenue", args);
 	},
 });
 

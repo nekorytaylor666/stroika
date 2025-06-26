@@ -11,8 +11,7 @@ export default function HeaderNav() {
 				<SidebarTrigger className="" />
 				<div className="flex items-center gap-1">
 					<span className="font-medium text-sm">Members</span>
-					<span className="rounded-md bg-accent px-1.5 py-1 text-xs">
-					</span>
+					<span className="rounded-md bg-accent px-1.5 py-1 text-xs"></span>
 				</div>
 			</div>
 			<div className="flex items-center gap-2">

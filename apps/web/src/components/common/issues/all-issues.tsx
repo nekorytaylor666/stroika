@@ -135,5 +135,3 @@ const FilteredIssuesView: FC<{
 		</DndProvider>
 	);
 };
-
-

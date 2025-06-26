@@ -9,5 +9,5 @@ export const Route = createFileRoute("/construction/$orgId/construction-tasks")(
 );
 
 function ConstructionTasksPage() {
-	return <h1>asdf</h1>
+	return <h1>asdf</h1>;
 }

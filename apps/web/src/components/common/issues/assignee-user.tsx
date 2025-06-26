@@ -8,6 +8,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { api } from "@stroika/backend";
+import { useQuery } from "convex/react";
 import { CheckIcon, CircleUserRound, Send, UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -18,6 +20,7 @@ interface AssigneeUserProps {
 export function AssigneeUser({ user }: AssigneeUserProps) {
 	const [open, setOpen] = useState(false);
 	const [currentAssignee, setCurrentAssignee] = useState<User | null>(user);
+	const users = useQuery(api.users.getAll);
 
 	useEffect(() => {
 		setCurrentAssignee(user);
@@ -52,7 +55,7 @@ export function AssigneeUser({ user }: AssigneeUserProps) {
 						<span
 							className="-end-0.5 -bottom-0.5 absolute size-2.5 rounded-full border-2 border-background"
 							style={{
-								backgroundColor: statusUserColors[currentAssignee.status],
+								backgroundColor: "#000",
 							}}
 						>
 							<span className="sr-only">{currentAssignee.status}</span>

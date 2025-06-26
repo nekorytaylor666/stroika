@@ -16,7 +16,7 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 export function NavTeamsSettings() {
 	const { teams } = useConstructionData();
 	const joinedTeams = teams?.filter((t) => t.joined) || [];
-	
+
 	return (
 		<SidebarGroup>
 			<SidebarGroupLabel>Your teams</SidebarGroupLabel>

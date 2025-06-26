@@ -14,9 +14,7 @@ export default function Projects() {
 				<div className="w-[20%] pl-2 sm:w-[10%]">Status</div>
 			</div>
 
-			<div className="w-full">
-
-			</div>
+			<div className="w-full"></div>
 		</div>
 	);
 }
