@@ -24,8 +24,8 @@ import { Route as ConstructionOrgIdConstructionProjectsRouteImport } from './rou
 import { Route as ConstructionOrgIdConstructionDocumentsRouteImport } from './routes/construction.$orgId/construction-documents'
 import { Route as ConstructionOrgIdConstructionDashboardRouteImport } from './routes/construction.$orgId/construction-dashboard'
 import { Route as ConstructionOrgIdAttachmentsRouteImport } from './routes/construction.$orgId/attachments'
+import { Route as ConstructionOrgIdAdminRouteImport } from './routes/construction.$orgId/admin'
 import { Route as OrgIdTeamTeamIdRouteImport } from './routes/$orgId.team.$teamId'
-import { Route as OrgIdSettingsAdminRouteImport } from './routes/$orgId/settings/admin'
 import { Route as OrgIdTeamTeamIdAllRouteImport } from './routes/$orgId.team.$teamId.all'
 import { Route as ConstructionOrgIdProjectsProjectIdTeamRouteImport } from './routes/construction.$orgId/projects.$projectId.team'
 import { Route as ConstructionOrgIdProjectsProjectIdTasksRouteImport } from './routes/construction.$orgId/projects.$projectId.tasks'
@@ -115,15 +115,15 @@ const ConstructionOrgIdAttachmentsRoute =
     path: '/attachments',
     getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
+const ConstructionOrgIdAdminRoute = ConstructionOrgIdAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ConstructionOrgIdRouteRoute,
+} as any)
 const OrgIdTeamTeamIdRoute = OrgIdTeamTeamIdRouteImport.update({
   id: '/team/$teamId',
   path: '/team/$teamId',
   getParentRoute: () => OrgIdRoute,
-} as any)
-const OrgIdSettingsAdminRoute = OrgIdSettingsAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => OrgIdSettingsRoute,
 } as any)
 const OrgIdTeamTeamIdAllRoute = OrgIdTeamTeamIdAllRouteImport.update({
   id: '/all',
@@ -168,10 +168,10 @@ export interface FileRoutesByFullPath {
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRouteWithChildren
+  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
-  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
@@ -193,10 +193,10 @@ export interface FileRoutesByTo {
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRouteWithChildren
+  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
-  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
@@ -219,10 +219,10 @@ export interface FileRoutesById {
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/$orgId/members': typeof OrgIdMembersRoute
   '/$orgId/projects': typeof OrgIdProjectsRoute
-  '/$orgId/settings': typeof OrgIdSettingsRouteWithChildren
+  '/$orgId/settings': typeof OrgIdSettingsRoute
   '/$orgId/teams': typeof OrgIdTeamsRoute
-  '/$orgId/settings/admin': typeof OrgIdSettingsAdminRoute
   '/$orgId/team/$teamId': typeof OrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
   '/construction/$orgId/construction-documents': typeof ConstructionOrgIdConstructionDocumentsRoute
@@ -248,8 +248,8 @@ export interface FileRouteTypes {
     | '/$orgId/projects'
     | '/$orgId/settings'
     | '/$orgId/teams'
-    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
+    | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-documents'
@@ -273,8 +273,8 @@ export interface FileRouteTypes {
     | '/$orgId/projects'
     | '/$orgId/settings'
     | '/$orgId/teams'
-    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
+    | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-documents'
@@ -298,8 +298,8 @@ export interface FileRouteTypes {
     | '/$orgId/projects'
     | '/$orgId/settings'
     | '/$orgId/teams'
-    | '/$orgId/settings/admin'
     | '/$orgId/team/$teamId'
+    | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
     | '/construction/$orgId/construction-dashboard'
     | '/construction/$orgId/construction-documents'
@@ -429,19 +429,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConstructionOrgIdAttachmentsRouteImport
       parentRoute: typeof ConstructionOrgIdRouteRoute
     }
+    '/construction/$orgId/admin': {
+      id: '/construction/$orgId/admin'
+      path: '/admin'
+      fullPath: '/construction/$orgId/admin'
+      preLoaderRoute: typeof ConstructionOrgIdAdminRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
+    }
     '/$orgId/team/$teamId': {
       id: '/$orgId/team/$teamId'
       path: '/team/$teamId'
       fullPath: '/$orgId/team/$teamId'
       preLoaderRoute: typeof OrgIdTeamTeamIdRouteImport
       parentRoute: typeof OrgIdRoute
-    }
-    '/$orgId/settings/admin': {
-      id: '/$orgId/settings/admin'
-      path: '/admin'
-      fullPath: '/$orgId/settings/admin'
-      preLoaderRoute: typeof OrgIdSettingsAdminRouteImport
-      parentRoute: typeof OrgIdSettingsRoute
     }
     '/$orgId/team/$teamId/all': {
       id: '/$orgId/team/$teamId/all'
@@ -488,18 +488,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface OrgIdSettingsRouteChildren {
-  OrgIdSettingsAdminRoute: typeof OrgIdSettingsAdminRoute
-}
-
-const OrgIdSettingsRouteChildren: OrgIdSettingsRouteChildren = {
-  OrgIdSettingsAdminRoute: OrgIdSettingsAdminRoute,
-}
-
-const OrgIdSettingsRouteWithChildren = OrgIdSettingsRoute._addFileChildren(
-  OrgIdSettingsRouteChildren,
-)
-
 interface OrgIdTeamTeamIdRouteChildren {
   OrgIdTeamTeamIdAllRoute: typeof OrgIdTeamTeamIdAllRoute
 }
@@ -515,7 +503,7 @@ const OrgIdTeamTeamIdRouteWithChildren = OrgIdTeamTeamIdRoute._addFileChildren(
 interface OrgIdRouteChildren {
   OrgIdMembersRoute: typeof OrgIdMembersRoute
   OrgIdProjectsRoute: typeof OrgIdProjectsRoute
-  OrgIdSettingsRoute: typeof OrgIdSettingsRouteWithChildren
+  OrgIdSettingsRoute: typeof OrgIdSettingsRoute
   OrgIdTeamsRoute: typeof OrgIdTeamsRoute
   OrgIdTeamTeamIdRoute: typeof OrgIdTeamTeamIdRouteWithChildren
 }
@@ -523,7 +511,7 @@ interface OrgIdRouteChildren {
 const OrgIdRouteChildren: OrgIdRouteChildren = {
   OrgIdMembersRoute: OrgIdMembersRoute,
   OrgIdProjectsRoute: OrgIdProjectsRoute,
-  OrgIdSettingsRoute: OrgIdSettingsRouteWithChildren,
+  OrgIdSettingsRoute: OrgIdSettingsRoute,
   OrgIdTeamsRoute: OrgIdTeamsRoute,
   OrgIdTeamTeamIdRoute: OrgIdTeamTeamIdRouteWithChildren,
 }
@@ -531,6 +519,7 @@ const OrgIdRouteChildren: OrgIdRouteChildren = {
 const OrgIdRouteWithChildren = OrgIdRoute._addFileChildren(OrgIdRouteChildren)
 
 interface ConstructionOrgIdRouteRouteChildren {
+  ConstructionOrgIdAdminRoute: typeof ConstructionOrgIdAdminRoute
   ConstructionOrgIdAttachmentsRoute: typeof ConstructionOrgIdAttachmentsRoute
   ConstructionOrgIdConstructionDashboardRoute: typeof ConstructionOrgIdConstructionDashboardRoute
   ConstructionOrgIdConstructionDocumentsRoute: typeof ConstructionOrgIdConstructionDocumentsRoute
@@ -547,6 +536,7 @@ interface ConstructionOrgIdRouteRouteChildren {
 
 const ConstructionOrgIdRouteRouteChildren: ConstructionOrgIdRouteRouteChildren =
   {
+    ConstructionOrgIdAdminRoute: ConstructionOrgIdAdminRoute,
     ConstructionOrgIdAttachmentsRoute: ConstructionOrgIdAttachmentsRoute,
     ConstructionOrgIdConstructionDashboardRoute:
       ConstructionOrgIdConstructionDashboardRoute,

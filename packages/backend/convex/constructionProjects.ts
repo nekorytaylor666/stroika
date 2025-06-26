@@ -83,8 +83,8 @@ export const getProjectWithTasks = query({
 			// Get all tasks for this construction project
 			ctx.db
 				.query("issues")
-				.withIndex("by_construction_project", (q) =>
-					q.eq("constructionProjectId", project._id),
+				.withIndex("by_project", (q) =>
+					q.eq("projectId", project._id),
 				)
 				.collect(),
 			// Get team members
@@ -122,7 +122,7 @@ export const getProjectWithTasks = query({
 		// Count tasks by status (you may need to adjust based on your status names)
 		for (const task of tasksWithDetails) {
 			if (!task.status) continue;
-			
+
 			const statusName = task.status.name.toLowerCase();
 			if (statusName.includes('done') || statusName.includes('completed') || statusName.includes('завершено')) {
 				taskStats.completed++;
@@ -147,7 +147,7 @@ export const getProjectWithTasks = query({
 });
 
 export const getTasksForProject = query({
-	args: { 
+	args: {
 		constructionProjectId: v.id("constructionProjects"),
 		statusId: v.optional(v.id("status")),
 		assigneeId: v.optional(v.id("users")),
@@ -155,8 +155,8 @@ export const getTasksForProject = query({
 	handler: async (ctx, args) => {
 		let tasksQuery = ctx.db
 			.query("issues")
-			.withIndex("by_construction_project", (q) =>
-				q.eq("constructionProjectId", args.constructionProjectId),
+			.withIndex("by_project", (q) =>
+				q.eq("projectId", args.constructionProjectId),
 			);
 
 		// Apply filters if provided

@@ -3,6 +3,9 @@ import MainLayout from "@/components/layout/main-layout";
 import Header from "@/components/header";
 import { Card } from "@/components/ui/card";
 import { CheckSquare } from "lucide-react";
+import ProjectTasks from "@/components/construction/project-tasks";
+import type { Id } from "@stroika/backend";
+import ConstructionTasks from "@/components/common/construction/construction-tasks";
 
 export const Route = createFileRoute("/construction/$orgId/projects/$projectId/tasks")({
   component: ProjectTasksPage,
@@ -11,17 +14,10 @@ export const Route = createFileRoute("/construction/$orgId/projects/$projectId/t
 function ProjectTasksPage() {
   const { projectId } = Route.useParams();
 
+  // Convert the string projectId to Convex Id type
+  const convexProjectId = projectId as Id<"constructionProjects">;
+
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <CheckSquare className="h-8 w-8 text-muted-foreground" />
-        <h1 className="text-2xl font-semibold">Задачи проекта</h1>
-      </div>
-      <Card className="p-6">
-        <p className="text-muted-foreground">
-          Страница задач проекта {projectId} находится в разработке.
-        </p>
-      </Card>
-    </div>
+    <ConstructionTasks />
   );
 }

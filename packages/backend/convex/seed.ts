@@ -213,18 +213,7 @@ export const seedAll = mutation({
 			});
 		}
 
-		// 6. Create regular projects
-		try {
-			const regularProjectsResult = await createRegularProjects(ctx);
-			results.push({ step: "Regular Projects", ...regularProjectsResult });
-		} catch (error) {
-			results.push({
-				step: "Regular Projects",
-				error: error instanceof Error ? error.message : String(error),
-			});
-		}
-
-		// 7. Create construction projects
+		// 6. Create construction projects
 		try {
 			const projectsResult = await createConstructionProjects(ctx);
 			results.push({ step: "Construction Projects", ...projectsResult });
@@ -235,7 +224,7 @@ export const seedAll = mutation({
 			});
 		}
 
-		// 8. Create tasks/issues
+		// 7. Create tasks/issues
 		try {
 			const tasksResult = await createTasks(ctx);
 			results.push({ step: "Tasks", ...tasksResult });
@@ -618,69 +607,6 @@ async function createConstructionTeams(ctx: MutationCtx) {
 	};
 }
 
-async function createRegularProjects(ctx: MutationCtx) {
-	const now = new Date().toISOString();
-
-	// Get necessary IDs
-	const users = await ctx.db.query("users").collect();
-	const statuses = await ctx.db.query("status").collect();
-	const priorities = await ctx.db.query("priorities").collect();
-
-	const statusInProgress = statuses.find((s) => s.name === "В работе");
-	const statusPlanning = statuses.find((s) => s.name === "Новая");
-	const priorityHigh = priorities.find((p) => p.name === "Высокая");
-	const priorityMedium = priorities.find((p) => p.name === "Средняя");
-
-	if (
-		!statusInProgress ||
-		!statusPlanning ||
-		!priorityHigh ||
-		!priorityMedium
-	) {
-		throw new Error("Required status or priority not found");
-	}
-
-	const projects = [
-		{
-			name: "Разработка BIM модели",
-			statusId: statusInProgress._id,
-			iconName: "cube",
-			percentComplete: 45,
-			startDate: "2024-02-01",
-			leadId: users[0]._id,
-			priorityId: priorityHigh._id,
-			healthId: "on-track",
-			healthName: "В графике",
-			healthColor: "green",
-			healthDescription: "Моделирование идет по плану",
-		},
-		{
-			name: "Подготовка тендерной документации",
-			statusId: statusPlanning._id,
-			iconName: "file-text",
-			percentComplete: 20,
-			startDate: "2024-03-15",
-			leadId: users[1]._id,
-			priorityId: priorityMedium._id,
-			healthId: "on-track",
-			healthName: "В графике",
-			healthColor: "green",
-			healthDescription: "Сбор требований",
-		},
-	];
-
-	const projectIds: Id<"projects">[] = [];
-	for (const project of projects) {
-		const projectId = await ctx.db.insert("projects", project);
-		projectIds.push(projectId);
-	}
-
-	return {
-		message: "Regular projects created",
-		projectsCreated: projects.length,
-		projectIds,
-	};
-}
 
 async function createConstructionProjects(ctx: MutationCtx) {
 	const now = new Date().toISOString();
@@ -851,7 +777,7 @@ async function createTasks(ctx: MutationCtx) {
 	const statuses = await ctx.db.query("status").collect();
 	const priorities = await ctx.db.query("priorities").collect();
 	const labels = await ctx.db.query("labels").collect();
-	const projects = await ctx.db.query("projects").collect();
+	const projects = await ctx.db.query("constructionProjects").collect();
 
 	const tasks = [
 		{

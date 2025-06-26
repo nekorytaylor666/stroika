@@ -130,7 +130,7 @@ export const useConstructionData = () => {
 		priorityId: Id<"priorities">;
 		labelIds: Id<"labels">[];
 		cycleId: string;
-		projectId?: Id<"projects">;
+		projectId?: Id<"constructionProjects">;
 		rank: string;
 		dueDate?: string;
 	}) => {

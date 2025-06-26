@@ -4,7 +4,7 @@ import { mutation, query } from "./_generated/server";
 
 export const list = query({
 	args: {
-		projectId: v.optional(v.id("projects")),
+		projectId: v.optional(v.id("constructionProjects")),
 		parentId: v.optional(v.union(v.id("documents"), v.null())),
 		search: v.optional(v.string()),
 	},
@@ -107,7 +107,7 @@ export const create = mutation({
 	args: {
 		title: v.string(),
 		content: v.optional(v.string()),
-		projectId: v.optional(v.id("projects")),
+		projectId: v.optional(v.id("constructionProjects")),
 		parentId: v.optional(v.id("documents")),
 		assignedTo: v.optional(v.id("users")),
 		dueDate: v.optional(v.string()),

@@ -55,20 +55,7 @@ export default defineSchema({
 		iconName: v.string(),
 	}),
 
-	// Projects table
-	projects: defineTable({
-		name: v.string(),
-		statusId: v.id("status"),
-		iconName: v.string(),
-		percentComplete: v.number(),
-		startDate: v.string(),
-		leadId: v.id("users"),
-		priorityId: v.id("priorities"),
-		healthId: v.string(),
-		healthName: v.string(),
-		healthColor: v.string(),
-		healthDescription: v.string(),
-	}),
+
 
 	// Construction Projects table
 	constructionProjects: defineTable({
@@ -132,15 +119,7 @@ export default defineSchema({
 		workload: v.number(),
 	}),
 
-	// Teams table
-	teams: defineTable({
-		name: v.string(),
-		icon: v.string(),
-		joined: v.boolean(),
-		color: v.string(),
-		memberIds: v.array(v.id("users")),
-		projectIds: v.array(v.id("projects")),
-	}),
+
 
 	// Issues/Tasks table
 	issues: defineTable({
@@ -153,17 +132,15 @@ export default defineSchema({
 		labelIds: v.array(v.id("labels")),
 		createdAt: v.string(),
 		cycleId: v.string(),
-		projectId: v.optional(v.id("projects")),
-		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
+		projectId: v.optional(v.id("constructionProjects")),
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 		isConstructionTask: v.boolean(), // Flag to distinguish construction tasks
 	})
 		.index("by_status", ["statusId"])
 		.index("by_assignee", ["assigneeId"])
-		.index("by_project", ["projectId"])
 		.index("by_construction", ["isConstructionTask"])
-		.index("by_construction_project", ["constructionProjectId"]),
+		.index("by_project", ["projectId"]),
 
 	// Roles table
 	roles: defineTable({
@@ -265,7 +242,7 @@ export default defineSchema({
 	documents: defineTable({
 		title: v.string(),
 		content: v.string(),
-		projectId: v.optional(v.id("projects")),
+		projectId: v.optional(v.id("constructionProjects")),
 		parentId: v.union(v.id("documents"), v.null()), // For hierarchical documents
 		authorId: v.id("users"),
 		assignedTo: v.optional(v.id("users")),

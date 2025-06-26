@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "convex/react";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
+import { useNavigate, useParams } from "@tanstack/react-router";
 
 interface ConstructionProjectOverviewProps {
   projectId: Id<"constructionProjects">;
@@ -91,6 +92,8 @@ const projectTypeTranslations = {
 
 export function ConstructionProjectOverview({ projectId }: ConstructionProjectOverviewProps) {
   const projectData = useQuery(api.constructionProjects.getProjectWithTasks, { id: projectId });
+  const navigate = useNavigate();
+  const params = useParams({ from: "/construction/$orgId/projects/$projectId/overview" });
 
   if (!projectData) {
     return <ProjectOverviewSkeleton />;
@@ -353,10 +356,26 @@ export function ConstructionProjectOverview({ projectId }: ConstructionProjectOv
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-medium">Последние задачи</h2>
-                  <Button variant="ghost" size="sm" className="h-8">
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Добавить задачу
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8"
+                      onClick={() => navigate({
+                        to: "/construction/$orgId/projects/$projectId/tasks",
+                        params: {
+                          orgId: params.orgId,
+                          projectId: projectData._id,
+                        },
+                      })}
+                    >
+                      Все задачи
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8">
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Добавить задачу
+                    </Button>
+                  </div>
                 </div>
 
                 <Card className="p-4">

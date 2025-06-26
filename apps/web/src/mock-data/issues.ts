@@ -1,3 +1,4 @@
+import type { ConstructionTask } from "@/store/construction/construction-convex-store";
 import { type LabelInterface, labels } from "./labels";
 import { type Priority, priorities } from "./priorities";
 import { type Project, projects } from "./projects";
@@ -469,7 +470,7 @@ export function groupIssuesByStatus(issues: Issue[]): Record<string, Issue[]> {
 	}, {});
 }
 
-export function sortIssuesByPriority(issues: Issue[]): Issue[] {
+export function sortIssuesByPriority(issues: ConstructionTask[]): ConstructionTask[] {
 	const priorityOrder: Record<string, number> = {
 		urgent: 0,
 		high: 1,

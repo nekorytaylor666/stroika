@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { Id } from "../../../../packages/backend/convex/_generated/dataModel";
+import type { Id } from "@stroika/backend";
 
 // Types based on Convex schema
 export interface ConstructionTask {
@@ -14,7 +14,7 @@ export interface ConstructionTask {
 	labelIds: Id<"labels">[];
 	createdAt: string;
 	cycleId: string;
-	projectId?: Id<"projects">;
+	projectId?: Id<"constructionProjects">;
 	rank: string;
 	dueDate?: string;
 	isConstructionTask: boolean;

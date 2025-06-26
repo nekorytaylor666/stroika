@@ -2,7 +2,6 @@
 
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
-import { sortIssuesByPriority } from "@/mock-data/issues";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useViewStore } from "@/store/view-store";
 import {
@@ -18,9 +17,32 @@ import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { Button } from "../../ui/button";
-import { IssueDragType, IssueGrid } from "../issues/issue-grid";
+import { IssueDragType } from "../issues/issue-grid";
+import { ConstructionIssueGrid } from "./construction-issue-grid";
 import { ConstructionIssueLine } from "./construction-issue-line";
 import type { ConstructionTask, StatusType } from "./construction-tasks";
+
+// Sort construction tasks by priority
+function sortConstructionTasksByPriority(
+	tasks: ConstructionTask[],
+	priorities: Array<{ _id: string; level: number }> | undefined
+): ConstructionTask[] {
+	if (!priorities || priorities.length === 0) {
+		return tasks;
+	}
+
+	// Create a map of priority IDs to their level (lower level = higher priority)
+	const priorityLevelMap: Record<string, number> = {};
+	for (const priority of priorities) {
+		priorityLevelMap[priority._id] = priority.level;
+	}
+
+	return tasks.slice().sort((a, b) => {
+		const aLevel = priorityLevelMap[a.priorityId] ?? 999;
+		const bLevel = priorityLevelMap[b.priorityId] ?? 999;
+		return aLevel - bLevel;
+	});
+}
 
 interface ConstructionGroupIssuesProps {
 	status: StatusType;
@@ -55,7 +77,8 @@ export function ConstructionGroupIssues({
 	const { viewType } = useViewStore();
 	const isViewTypeGrid = viewType === "grid";
 	const { openModal } = useCreateIssueStore();
-	const sortedIssues = sortIssuesByPriority(issues);
+	const { priorities } = useConstructionData();
+	const sortedIssues = sortConstructionTasksByPriority(issues, priorities);
 
 	return (
 		<div
@@ -104,7 +127,7 @@ export function ConstructionGroupIssues({
 									<StatusIcon iconName={status.iconName} color={status.color} />
 								),
 							};
-							openModal(statusForModal as any);
+							openModal(statusForModal);
 						}}
 					>
 						<Plus className="size-4" />
@@ -134,7 +157,7 @@ const ConstructionIssueGridList: FC<{
 	status: StatusType;
 }> = ({ issues, status }) => {
 	const ref = useRef<HTMLDivElement>(null);
-	const { updateTaskStatus } = useConstructionData();
+	const { updateTaskStatus, priorities } = useConstructionData();
 
 	// Set up drop functionality to accept only issue items.
 	const [{ isOver }, drop] = useDrop(() => ({
@@ -157,7 +180,7 @@ const ConstructionIssueGridList: FC<{
 	}));
 	drop(ref);
 
-	const sortedIssues = sortIssuesByPriority(issues);
+	const sortedIssues = sortConstructionTasksByPriority(issues, priorities);
 
 	return (
 		<div
@@ -187,7 +210,7 @@ const ConstructionIssueGridList: FC<{
 				)}
 			</AnimatePresence>
 			{sortedIssues.map((issue) => (
-				<IssueGrid key={issue._id} issue={issue as any} />
+				<ConstructionIssueGrid key={issue._id} issue={issue} />
 			))}
 		</div>
 	);

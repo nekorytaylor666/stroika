@@ -15,6 +15,9 @@ import { ConstructionCreateIssueModal } from "./construction-create-issue-modal"
 import { ConstructionGroupIssues } from "./construction-group-issues";
 import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
+import { api, type Id } from "@stroika/backend";
+import { useQuery } from "convex/react";
+import { useParams } from "@tanstack/react-router";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -28,7 +31,7 @@ export interface ConstructionTask {
 	labelIds: string[];
 	createdAt: string;
 	cycleId: string;
-	projectId?: string;
+	projectId?: string; // References constructionProjects
 	rank: string;
 	dueDate?: string;
 	isConstructionTask: boolean;
@@ -199,7 +202,11 @@ const FilteredConstructionTasksView: FC<{
 const GroupConstructionTasksListView: FC<{
 	isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-	const { tasks, statuses } = useConstructionData();
+	const { projectId } = useParams({ from: "/construction/$orgId/projects/$projectId/tasks" });
+	const tasks = useQuery(api.constructionTasks.getByProject, {
+		projectId: projectId as Id<"projects">,
+	});
+	const statuses = useQuery(api.metadata.getAllStatus);
 
 	// Group tasks by status
 	const tasksByStatus = useMemo(() => {

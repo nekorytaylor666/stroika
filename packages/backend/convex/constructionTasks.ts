@@ -168,7 +168,7 @@ export const getByAssignee = query({
 });
 
 export const getByProject = query({
-	args: { projectId: v.id("projects") },
+	args: { projectId: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
 		return await ctx.db
 			.query("issues")
@@ -267,8 +267,7 @@ export const create = mutation({
 		priorityId: v.id("priorities"),
 		labelIds: v.array(v.id("labels")),
 		cycleId: v.string(),
-		projectId: v.optional(v.id("projects")),
-		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
+		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 	},
@@ -294,8 +293,7 @@ export const update = mutation({
 		priorityId: v.optional(v.id("priorities")),
 		labelIds: v.optional(v.array(v.id("labels"))),
 		cycleId: v.optional(v.string()),
-		projectId: v.optional(v.id("projects")),
-		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
+		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
 	},

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
 import { Building2, Database, Shield } from "lucide-react";
 
-export const Route = createFileRoute("/$orgId/settings/admin")({
+export const Route = createFileRoute("/construction/$orgId/admin")({
 	component: AdminSettings,
 });
 
@@ -122,5 +122,5 @@ function AdminSettings() {
 				</TabsContent>
 			</Tabs>
 		</div>
-	);
+	)
 }
