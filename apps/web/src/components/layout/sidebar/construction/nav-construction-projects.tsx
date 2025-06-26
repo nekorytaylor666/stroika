@@ -25,6 +25,7 @@ import {
 	Building2,
 	CheckSquare,
 	ChevronRight,
+	Paperclip,
 	Plus,
 	Settings,
 	Star,
@@ -66,6 +67,11 @@ export function NavConstructionProjects() {
 			name: "Задачи",
 			icon: CheckSquare,
 			url: `/construction/${params.orgId}/projects/${projectId}/tasks`,
+		},
+		{
+			name: "Файлы",
+			icon: Paperclip,
+			url: `/construction/${params.orgId}/projects/${projectId}/attachments`,
 		},
 		{
 			name: "Команда",

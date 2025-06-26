@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { differenceInDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -41,6 +41,15 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import {
+	EditableDate,
+	EditableNumber,
+	EditableSelect,
+	EditableText,
+	EditableTextarea,
+	EditableUserSelect,
+	type SelectOption,
+} from "./project-overview/editable";
 
 interface ConstructionProjectOverviewProps {
 	projectId: Id<"constructionProjects">;
@@ -93,6 +102,13 @@ export function ConstructionProjectOverview({
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
 	});
+	const statuses = useQuery(api.metadata.getAllStatus);
+	const priorities = useQuery(api.metadata.getAllPriorities);
+	const users = useQuery(api.users.getAll);
+
+	const updateProject = useMutation(api.constructionProjects.update);
+	const updateStatus = useMutation(api.constructionProjects.updateStatus);
+
 	const navigate = useNavigate();
 	const params = useParams({
 		from: "/construction/$orgId/projects/$projectId/overview",
@@ -141,19 +157,52 @@ export function ConstructionProjectOverview({
 					>
 						<div className="flex items-start justify-between">
 							<div className="space-y-1">
-								<h1 className="font-semibold text-2xl">{projectData.name}</h1>
+								<EditableText
+									value={projectData.name}
+									onSave={async (value) => {
+										await updateProject({ id: projectId, name: value });
+									}}
+									variant="h1"
+									placeholder="Project name"
+								/>
 								<div className="flex items-center gap-4 text-muted-foreground text-sm">
 									<div className="flex items-center gap-1">
 										<Building2 className="h-3.5 w-3.5" />
-										<span>{projectData.client}</span>
+										<EditableText
+											value={projectData.client}
+											onSave={async (value) => {
+												await updateProject({ id: projectId, client: value });
+											}}
+											placeholder="Client name"
+											className="text-sm"
+										/>
 									</div>
 									<div className="flex items-center gap-1">
 										<MapPin className="h-3.5 w-3.5" />
-										<span>{projectData.location}</span>
+										<EditableText
+											value={projectData.location}
+											onSave={async (value) => {
+												await updateProject({ id: projectId, location: value });
+											}}
+											placeholder="Location"
+											className="text-sm"
+										/>
 									</div>
 									<div className="flex items-center gap-1">
 										<DollarSign className="h-3.5 w-3.5" />
-										<span>{formatCurrency(projectData.contractValue)}</span>
+										<EditableNumber
+											value={projectData.contractValue}
+											onSave={async (value) => {
+												await updateProject({
+													id: projectId,
+													contractValue: value,
+												});
+											}}
+											formatValue={formatCurrency}
+											min={0}
+											step={1000000}
+											className="text-sm"
+										/>
 									</div>
 								</div>
 							</div>
@@ -166,77 +215,102 @@ export function ConstructionProjectOverview({
 
 						{/* Status Bar */}
 						<div className="flex items-center gap-4 text-sm">
-							{projectData.status && (
-								<div
-									className={cn(
-										"flex items-center gap-1.5 rounded-md px-2 py-1",
-										statusStyles[
-											projectData.status.name as keyof typeof statusStyles
-										]?.bg,
-										statusStyles[
-											projectData.status.name as keyof typeof statusStyles
-										]?.borderColor,
-										"border",
-									)}
-								>
-									<StatusIcon
-										className={cn(
-											"h-3.5 w-3.5",
-											statusStyles[
-												projectData.status.name as keyof typeof statusStyles
-											]?.color,
-										)}
-									/>
-									<span
-										className={
-											statusStyles[
-												projectData.status.name as keyof typeof statusStyles
-											]?.color
+							{statuses && (
+								<EditableSelect
+									value={projectData.status?._id || ""}
+									options={statuses.map((status) => {
+										const Icon =
+											statusStyles[status.name as keyof typeof statusStyles]
+												?.icon || Circle;
+										return {
+											value: status._id,
+											label: status.name,
+											icon: <Icon className="h-3.5 w-3.5" />,
+											className: cn(
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.bg,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.borderColor,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.color,
+												"border",
+											),
+										};
+									})}
+									onSave={async (value) => {
+										await updateStatus({
+											id: projectId,
+											statusId: value as Id<"status">,
+										});
+									}}
+									placeholder="Select status"
+									searchable={false}
+								/>
+							)}
+
+							{priorities && (
+								<EditableSelect
+									value={projectData.priority?._id || ""}
+									options={priorities.map((priority) => ({
+										value: priority._id,
+										label: `${priority.name} приоритет`,
+										className: cn(
+											"border-0",
+											priorityStyles[
+												priority.name as keyof typeof priorityStyles
+											],
+										),
+									}))}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											priorityId: value as Id<"priorities">,
+										});
+									}}
+									placeholder="Select priority"
+									searchable={false}
+								/>
+							)}
+
+							{users && (
+								<EditableUserSelect
+									value={projectData.lead?._id || null}
+									users={users}
+									onSave={async (value) => {
+										if (value) {
+											await updateProject({ id: projectId, leadId: value });
 										}
-									>
-										{projectData.status.name}
-									</span>
-								</div>
-							)}
-
-							{projectData.priority && (
-								<Badge
-									className={cn(
-										"border-0",
-										priorityStyles[
-											projectData.priority.name as keyof typeof priorityStyles
-										],
-									)}
-								>
-									{projectData.priority.name} приоритет
-								</Badge>
-							)}
-
-							{projectData.lead && (
-								<div className="flex items-center gap-2">
-									<User className="h-3.5 w-3.5 text-muted-foreground" />
-									<span className="text-muted-foreground">Руководитель</span>
-								</div>
+									}}
+									placeholder="Select lead"
+									multiple={false}
+								/>
 							)}
 
 							<div className="flex items-center gap-2">
 								<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-								<span className="text-muted-foreground">
-									{format(new Date(projectData.startDate), "d MMM", {
-										locale: ru,
-									})}{" "}
-									→{" "}
-									{projectData.targetDate
-										? format(new Date(projectData.targetDate), "d MMM yyyy", {
-												locale: ru,
-											})
-										: "Не определено"}
-								</span>
-							</div>
-
-							<div className="flex items-center gap-2">
-								<Target className="h-3.5 w-3.5 text-muted-foreground" />
-								<span className="text-muted-foreground">Целевая дата</span>
+								<EditableDate
+									value={projectData.startDate}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											startDate: value || new Date().toISOString(),
+										});
+									}}
+									placeholder="Start date"
+									allowClear={false}
+								/>
+								<span className="text-muted-foreground">→</span>
+								<EditableDate
+									value={projectData.targetDate}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											targetDate: value || undefined,
+										});
+									}}
+									placeholder="Target date"
+									minDate={new Date(projectData.startDate)}
+								/>
 							</div>
 						</div>
 					</motion.div>
@@ -609,93 +683,104 @@ export function ConstructionProjectOverview({
 					<h3 className="mb-4 font-medium text-sm">Свойства</h3>
 					<div className="space-y-4">
 						{/* Status */}
-						{projectData.status && (
+						{statuses && (
 							<div className="space-y-1.5">
 								<p className="text-muted-foreground text-xs">Статус</p>
-								<div
-									className={cn(
-										"inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm",
-										statusStyles[
-											projectData.status.name as keyof typeof statusStyles
-										]?.bg,
-										statusStyles[
-											projectData.status.name as keyof typeof statusStyles
-										]?.borderColor,
-										"border",
-									)}
-								>
-									<StatusIcon
-										className={cn(
-											"h-3.5 w-3.5",
-											statusStyles[
-												projectData.status.name as keyof typeof statusStyles
-											]?.color,
-										)}
-									/>
-									<span
-										className={
-											statusStyles[
-												projectData.status.name as keyof typeof statusStyles
-											]?.color
-										}
-									>
-										{projectData.status.name}
-									</span>
-								</div>
+								<EditableSelect
+									value={projectData.status?._id || ""}
+									options={statuses.map((status) => {
+										const Icon =
+											statusStyles[status.name as keyof typeof statusStyles]
+												?.icon || Circle;
+										return {
+											value: status._id,
+											label: status.name,
+											icon: <Icon className="h-3.5 w-3.5" />,
+											className: cn(
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.bg,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.borderColor,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.color,
+												"border",
+											),
+										};
+									})}
+									onSave={async (value) => {
+										await updateStatus({
+											id: projectId,
+											statusId: value as Id<"status">,
+										});
+									}}
+									placeholder="Select status"
+									searchable={false}
+								/>
 							</div>
 						)}
 
 						{/* Priority */}
-						{projectData.priority && (
+						{priorities && (
 							<div className="space-y-1.5">
 								<p className="text-muted-foreground text-xs">Приоритет</p>
-								<Badge
-									className={cn(
-										"border-0",
-										priorityStyles[
-											projectData.priority.name as keyof typeof priorityStyles
-										],
-									)}
-								>
-									{projectData.priority.name} приоритет
-								</Badge>
+								<EditableSelect
+									value={projectData.priority?._id || ""}
+									options={priorities.map((priority) => ({
+										value: priority._id,
+										label: priority.name,
+										className: cn(
+											"border-0",
+											priorityStyles[
+												priority.name as keyof typeof priorityStyles
+											],
+										),
+									}))}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											priorityId: value as Id<"priorities">,
+										});
+									}}
+									placeholder="Select priority"
+									searchable={false}
+								/>
 							</div>
 						)}
 
 						{/* Lead */}
-						{projectData.lead && (
+						{users && (
 							<div className="space-y-1.5">
 								<p className="text-muted-foreground text-xs">Руководитель</p>
-								<div className="flex items-center gap-2">
-									<Avatar className="h-6 w-6">
-										<AvatarImage src={projectData.lead.avatarUrl} />
-										<AvatarFallback>{projectData.lead.name[0]}</AvatarFallback>
-									</Avatar>
-									<span className="text-sm">{projectData.lead.name}</span>
-								</div>
+								<EditableUserSelect
+									value={projectData.lead?._id || null}
+									users={users}
+									onSave={async (value) => {
+										if (value) {
+											await updateProject({ id: projectId, leadId: value });
+										}
+									}}
+									placeholder="Select lead"
+									multiple={false}
+								/>
 							</div>
 						)}
 
 						{/* Members */}
-						{projectData.teamMembers && projectData.teamMembers.length > 0 && (
+						{users && (
 							<div className="space-y-1.5">
 								<p className="text-muted-foreground text-xs">Участники</p>
-								<div className="-space-x-2 flex">
-									{projectData.teamMembers.slice(0, 5).map((member) => member && (
-										<Avatar
-											key={member._id}
-											className="h-6 w-6 border-2 border-background"
-										>
-											<AvatarImage src={member.avatarUrl} />
-											<AvatarFallback>{member.name[0]}</AvatarFallback>
-										</Avatar>
-									))}
-									{projectData.teamMembers.length > 5 && (
-										<div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
-											+{projectData.teamMembers.length - 5}
-										</div>
-									)}
-								</div>
+								<EditableUserSelect
+									value={projectData.teamMemberIds || []}
+									users={users}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											teamMemberIds: value,
+										});
+									}}
+									placeholder="Select team members"
+									multiple={true}
+								/>
 							</div>
 						)}
 
@@ -722,15 +807,40 @@ export function ConstructionProjectOverview({
 						{/* Project Type */}
 						<div className="space-y-1.5">
 							<p className="text-muted-foreground text-xs">Тип проекта</p>
-							<Badge variant="secondary" className="font-normal">
-								{projectTypeTranslations[projectData.projectType]}
-							</Badge>
+							<EditableSelect
+								value={projectData.projectType}
+								options={[
+									{ value: "residential", label: "Жилое" },
+									{ value: "commercial", label: "Коммерческое" },
+									{ value: "industrial", label: "Промышленное" },
+									{ value: "infrastructure", label: "Инфраструктура" },
+								]}
+								onSave={async (value) => {
+									await updateProject({
+										id: projectId,
+										projectType: value as
+											| "residential"
+											| "commercial"
+											| "industrial"
+											| "infrastructure",
+									});
+								}}
+								placeholder="Select type"
+								searchable={false}
+							/>
 						</div>
 
 						{/* Location */}
 						<div className="space-y-1.5">
 							<p className="text-muted-foreground text-xs">Местоположение</p>
-							<p className="text-sm">{projectData.location}</p>
+							<EditableText
+								value={projectData.location}
+								onSave={async (value) => {
+									await updateProject({ id: projectId, location: value });
+								}}
+								placeholder="Enter location"
+								className="text-sm"
+							/>
 						</div>
 
 						{/* Contract Value */}
@@ -738,9 +848,16 @@ export function ConstructionProjectOverview({
 							<p className="text-muted-foreground text-xs">
 								Стоимость контракта
 							</p>
-							<p className="font-medium text-sm">
-								{formatCurrency(projectData.contractValue)}
-							</p>
+							<EditableNumber
+								value={projectData.contractValue}
+								onSave={async (value) => {
+									await updateProject({ id: projectId, contractValue: value });
+								}}
+								formatValue={formatCurrency}
+								min={0}
+								step={1000000}
+								className="font-medium text-sm"
+							/>
 						</div>
 
 						{/* Progress */}
@@ -763,14 +880,22 @@ export function ConstructionProjectOverview({
 						</div>
 
 						{/* Notes */}
-						{projectData.notes && (
-							<div className="space-y-1.5">
-								<p className="text-muted-foreground text-xs">Заметки</p>
-								<p className="text-muted-foreground text-sm">
-									{projectData.notes}
-								</p>
-							</div>
-						)}
+						<div className="space-y-1.5">
+							<p className="text-muted-foreground text-xs">Заметки</p>
+							<EditableTextarea
+								value={projectData.notes || ""}
+								onSave={async (value) => {
+									await updateProject({
+										id: projectId,
+										notes: value || undefined,
+									});
+								}}
+								placeholder="Add notes..."
+								className="text-muted-foreground text-sm"
+								rows={4}
+								maxLength={500}
+							/>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -812,67 +937,72 @@ function generateTimelineData(projectData: {
 	};
 }) {
 	const startDate = new Date(projectData.startDate);
-	const targetDate = projectData.targetDate ? new Date(projectData.targetDate) : new Date();
+	const targetDate = projectData.targetDate
+		? new Date(projectData.targetDate)
+		: new Date();
 	const currentDate = new Date();
-	
+
 	// Generate data points from start to current date
 	const dataPoints = [];
 	const totalDays = differenceInDays(targetDate, startDate);
 	const daysPassed = differenceInDays(currentDate, startDate);
 	const daysToShow = Math.min(daysPassed, totalDays);
-	
+
 	// Create data points for every 7 days (weekly)
 	for (let i = 0; i <= daysToShow; i += 7) {
 		const date = new Date(startDate);
 		date.setDate(date.getDate() + i);
-		
+
 		// Calculate expected completion based on linear progress
 		const expectedProgress = (i / totalDays) * projectData.taskStats.total;
-		
+
 		// For demo purposes, show gradual completion
 		// In real implementation, this would come from historical task data
 		const progressRatio = i / daysToShow;
-		
+
 		// Simulate task progression over time
 		const completedTasks = Math.min(
 			Math.round(progressRatio * projectData.taskStats.completed),
-			projectData.taskStats.completed
+			projectData.taskStats.completed,
 		);
-		
+
 		const inProgressTasks = Math.min(
 			Math.round(progressRatio * projectData.taskStats.inProgress),
-			projectData.taskStats.inProgress
+			projectData.taskStats.inProgress,
 		);
-		
+
 		// Not started tasks decrease as tasks move to in progress and completed
 		const totalProgressedTasks = completedTasks + inProgressTasks;
 		const notStartedTasks = Math.max(
 			projectData.taskStats.total - totalProgressedTasks,
-			projectData.taskStats.notStarted
+			projectData.taskStats.notStarted,
 		);
-		
+
 		dataPoints.push({
 			date: format(date, "d MMM", { locale: ru }),
 			total: projectData.taskStats.total,
 			completed: completedTasks,
 			inProgress: inProgressTasks + completedTasks,
 			notStarted: notStartedTasks + inProgressTasks + completedTasks,
-			expected: Math.round(expectedProgress)
+			expected: Math.round(expectedProgress),
 		});
 	}
-	
+
 	// Add current state as the last point
 	if (daysToShow > 0) {
 		dataPoints.push({
 			date: format(currentDate, "d MMM", { locale: ru }),
 			total: projectData.taskStats.total,
 			completed: projectData.taskStats.completed,
-			inProgress: projectData.taskStats.completed + projectData.taskStats.inProgress,
+			inProgress:
+				projectData.taskStats.completed + projectData.taskStats.inProgress,
 			notStarted: projectData.taskStats.total,
-			expected: Math.round((daysPassed / totalDays) * projectData.taskStats.total)
+			expected: Math.round(
+				(daysPassed / totalDays) * projectData.taskStats.total,
+			),
 		});
 	}
-	
+
 	return dataPoints;
 }
 

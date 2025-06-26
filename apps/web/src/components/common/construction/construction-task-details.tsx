@@ -3,6 +3,7 @@
 import { DocumentDetailsModal } from "@/components/documents/document-details-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import {
 	DropdownMenu,
@@ -11,6 +12,11 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
@@ -53,13 +59,21 @@ export function ConstructionTaskDetails({
 	open,
 	onOpenChange,
 }: ConstructionTaskDetailsProps) {
-	const { users, priorities, labels, projects, updateTask } =
-		useConstructionData();
+	const {
+		users,
+		priorities,
+		labels,
+		projects,
+		updateTask,
+		updateTaskAssignee,
+		updateTaskPriority,
+	} = useConstructionData();
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
 	const [title, setTitle] = useState(task?.title || "");
 	const [description, setDescription] = useState(task?.description || "");
 	const [comment, setComment] = useState("");
+	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
 	// Query to get fresh task data
 	const freshTask = useQuery(
@@ -361,24 +375,59 @@ export function ConstructionTaskDetails({
 								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Исполнитель
 								</span>
-								<Button
-									variant="ghost"
-									className="h-8 w-full justify-start px-2"
-								>
-									{assignee ? (
-										<>
-											<ConstructionAssigneeUser user={assignee} />
-											<span className="ml-2 text-sm">{assignee.name}</span>
-										</>
-									) : (
-										<>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											className="h-8 w-full justify-start px-2"
+										>
+											{assignee ? (
+												<>
+													<ConstructionAssigneeUser user={assignee} />
+													<span className="ml-2 text-sm">{assignee.name}</span>
+												</>
+											) : (
+												<>
+													<User className="mr-2 h-4 w-4" />
+													<span className="text-muted-foreground text-sm">
+														Не назначен
+													</span>
+												</>
+											)}
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start" className="w-[200px]">
+										<DropdownMenuItem
+											onClick={async () => {
+												if (updateTaskAssignee) {
+													await updateTaskAssignee({
+														id: currentTask._id as Id<"issues">,
+														assigneeId: undefined,
+													});
+												}
+											}}
+										>
 											<User className="mr-2 h-4 w-4" />
-											<span className="text-muted-foreground text-sm">
-												Не назначен
-											</span>
-										</>
-									)}
-								</Button>
+											Не назначен
+										</DropdownMenuItem>
+										{users?.map((user) => (
+											<DropdownMenuItem
+												key={user._id}
+												onClick={async () => {
+													if (updateTaskAssignee) {
+														await updateTaskAssignee({
+															id: currentTask._id as Id<"issues">,
+															assigneeId: user._id as Id<"users">,
+														});
+													}
+												}}
+											>
+												<ConstructionAssigneeUser user={user} />
+												<span className="ml-2">{user.name}</span>
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
 							</div>
 
 							{/* Priority */}
@@ -386,20 +435,45 @@ export function ConstructionTaskDetails({
 								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Приоритет
 								</span>
-								<Button
-									variant="ghost"
-									className="h-8 w-full justify-start px-2"
-								>
-									{priority && (
-										<>
-											<ConstructionPrioritySelector
-												priority={priority}
-												issueId={currentTask._id}
-											/>
-											<span className="ml-2 text-sm">{priority.name}</span>
-										</>
-									)}
-								</Button>
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											className="h-8 w-full justify-start px-2"
+										>
+											{priority && (
+												<>
+													<ConstructionPrioritySelector
+														priority={priority}
+														issueId={currentTask._id}
+													/>
+													<span className="ml-2 text-sm">{priority.name}</span>
+												</>
+											)}
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start" className="w-[200px]">
+										{priorities?.map((p) => (
+											<DropdownMenuItem
+												key={p._id}
+												onClick={async () => {
+													if (updateTaskPriority) {
+														await updateTaskPriority({
+															id: currentTask._id as Id<"issues">,
+															priorityId: p._id as Id<"priorities">,
+														});
+													}
+												}}
+											>
+												<ConstructionPrioritySelector
+													priority={p}
+													issueId={currentTask._id}
+												/>
+												<span className="ml-2">{p.name}</span>
+											</DropdownMenuItem>
+										))}
+									</DropdownMenuContent>
+								</DropdownMenu>
 							</div>
 
 							{/* Due Date */}
@@ -407,19 +481,74 @@ export function ConstructionTaskDetails({
 								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Срок выполнения
 								</span>
-								<Button
-									variant="ghost"
-									className="h-8 w-full justify-start px-2"
+								<Popover
+									open={isDatePickerOpen}
+									onOpenChange={setIsDatePickerOpen}
 								>
-									<Calendar className="mr-2 h-4 w-4" />
-									<span className="text-sm">
-										{currentTask.dueDate
-											? format(new Date(currentTask.dueDate), "d MMM", {
-													locale: ru,
-												})
-											: "Не указан"}
-									</span>
-								</Button>
+									<PopoverTrigger asChild>
+										<Button
+											variant="ghost"
+											className="h-8 w-full justify-start px-2"
+										>
+											<Calendar className="mr-2 h-4 w-4" />
+											<span className="text-sm">
+												{currentTask.dueDate
+													? format(
+															new Date(currentTask.dueDate),
+															"d MMM yyyy",
+															{
+																locale: ru,
+															},
+														)
+													: "Не указан"}
+											</span>
+										</Button>
+									</PopoverTrigger>
+									<PopoverContent className="w-auto p-0" align="start">
+										<CalendarComponent
+											mode="single"
+											selected={
+												currentTask.dueDate
+													? new Date(currentTask.dueDate)
+													: undefined
+											}
+											onSelect={async (date) => {
+												if (updateTask) {
+													await (updateTask as any)({
+														id: currentTask._id as Id<"issues">,
+														dueDate: date
+															? date.toISOString().split("T")[0]
+															: undefined,
+													});
+													setIsDatePickerOpen(false);
+												}
+											}}
+											initialFocus
+											locale={ru}
+										/>
+										{currentTask.dueDate && (
+											<div className="border-t p-3">
+												<Button
+													variant="ghost"
+													size="sm"
+													className="w-full justify-start text-muted-foreground"
+													onClick={async () => {
+														if (updateTask) {
+															await (updateTask as any)({
+																id: currentTask._id as Id<"issues">,
+																dueDate: undefined,
+															});
+															setIsDatePickerOpen(false);
+														}
+													}}
+												>
+													<X className="mr-2 h-4 w-4" />
+													Очистить дату
+												</Button>
+											</div>
+										)}
+									</PopoverContent>
+								</Popover>
 							</div>
 
 							{/* Labels */}

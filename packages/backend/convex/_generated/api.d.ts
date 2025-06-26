@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as attachments_projectAttachments from "../attachments/projectAttachments.js";
 import type * as attachments_queries from "../attachments/queries.js";
 import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
@@ -50,6 +51,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "attachments/projectAttachments": typeof attachments_projectAttachments;
   "attachments/queries": typeof attachments_queries;
   auth: typeof auth;
   comments: typeof comments;

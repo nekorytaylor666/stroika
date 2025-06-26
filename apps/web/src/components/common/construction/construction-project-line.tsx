@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
+import { api } from "@stroika/backend";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
 import {
 	Building,
 	Building2,
@@ -15,8 +17,6 @@ import {
 import { useState } from "react";
 import { AssigneeUser } from "../issues/assignee-user";
 import { ConstructionProjectDetails } from "./construction-project-details";
-import { api } from "@stroika/backend";
-import { useQuery } from "convex/react";
 
 interface ConstructionProjectLineProps {
 	project: ConstructionProject;
