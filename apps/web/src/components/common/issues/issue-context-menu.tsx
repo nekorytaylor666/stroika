@@ -10,6 +10,8 @@ import {
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
 import { useIssuesStore } from "@/store/issues-store";
+import { api } from "@stroika/backend";
+import { useQuery } from "convex/react";
 import {
 	AlarmClock,
 	ArrowRightLeft,
@@ -45,82 +47,12 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 	const [isSubscribed, setIsSubscribed] = useState(false);
 	const [isFavorite, setIsFavorite] = useState(false);
 
-	const {
-		updateIssueStatus,
-		updateIssuePriority,
-		updateIssueAssignee,
-		addIssueLabel,
-		removeIssueLabel,
-		updateIssueProject,
-		updateIssue,
-		getIssueById,
-	} = useIssuesStore();
+	const statuses = useQuery(api.metadata.getAllStatus);
+	const priorities = useQuery(api.metadata.getAllPriorities);
+	const users = useQuery(api.users.getAll);
+	const labels = useQuery(api.metadata.getAllLabels);
+	const projects = useQuery(api.constructionProjects.getAll);
 
-	const handleStatusChange = (statusId: string) => {
-		if (!issueId) return;
-		const newStatus = status.find((s) => s.id === statusId);
-		if (newStatus) {
-			updateIssueStatus(issueId, newStatus);
-			toast.success(`Status updated to ${newStatus.name}`);
-		}
-	};
-
-	const handlePriorityChange = (priorityId: string) => {
-		if (!issueId) return;
-		const newPriority = priorities.find((p) => p.id === priorityId);
-		if (newPriority) {
-			updateIssuePriority(issueId, newPriority);
-			toast.success(`Priority updated to ${newPriority.name}`);
-		}
-	};
-
-	const handleAssigneeChange = (userId: string | null) => {
-		if (!issueId) return;
-		const newAssignee = userId
-			? users.find((u) => u.id === userId) || null
-			: null;
-		updateIssueAssignee(issueId, newAssignee);
-		toast.success(
-			newAssignee ? `Assigned to ${newAssignee.name}` : "Unassigned",
-		);
-	};
-
-	const handleLabelToggle = (labelId: string) => {
-		if (!issueId) return;
-		const issue = getIssueById(issueId);
-		const label = labels.find((l) => l.id === labelId);
-
-		if (!issue || !label) return;
-
-		const hasLabel = issue.labels.some((l) => l.id === labelId);
-
-		if (hasLabel) {
-			removeIssueLabel(issueId, labelId);
-			toast.success(`Removed label: ${label.name}`);
-		} else {
-			addIssueLabel(issueId, label);
-			toast.success(`Added label: ${label.name}`);
-		}
-	};
-
-	const handleProjectChange = (projectId: string | null) => {
-		if (!issueId) return;
-		const newProject = projectId
-			? projects.find((p) => p.id === projectId)
-			: undefined;
-		updateIssueProject(issueId, newProject);
-		toast.success(
-			newProject ? `Project set to ${newProject.name}` : "Project removed",
-		);
-	};
-
-	const handleSetDueDate = () => {
-		if (!issueId) return;
-		const dueDate = new Date();
-		dueDate.setDate(dueDate.getDate() + 7);
-		updateIssue(issueId, { dueDate: dueDate.toISOString() });
-		toast.success("Due date set to 7 days from now");
-	};
 
 	const handleAddLink = () => {
 		toast.success("Link added");
@@ -167,6 +99,10 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 		toast.success("Reminder set");
 	};
 
+	const isLoading = !statuses || !priorities || !users || !labels || !projects;
+
+	if (isLoading) return <div>Loading...</div>;
+
 	return (
 		<ContextMenuContent className="w-64">
 			<ContextMenuGroup>
@@ -175,7 +111,7 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 						<CircleCheck className="mr-2 size-4" /> Status
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
-						{status.map((s) => {
+						{statuses.map((s) => {
 							const Icon = s.icon;
 							return (
 								<ContextMenuItem

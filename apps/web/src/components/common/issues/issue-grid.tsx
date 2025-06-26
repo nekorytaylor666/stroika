@@ -1,7 +1,6 @@
 "use client";
 
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
-import type { Issue } from "@/mock-data/issues";
 import { format } from "date-fns";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";

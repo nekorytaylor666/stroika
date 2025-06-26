@@ -1,5 +1,5 @@
 import type { ConstructionTask } from "@/components/common/construction/construction-tasks";
-import { create } from "zustand";
+import { create } from "../create-store";
 
 interface ConstructionTaskDetailsStore {
 	isOpen: boolean;

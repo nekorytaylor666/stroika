@@ -201,7 +201,7 @@ export function ConstructionIssueGrid({ issue }: ConstructionIssueGridProps) {
 					</div>
 				</motion.div>
 			</ContextMenuTrigger>
-			<IssueContextMenu issueId={issue._id} />
+			{/* <IssueContextMenu issueId={issue._id} /> */}
 		</ContextMenu>
 	);
 }

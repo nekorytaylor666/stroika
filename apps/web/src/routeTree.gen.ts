@@ -10,11 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
-import { Route as OrgIdRouteImport } from './routes/$orgId'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ConstructionOrgIdTeamsRouteImport } from './routes/construction.$orgId/teams'
+import { Route as ConstructionOrgIdRouteRouteImport } from './routes/construction.$orgId/route'
+import { Route as ConstructionOrgIdIndexRouteImport } from './routes/construction.$orgId/index'
 import { Route as ConstructionOrgIdSettingsRouteImport } from './routes/construction.$orgId/settings'
-import { Route as ConstructionOrgIdProjectsRouteImport } from './routes/construction.$orgId/projects'
 import { Route as ConstructionOrgIdMembersRouteImport } from './routes/construction.$orgId/members'
 import { Route as ConstructionOrgIdConstructionTeamsRouteImport } from './routes/construction.$orgId/construction-teams'
 import { Route as ConstructionOrgIdConstructionTasksRouteImport } from './routes/construction.$orgId/construction-tasks'
@@ -23,8 +21,6 @@ import { Route as ConstructionOrgIdConstructionDocumentsRouteImport } from './ro
 import { Route as ConstructionOrgIdConstructionDashboardRouteImport } from './routes/construction.$orgId/construction-dashboard'
 import { Route as ConstructionOrgIdAttachmentsRouteImport } from './routes/construction.$orgId/attachments'
 import { Route as ConstructionOrgIdAdminRouteImport } from './routes/construction.$orgId/admin'
-import { Route as ConstructionOrgIdTeamTeamIdRouteImport } from './routes/construction.$orgId/team.$teamId'
-import { Route as ConstructionOrgIdTeamTeamIdAllRouteImport } from './routes/construction.$orgId/team.$teamId.all'
 import { Route as ConstructionOrgIdProjectsProjectIdTeamRouteImport } from './routes/construction.$orgId/projects.$projectId.team'
 import { Route as ConstructionOrgIdProjectsProjectIdTasksRouteImport } from './routes/construction.$orgId/projects.$projectId.tasks'
 import { Route as ConstructionOrgIdProjectsProjectIdSettingsRouteImport } from './routes/construction.$orgId/projects.$projectId.settings'
@@ -36,127 +32,103 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrgIdRoute = OrgIdRouteImport.update({
-  id: '/$orgId',
-  path: '/$orgId',
+const ConstructionOrgIdRouteRoute = ConstructionOrgIdRouteRouteImport.update({
+  id: '/construction/$orgId',
+  path: '/construction/$orgId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const ConstructionOrgIdIndexRoute = ConstructionOrgIdIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConstructionOrgIdTeamsRoute = ConstructionOrgIdTeamsRouteImport.update({
-  id: '/construction/$orgId/teams',
-  path: '/construction/$orgId/teams',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => ConstructionOrgIdRouteRoute,
 } as any)
 const ConstructionOrgIdSettingsRoute =
   ConstructionOrgIdSettingsRouteImport.update({
-    id: '/construction/$orgId/settings',
-    path: '/construction/$orgId/settings',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ConstructionOrgIdProjectsRoute =
-  ConstructionOrgIdProjectsRouteImport.update({
-    id: '/construction/$orgId/projects',
-    path: '/construction/$orgId/projects',
-    getParentRoute: () => rootRouteImport,
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdMembersRoute =
   ConstructionOrgIdMembersRouteImport.update({
-    id: '/construction/$orgId/members',
-    path: '/construction/$orgId/members',
-    getParentRoute: () => rootRouteImport,
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdConstructionTeamsRoute =
   ConstructionOrgIdConstructionTeamsRouteImport.update({
-    id: '/construction/$orgId/construction-teams',
-    path: '/construction/$orgId/construction-teams',
-    getParentRoute: () => rootRouteImport,
+    id: '/construction-teams',
+    path: '/construction-teams',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdConstructionTasksRoute =
   ConstructionOrgIdConstructionTasksRouteImport.update({
-    id: '/construction/$orgId/construction-tasks',
-    path: '/construction/$orgId/construction-tasks',
-    getParentRoute: () => rootRouteImport,
+    id: '/construction-tasks',
+    path: '/construction-tasks',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdConstructionProjectsRoute =
   ConstructionOrgIdConstructionProjectsRouteImport.update({
-    id: '/construction/$orgId/construction-projects',
-    path: '/construction/$orgId/construction-projects',
-    getParentRoute: () => rootRouteImport,
+    id: '/construction-projects',
+    path: '/construction-projects',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdConstructionDocumentsRoute =
   ConstructionOrgIdConstructionDocumentsRouteImport.update({
-    id: '/construction/$orgId/construction-documents',
-    path: '/construction/$orgId/construction-documents',
-    getParentRoute: () => rootRouteImport,
+    id: '/construction-documents',
+    path: '/construction-documents',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdConstructionDashboardRoute =
   ConstructionOrgIdConstructionDashboardRouteImport.update({
-    id: '/construction/$orgId/construction-dashboard',
-    path: '/construction/$orgId/construction-dashboard',
-    getParentRoute: () => rootRouteImport,
+    id: '/construction-dashboard',
+    path: '/construction-dashboard',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdAttachmentsRoute =
   ConstructionOrgIdAttachmentsRouteImport.update({
-    id: '/construction/$orgId/attachments',
-    path: '/construction/$orgId/attachments',
-    getParentRoute: () => rootRouteImport,
+    id: '/attachments',
+    path: '/attachments',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdAdminRoute = ConstructionOrgIdAdminRouteImport.update({
-  id: '/construction/$orgId/admin',
-  path: '/construction/$orgId/admin',
-  getParentRoute: () => rootRouteImport,
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => ConstructionOrgIdRouteRoute,
 } as any)
-const ConstructionOrgIdTeamTeamIdRoute =
-  ConstructionOrgIdTeamTeamIdRouteImport.update({
-    id: '/construction/$orgId/team/$teamId',
-    path: '/construction/$orgId/team/$teamId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ConstructionOrgIdTeamTeamIdAllRoute =
-  ConstructionOrgIdTeamTeamIdAllRouteImport.update({
-    id: '/all',
-    path: '/all',
-    getParentRoute: () => ConstructionOrgIdTeamTeamIdRoute,
-  } as any)
 const ConstructionOrgIdProjectsProjectIdTeamRoute =
   ConstructionOrgIdProjectsProjectIdTeamRouteImport.update({
-    id: '/$projectId/team',
-    path: '/$projectId/team',
-    getParentRoute: () => ConstructionOrgIdProjectsRoute,
+    id: '/projects/$projectId/team',
+    path: '/projects/$projectId/team',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdProjectsProjectIdTasksRoute =
   ConstructionOrgIdProjectsProjectIdTasksRouteImport.update({
-    id: '/$projectId/tasks',
-    path: '/$projectId/tasks',
-    getParentRoute: () => ConstructionOrgIdProjectsRoute,
+    id: '/projects/$projectId/tasks',
+    path: '/projects/$projectId/tasks',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdProjectsProjectIdSettingsRoute =
   ConstructionOrgIdProjectsProjectIdSettingsRouteImport.update({
-    id: '/$projectId/settings',
-    path: '/$projectId/settings',
-    getParentRoute: () => ConstructionOrgIdProjectsRoute,
+    id: '/projects/$projectId/settings',
+    path: '/projects/$projectId/settings',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdProjectsProjectIdOverviewRoute =
   ConstructionOrgIdProjectsProjectIdOverviewRouteImport.update({
-    id: '/$projectId/overview',
-    path: '/$projectId/overview',
-    getParentRoute: () => ConstructionOrgIdProjectsRoute,
+    id: '/projects/$projectId/overview',
+    path: '/projects/$projectId/overview',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdProjectsProjectIdAnalyticsRoute =
   ConstructionOrgIdProjectsProjectIdAnalyticsRouteImport.update({
-    id: '/$projectId/analytics',
-    path: '/$projectId/analytics',
-    getParentRoute: () => ConstructionOrgIdProjectsRoute,
+    id: '/projects/$projectId/analytics',
+    path: '/projects/$projectId/analytics',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$orgId': typeof OrgIdRoute
   '/auth': typeof AuthRoute
+  '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
@@ -165,20 +137,15 @@ export interface FileRoutesByFullPath {
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
-  '/construction/$orgId/projects': typeof ConstructionOrgIdProjectsRouteWithChildren
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
-  '/construction/$orgId/teams': typeof ConstructionOrgIdTeamsRoute
-  '/construction/$orgId/team/$teamId': typeof ConstructionOrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId/': typeof ConstructionOrgIdIndexRoute
   '/construction/$orgId/projects/$projectId/analytics': typeof ConstructionOrgIdProjectsProjectIdAnalyticsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
   '/construction/$orgId/projects/$projectId/team': typeof ConstructionOrgIdProjectsProjectIdTeamRoute
-  '/construction/$orgId/team/$teamId/all': typeof ConstructionOrgIdTeamTeamIdAllRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$orgId': typeof OrgIdRoute
   '/auth': typeof AuthRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
@@ -188,22 +155,18 @@ export interface FileRoutesByTo {
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
-  '/construction/$orgId/projects': typeof ConstructionOrgIdProjectsRouteWithChildren
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
-  '/construction/$orgId/teams': typeof ConstructionOrgIdTeamsRoute
-  '/construction/$orgId/team/$teamId': typeof ConstructionOrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId': typeof ConstructionOrgIdIndexRoute
   '/construction/$orgId/projects/$projectId/analytics': typeof ConstructionOrgIdProjectsProjectIdAnalyticsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
   '/construction/$orgId/projects/$projectId/team': typeof ConstructionOrgIdProjectsProjectIdTeamRoute
-  '/construction/$orgId/team/$teamId/all': typeof ConstructionOrgIdTeamTeamIdAllRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$orgId': typeof OrgIdRoute
   '/auth': typeof AuthRoute
+  '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
   '/construction/$orgId/construction-dashboard': typeof ConstructionOrgIdConstructionDashboardRoute
@@ -212,23 +175,19 @@ export interface FileRoutesById {
   '/construction/$orgId/construction-tasks': typeof ConstructionOrgIdConstructionTasksRoute
   '/construction/$orgId/construction-teams': typeof ConstructionOrgIdConstructionTeamsRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
-  '/construction/$orgId/projects': typeof ConstructionOrgIdProjectsRouteWithChildren
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
-  '/construction/$orgId/teams': typeof ConstructionOrgIdTeamsRoute
-  '/construction/$orgId/team/$teamId': typeof ConstructionOrgIdTeamTeamIdRouteWithChildren
+  '/construction/$orgId/': typeof ConstructionOrgIdIndexRoute
   '/construction/$orgId/projects/$projectId/analytics': typeof ConstructionOrgIdProjectsProjectIdAnalyticsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
   '/construction/$orgId/projects/$projectId/team': typeof ConstructionOrgIdProjectsProjectIdTeamRoute
-  '/construction/$orgId/team/$teamId/all': typeof ConstructionOrgIdTeamTeamIdAllRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/$orgId'
     | '/auth'
+    | '/construction/$orgId'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
     | '/construction/$orgId/construction-dashboard'
@@ -237,20 +196,15 @@ export interface FileRouteTypes {
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
     | '/construction/$orgId/members'
-    | '/construction/$orgId/projects'
     | '/construction/$orgId/settings'
-    | '/construction/$orgId/teams'
-    | '/construction/$orgId/team/$teamId'
+    | '/construction/$orgId/'
     | '/construction/$orgId/projects/$projectId/analytics'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
     | '/construction/$orgId/projects/$projectId/team'
-    | '/construction/$orgId/team/$teamId/all'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/$orgId'
     | '/auth'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
@@ -260,21 +214,17 @@ export interface FileRouteTypes {
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
     | '/construction/$orgId/members'
-    | '/construction/$orgId/projects'
     | '/construction/$orgId/settings'
-    | '/construction/$orgId/teams'
-    | '/construction/$orgId/team/$teamId'
+    | '/construction/$orgId'
     | '/construction/$orgId/projects/$projectId/analytics'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
     | '/construction/$orgId/projects/$projectId/team'
-    | '/construction/$orgId/team/$teamId/all'
   id:
     | '__root__'
-    | '/'
-    | '/$orgId'
     | '/auth'
+    | '/construction/$orgId'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
     | '/construction/$orgId/construction-dashboard'
@@ -283,34 +233,18 @@ export interface FileRouteTypes {
     | '/construction/$orgId/construction-tasks'
     | '/construction/$orgId/construction-teams'
     | '/construction/$orgId/members'
-    | '/construction/$orgId/projects'
     | '/construction/$orgId/settings'
-    | '/construction/$orgId/teams'
-    | '/construction/$orgId/team/$teamId'
+    | '/construction/$orgId/'
     | '/construction/$orgId/projects/$projectId/analytics'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
     | '/construction/$orgId/projects/$projectId/team'
-    | '/construction/$orgId/team/$teamId/all'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  OrgIdRoute: typeof OrgIdRoute
   AuthRoute: typeof AuthRoute
-  ConstructionOrgIdAdminRoute: typeof ConstructionOrgIdAdminRoute
-  ConstructionOrgIdAttachmentsRoute: typeof ConstructionOrgIdAttachmentsRoute
-  ConstructionOrgIdConstructionDashboardRoute: typeof ConstructionOrgIdConstructionDashboardRoute
-  ConstructionOrgIdConstructionDocumentsRoute: typeof ConstructionOrgIdConstructionDocumentsRoute
-  ConstructionOrgIdConstructionProjectsRoute: typeof ConstructionOrgIdConstructionProjectsRoute
-  ConstructionOrgIdConstructionTasksRoute: typeof ConstructionOrgIdConstructionTasksRoute
-  ConstructionOrgIdConstructionTeamsRoute: typeof ConstructionOrgIdConstructionTeamsRoute
-  ConstructionOrgIdMembersRoute: typeof ConstructionOrgIdMembersRoute
-  ConstructionOrgIdProjectsRoute: typeof ConstructionOrgIdProjectsRouteWithChildren
-  ConstructionOrgIdSettingsRoute: typeof ConstructionOrgIdSettingsRoute
-  ConstructionOrgIdTeamsRoute: typeof ConstructionOrgIdTeamsRoute
-  ConstructionOrgIdTeamTeamIdRoute: typeof ConstructionOrgIdTeamTeamIdRouteWithChildren
+  ConstructionOrgIdRouteRoute: typeof ConstructionOrgIdRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -322,150 +256,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$orgId': {
-      id: '/$orgId'
-      path: '/$orgId'
-      fullPath: '/$orgId'
-      preLoaderRoute: typeof OrgIdRouteImport
+    '/construction/$orgId': {
+      id: '/construction/$orgId'
+      path: '/construction/$orgId'
+      fullPath: '/construction/$orgId'
+      preLoaderRoute: typeof ConstructionOrgIdRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/construction/$orgId/': {
+      id: '/construction/$orgId/'
       path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/construction/$orgId/teams': {
-      id: '/construction/$orgId/teams'
-      path: '/construction/$orgId/teams'
-      fullPath: '/construction/$orgId/teams'
-      preLoaderRoute: typeof ConstructionOrgIdTeamsRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/construction/$orgId/'
+      preLoaderRoute: typeof ConstructionOrgIdIndexRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/settings': {
       id: '/construction/$orgId/settings'
-      path: '/construction/$orgId/settings'
+      path: '/settings'
       fullPath: '/construction/$orgId/settings'
       preLoaderRoute: typeof ConstructionOrgIdSettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/construction/$orgId/projects': {
-      id: '/construction/$orgId/projects'
-      path: '/construction/$orgId/projects'
-      fullPath: '/construction/$orgId/projects'
-      preLoaderRoute: typeof ConstructionOrgIdProjectsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/members': {
       id: '/construction/$orgId/members'
-      path: '/construction/$orgId/members'
+      path: '/members'
       fullPath: '/construction/$orgId/members'
       preLoaderRoute: typeof ConstructionOrgIdMembersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/construction-teams': {
       id: '/construction/$orgId/construction-teams'
-      path: '/construction/$orgId/construction-teams'
+      path: '/construction-teams'
       fullPath: '/construction/$orgId/construction-teams'
       preLoaderRoute: typeof ConstructionOrgIdConstructionTeamsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/construction-tasks': {
       id: '/construction/$orgId/construction-tasks'
-      path: '/construction/$orgId/construction-tasks'
+      path: '/construction-tasks'
       fullPath: '/construction/$orgId/construction-tasks'
       preLoaderRoute: typeof ConstructionOrgIdConstructionTasksRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/construction-projects': {
       id: '/construction/$orgId/construction-projects'
-      path: '/construction/$orgId/construction-projects'
+      path: '/construction-projects'
       fullPath: '/construction/$orgId/construction-projects'
       preLoaderRoute: typeof ConstructionOrgIdConstructionProjectsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/construction-documents': {
       id: '/construction/$orgId/construction-documents'
-      path: '/construction/$orgId/construction-documents'
+      path: '/construction-documents'
       fullPath: '/construction/$orgId/construction-documents'
       preLoaderRoute: typeof ConstructionOrgIdConstructionDocumentsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/construction-dashboard': {
       id: '/construction/$orgId/construction-dashboard'
-      path: '/construction/$orgId/construction-dashboard'
+      path: '/construction-dashboard'
       fullPath: '/construction/$orgId/construction-dashboard'
       preLoaderRoute: typeof ConstructionOrgIdConstructionDashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/attachments': {
       id: '/construction/$orgId/attachments'
-      path: '/construction/$orgId/attachments'
+      path: '/attachments'
       fullPath: '/construction/$orgId/attachments'
       preLoaderRoute: typeof ConstructionOrgIdAttachmentsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/admin': {
       id: '/construction/$orgId/admin'
-      path: '/construction/$orgId/admin'
+      path: '/admin'
       fullPath: '/construction/$orgId/admin'
       preLoaderRoute: typeof ConstructionOrgIdAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/construction/$orgId/team/$teamId': {
-      id: '/construction/$orgId/team/$teamId'
-      path: '/construction/$orgId/team/$teamId'
-      fullPath: '/construction/$orgId/team/$teamId'
-      preLoaderRoute: typeof ConstructionOrgIdTeamTeamIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/construction/$orgId/team/$teamId/all': {
-      id: '/construction/$orgId/team/$teamId/all'
-      path: '/all'
-      fullPath: '/construction/$orgId/team/$teamId/all'
-      preLoaderRoute: typeof ConstructionOrgIdTeamTeamIdAllRouteImport
-      parentRoute: typeof ConstructionOrgIdTeamTeamIdRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/projects/$projectId/team': {
       id: '/construction/$orgId/projects/$projectId/team'
-      path: '/$projectId/team'
+      path: '/projects/$projectId/team'
       fullPath: '/construction/$orgId/projects/$projectId/team'
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdTeamRouteImport
-      parentRoute: typeof ConstructionOrgIdProjectsRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/projects/$projectId/tasks': {
       id: '/construction/$orgId/projects/$projectId/tasks'
-      path: '/$projectId/tasks'
+      path: '/projects/$projectId/tasks'
       fullPath: '/construction/$orgId/projects/$projectId/tasks'
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdTasksRouteImport
-      parentRoute: typeof ConstructionOrgIdProjectsRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/projects/$projectId/settings': {
       id: '/construction/$orgId/projects/$projectId/settings'
-      path: '/$projectId/settings'
+      path: '/projects/$projectId/settings'
       fullPath: '/construction/$orgId/projects/$projectId/settings'
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdSettingsRouteImport
-      parentRoute: typeof ConstructionOrgIdProjectsRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/projects/$projectId/overview': {
       id: '/construction/$orgId/projects/$projectId/overview'
-      path: '/$projectId/overview'
+      path: '/projects/$projectId/overview'
       fullPath: '/construction/$orgId/projects/$projectId/overview'
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdOverviewRouteImport
-      parentRoute: typeof ConstructionOrgIdProjectsRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/projects/$projectId/analytics': {
       id: '/construction/$orgId/projects/$projectId/analytics'
-      path: '/$projectId/analytics'
+      path: '/projects/$projectId/analytics'
       fullPath: '/construction/$orgId/projects/$projectId/analytics'
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdAnalyticsRouteImport
-      parentRoute: typeof ConstructionOrgIdProjectsRoute
+      parentRoute: typeof ConstructionOrgIdRouteRoute
     }
   }
 }
 
-interface ConstructionOrgIdProjectsRouteChildren {
+interface ConstructionOrgIdRouteRouteChildren {
+  ConstructionOrgIdAdminRoute: typeof ConstructionOrgIdAdminRoute
+  ConstructionOrgIdAttachmentsRoute: typeof ConstructionOrgIdAttachmentsRoute
+  ConstructionOrgIdConstructionDashboardRoute: typeof ConstructionOrgIdConstructionDashboardRoute
+  ConstructionOrgIdConstructionDocumentsRoute: typeof ConstructionOrgIdConstructionDocumentsRoute
+  ConstructionOrgIdConstructionProjectsRoute: typeof ConstructionOrgIdConstructionProjectsRoute
+  ConstructionOrgIdConstructionTasksRoute: typeof ConstructionOrgIdConstructionTasksRoute
+  ConstructionOrgIdConstructionTeamsRoute: typeof ConstructionOrgIdConstructionTeamsRoute
+  ConstructionOrgIdMembersRoute: typeof ConstructionOrgIdMembersRoute
+  ConstructionOrgIdSettingsRoute: typeof ConstructionOrgIdSettingsRoute
+  ConstructionOrgIdIndexRoute: typeof ConstructionOrgIdIndexRoute
   ConstructionOrgIdProjectsProjectIdAnalyticsRoute: typeof ConstructionOrgIdProjectsProjectIdAnalyticsRoute
   ConstructionOrgIdProjectsProjectIdOverviewRoute: typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   ConstructionOrgIdProjectsProjectIdSettingsRoute: typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
@@ -473,8 +389,23 @@ interface ConstructionOrgIdProjectsRouteChildren {
   ConstructionOrgIdProjectsProjectIdTeamRoute: typeof ConstructionOrgIdProjectsProjectIdTeamRoute
 }
 
-const ConstructionOrgIdProjectsRouteChildren: ConstructionOrgIdProjectsRouteChildren =
+const ConstructionOrgIdRouteRouteChildren: ConstructionOrgIdRouteRouteChildren =
   {
+    ConstructionOrgIdAdminRoute: ConstructionOrgIdAdminRoute,
+    ConstructionOrgIdAttachmentsRoute: ConstructionOrgIdAttachmentsRoute,
+    ConstructionOrgIdConstructionDashboardRoute:
+      ConstructionOrgIdConstructionDashboardRoute,
+    ConstructionOrgIdConstructionDocumentsRoute:
+      ConstructionOrgIdConstructionDocumentsRoute,
+    ConstructionOrgIdConstructionProjectsRoute:
+      ConstructionOrgIdConstructionProjectsRoute,
+    ConstructionOrgIdConstructionTasksRoute:
+      ConstructionOrgIdConstructionTasksRoute,
+    ConstructionOrgIdConstructionTeamsRoute:
+      ConstructionOrgIdConstructionTeamsRoute,
+    ConstructionOrgIdMembersRoute: ConstructionOrgIdMembersRoute,
+    ConstructionOrgIdSettingsRoute: ConstructionOrgIdSettingsRoute,
+    ConstructionOrgIdIndexRoute: ConstructionOrgIdIndexRoute,
     ConstructionOrgIdProjectsProjectIdAnalyticsRoute:
       ConstructionOrgIdProjectsProjectIdAnalyticsRoute,
     ConstructionOrgIdProjectsProjectIdOverviewRoute:
@@ -487,47 +418,14 @@ const ConstructionOrgIdProjectsRouteChildren: ConstructionOrgIdProjectsRouteChil
       ConstructionOrgIdProjectsProjectIdTeamRoute,
   }
 
-const ConstructionOrgIdProjectsRouteWithChildren =
-  ConstructionOrgIdProjectsRoute._addFileChildren(
-    ConstructionOrgIdProjectsRouteChildren,
-  )
-
-interface ConstructionOrgIdTeamTeamIdRouteChildren {
-  ConstructionOrgIdTeamTeamIdAllRoute: typeof ConstructionOrgIdTeamTeamIdAllRoute
-}
-
-const ConstructionOrgIdTeamTeamIdRouteChildren: ConstructionOrgIdTeamTeamIdRouteChildren =
-  {
-    ConstructionOrgIdTeamTeamIdAllRoute: ConstructionOrgIdTeamTeamIdAllRoute,
-  }
-
-const ConstructionOrgIdTeamTeamIdRouteWithChildren =
-  ConstructionOrgIdTeamTeamIdRoute._addFileChildren(
-    ConstructionOrgIdTeamTeamIdRouteChildren,
+const ConstructionOrgIdRouteRouteWithChildren =
+  ConstructionOrgIdRouteRoute._addFileChildren(
+    ConstructionOrgIdRouteRouteChildren,
   )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  OrgIdRoute: OrgIdRoute,
   AuthRoute: AuthRoute,
-  ConstructionOrgIdAdminRoute: ConstructionOrgIdAdminRoute,
-  ConstructionOrgIdAttachmentsRoute: ConstructionOrgIdAttachmentsRoute,
-  ConstructionOrgIdConstructionDashboardRoute:
-    ConstructionOrgIdConstructionDashboardRoute,
-  ConstructionOrgIdConstructionDocumentsRoute:
-    ConstructionOrgIdConstructionDocumentsRoute,
-  ConstructionOrgIdConstructionProjectsRoute:
-    ConstructionOrgIdConstructionProjectsRoute,
-  ConstructionOrgIdConstructionTasksRoute:
-    ConstructionOrgIdConstructionTasksRoute,
-  ConstructionOrgIdConstructionTeamsRoute:
-    ConstructionOrgIdConstructionTeamsRoute,
-  ConstructionOrgIdMembersRoute: ConstructionOrgIdMembersRoute,
-  ConstructionOrgIdProjectsRoute: ConstructionOrgIdProjectsRouteWithChildren,
-  ConstructionOrgIdSettingsRoute: ConstructionOrgIdSettingsRoute,
-  ConstructionOrgIdTeamsRoute: ConstructionOrgIdTeamsRoute,
-  ConstructionOrgIdTeamTeamIdRoute:
-    ConstructionOrgIdTeamTeamIdRouteWithChildren,
+  ConstructionOrgIdRouteRoute: ConstructionOrgIdRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

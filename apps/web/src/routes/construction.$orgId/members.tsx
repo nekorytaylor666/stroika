@@ -9,8 +9,6 @@ export const Route = createFileRoute("/construction/$orgId/members")({
 
 function MembersPage() {
 	return (
-		<MainLayout header={<Header />}>
-			<Members />
-		</MainLayout>
+		<Members />
 	);
 }

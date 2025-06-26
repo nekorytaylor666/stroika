@@ -20,7 +20,7 @@ import type { LabelInterface } from "@/mock-data/labels";
 import type { Priority } from "@/mock-data/priorities";
 import type { Status } from "@/mock-data/status";
 import type { User } from "@/mock-data/users";
-import { create } from "zustand";
+import { create } from "../create-store";
 
 interface FilterOptions {
 	status?: string[];

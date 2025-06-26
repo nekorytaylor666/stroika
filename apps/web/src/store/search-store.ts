@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from "./create-store";
 
 interface SearchState {
 	isSearchOpen: boolean;

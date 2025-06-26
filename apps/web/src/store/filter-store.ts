@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from "./create-store";
 
 export interface FilterState {
 	// Filter options

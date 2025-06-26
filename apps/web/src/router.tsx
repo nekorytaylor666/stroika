@@ -30,6 +30,7 @@ export function createRouter() {
 			routeTree,
 			defaultPreload: "intent",
 			defaultPendingComponent: () => <Loader />,
+			defaultErrorComponent: () => <div>Error</div>,
 			defaultNotFoundComponent: () => <div>Not Found</div>,
 			context: { queryClient },
 			Wrap: ({ children }) => (

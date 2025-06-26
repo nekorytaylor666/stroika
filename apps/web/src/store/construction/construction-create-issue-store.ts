@@ -1,5 +1,5 @@
 import type { Status } from "@/mock-data/status";
-import { create } from "zustand";
+import { create } from "../create-store";
 
 interface ConstructionCreateIssueState {
 	isOpen: boolean;

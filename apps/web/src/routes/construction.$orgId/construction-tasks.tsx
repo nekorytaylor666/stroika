@@ -1,4 +1,3 @@
-import ConstructionTasks from "@/components/common/construction/construction-tasks";
 import Header from "@/components/layout/headers/issues/header";
 import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
@@ -10,5 +9,5 @@ export const Route = createFileRoute("/construction/$orgId/construction-tasks")(
 );
 
 function ConstructionTasksPage() {
-	return <ConstructionTasks />;
+	return <h1>asdf</h1>
 }

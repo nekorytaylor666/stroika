@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from "./create-store";
 
 type ViewMode = "list" | "grid" | "board";
 type SortBy = "title" | "date" | "status" | "assignee";

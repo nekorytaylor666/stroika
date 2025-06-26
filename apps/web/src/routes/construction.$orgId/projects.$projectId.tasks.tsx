@@ -1,8 +1,4 @@
 import ConstructionTasks from "@/components/common/construction/construction-tasks";
-import ProjectTasks from "@/components/construction/project-tasks";
-import Header from "@/components/header";
-import MainLayout from "@/components/layout/main-layout";
-import { Card } from "@/components/ui/card";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckSquare } from "lucide-react";
@@ -19,5 +15,5 @@ function ProjectTasksPage() {
 	// Convert the string projectId to Convex Id type
 	const convexProjectId = projectId as Id<"constructionProjects">;
 
-	return <ConstructionTasks />;
+	return <ConstructionTasks />
 }

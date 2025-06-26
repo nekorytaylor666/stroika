@@ -1,5 +1,5 @@
 import type { Id } from "@stroika/backend";
-import { create } from "zustand";
+import { create } from "./create-store";
 
 // Define Status type based on Convex schema
 interface Status {

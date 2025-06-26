@@ -1,5 +1,5 @@
 
-import { create } from "zustand";
+import { create } from "./create-store";
 
 interface FilterOptions {
 	status?: string[];
@@ -56,8 +56,8 @@ interface IssuesState {
 
 export const useIssuesStore = create<IssuesState>((set, get) => ({
 	// Initial state
-	issues: mockIssues.sort((a, b) => b.rank.localeCompare(a.rank)),
-	issuesByStatus: groupIssuesByStatus(mockIssues),
+	issues: [],
+	issuesByStatus: {},
 
 	//
 	getAllIssues: () => get().issues,

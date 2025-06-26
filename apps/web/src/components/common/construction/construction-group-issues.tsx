@@ -15,7 +15,6 @@ import {
 	XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useParams } from "node_modules/@tanstack/react-router/dist/esm/useParams";
 import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
@@ -130,7 +129,7 @@ export function ConstructionGroupIssues({
 									<StatusIcon iconName={status.iconName} color={status.color} />
 								),
 							};
-							openModal({ status: statusForModal });
+							openModal({ status: statusForModal as any });
 						}}
 					>
 						<Plus className="size-4" />
