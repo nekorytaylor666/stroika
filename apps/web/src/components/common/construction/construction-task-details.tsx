@@ -15,11 +15,13 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
+import { api } from "@stroika/backend";
+import type { Id } from "@stroika/backend";
+import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
 	Calendar,
-	ChevronRight,
 	Clock,
 	Copy,
 	FileText,
@@ -29,16 +31,15 @@ import {
 	Paperclip,
 	Plus,
 	Send,
-	Tag,
 	User,
 	X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionStatusSelector } from "./construction-status-selector";
-import { ConstructionTaskDocuments } from "./construction-task-documents";
+import { ConstructionTaskAttachmentsGrid } from "./construction-task-attachments-grid";
 import type { ConstructionTask } from "./construction-tasks";
 
 interface ConstructionTaskDetailsProps {
@@ -60,43 +61,66 @@ export function ConstructionTaskDetails({
 	const [description, setDescription] = useState(task?.description || "");
 	const [comment, setComment] = useState("");
 
+	// Query to get fresh task data
+	const freshTask = useQuery(
+		api.constructionTasks.getById,
+		task?._id ? { id: task._id as Id<"issues"> } : "skip",
+	);
+
+	// Use fresh task data if available, otherwise fall back to prop
+	const currentTask = freshTask || task;
+
 	useEffect(() => {
-		if (task) {
-			setTitle(task.title);
-			setDescription(task.description);
+		if (currentTask) {
+			setTitle(currentTask.title);
+			setDescription(currentTask.description);
 		}
-	}, [task]);
+	}, [currentTask]);
 
-	if (!task) return null;
+	if (!currentTask) return null;
 
-	const assignee = task.assigneeId
-		? users?.find((u) => u._id === task.assigneeId)
+	const assignee = currentTask.assigneeId
+		? users?.find((u) => u._id === currentTask.assigneeId)
 		: null;
-	const priority = priorities?.find((p) => p._id === task.priorityId);
-	const taskLabels = task.labelIds
+	const priority = priorities?.find((p) => p._id === currentTask.priorityId);
+	const taskLabels = currentTask.labelIds
 		.map((id) => labels?.find((l) => l._id === id))
 		.filter(Boolean);
-	const project = task.projectId
-		? projects?.find((p) => p._id === task.projectId)
+	const project = currentTask.projectId
+		? projects?.find((p) => p._id === currentTask.projectId)
 		: null;
 
 	const handleTitleSave = async () => {
-		if (title !== task.title && updateTask) {
-			await updateTask({ id: task._id, title });
+		if (title !== currentTask.title && updateTask) {
+			try {
+				await (updateTask as any)({
+					id: currentTask._id as Id<"issues">,
+					title,
+				});
+			} catch (error) {
+				console.error("Error updating title:", error);
+			}
 		}
 		setIsEditingTitle(false);
 	};
 
 	const handleDescriptionSave = async () => {
-		if (description !== task.description && updateTask) {
-			await updateTask({ id: task._id, description });
+		if (description !== currentTask.description && updateTask) {
+			try {
+				await (updateTask as any)({
+					id: currentTask._id as Id<"issues">,
+					description,
+				});
+			} catch (error) {
+				console.error("Error updating description:", error);
+			}
 		}
 		setIsEditingDescription(false);
 	};
 
 	const handleCopyLink = () => {
 		navigator.clipboard.writeText(
-			`${window.location.origin}/task/${task.identifier}`,
+			`${window.location.origin}/task/${currentTask.identifier}`,
 		);
 	};
 
@@ -118,12 +142,12 @@ export function ConstructionTaskDetails({
 								{priority && (
 									<ConstructionPrioritySelector
 										priority={priority}
-										issueId={task._id}
+										issueId={currentTask._id}
 									/>
 								)}
 							</motion.div>
 							<span className="font-mono text-muted-foreground text-sm">
-								{task.identifier}
+								{currentTask.identifier}
 							</span>
 						</div>
 						<div className="flex items-center gap-1">
@@ -171,7 +195,7 @@ export function ConstructionTaskDetails({
 											onKeyDown={(e) => {
 												if (e.key === "Enter") handleTitleSave();
 												if (e.key === "Escape") {
-													setTitle(task.title);
+													setTitle(currentTask.title);
 													setIsEditingTitle(false);
 												}
 											}}
@@ -179,12 +203,13 @@ export function ConstructionTaskDetails({
 											autoFocus
 										/>
 									) : (
-										<h2
-											className="-mx-2 cursor-text rounded px-2 py-1 font-semibold text-2xl hover:bg-muted/50"
+										<button
+											type="button"
+											className="-mx-2 w-full cursor-text rounded px-2 py-1 text-left font-semibold text-2xl hover:bg-muted/50"
 											onClick={() => setIsEditingTitle(true)}
 										>
 											{title}
-										</h2>
+										</button>
 									)}
 								</div>
 
@@ -211,7 +236,7 @@ export function ConstructionTaskDetails({
 													size="sm"
 													variant="ghost"
 													onClick={() => {
-														setDescription(task.description);
+														setDescription(currentTask.description);
 														setIsEditingDescription(false);
 													}}
 												>
@@ -220,8 +245,9 @@ export function ConstructionTaskDetails({
 											</div>
 										</div>
 									) : (
-										<div
-											className="min-h-[60px] cursor-text rounded p-3 hover:bg-muted/50"
+										<button
+											type="button"
+											className="min-h-[60px] w-full cursor-text rounded p-3 text-left hover:bg-muted/50"
 											onClick={() => setIsEditingDescription(true)}
 										>
 											{description || (
@@ -229,8 +255,24 @@ export function ConstructionTaskDetails({
 													Нажмите для добавления описания...
 												</span>
 											)}
-										</div>
+										</button>
 									)}
+								</div>
+
+								<Separator />
+
+								{/* Attachments Section */}
+								<div>
+									<div className="mb-4 flex items-center gap-2">
+										<Paperclip className="h-4 w-4 text-muted-foreground" />
+										<span className="font-medium text-sm">Вложения</span>
+									</div>
+									<ConstructionTaskAttachmentsGrid
+										task={currentTask}
+										onAttachmentsUpdate={() => {
+											// Optionally refresh task data here
+										}}
+									/>
 								</div>
 
 								<Separator />
@@ -305,20 +347,20 @@ export function ConstructionTaskDetails({
 						<div className="w-80 space-y-4 overflow-y-auto border-l bg-muted/30 p-4">
 							{/* Status */}
 							<div>
-								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Статус
-								</label>
+								</span>
 								<ConstructionStatusSelector
-									statusId={task.statusId}
-									issueId={task._id}
+									statusId={currentTask.statusId}
+									issueId={currentTask._id}
 								/>
 							</div>
 
 							{/* Assignee */}
 							<div>
-								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Исполнитель
-								</label>
+								</span>
 								<Button
 									variant="ghost"
 									className="h-8 w-full justify-start px-2"
@@ -341,9 +383,9 @@ export function ConstructionTaskDetails({
 
 							{/* Priority */}
 							<div>
-								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Приоритет
-								</label>
+								</span>
 								<Button
 									variant="ghost"
 									className="h-8 w-full justify-start px-2"
@@ -352,7 +394,7 @@ export function ConstructionTaskDetails({
 										<>
 											<ConstructionPrioritySelector
 												priority={priority}
-												issueId={task._id}
+												issueId={currentTask._id}
 											/>
 											<span className="ml-2 text-sm">{priority.name}</span>
 										</>
@@ -362,17 +404,19 @@ export function ConstructionTaskDetails({
 
 							{/* Due Date */}
 							<div>
-								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Срок выполнения
-								</label>
+								</span>
 								<Button
 									variant="ghost"
 									className="h-8 w-full justify-start px-2"
 								>
 									<Calendar className="mr-2 h-4 w-4" />
 									<span className="text-sm">
-										{task.dueDate
-											? format(new Date(task.dueDate), "d MMM", { locale: ru })
+										{currentTask.dueDate
+											? format(new Date(currentTask.dueDate), "d MMM", {
+													locale: ru,
+												})
 											: "Не указан"}
 									</span>
 								</Button>
@@ -380,22 +424,25 @@ export function ConstructionTaskDetails({
 
 							{/* Labels */}
 							<div>
-								<label className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-1 block font-medium text-muted-foreground text-xs">
 									Метки
-								</label>
+								</span>
 								<div className="flex flex-wrap gap-1">
-									{taskLabels.map((label: any) => (
-										<span
-											key={label._id}
-											className="inline-flex items-center rounded px-2 py-1 text-xs"
-											style={{
-												backgroundColor: `${label.color}20`,
-												color: label.color,
-											}}
-										>
-											{label.name}
-										</span>
-									))}
+									{taskLabels.map((label) => {
+										if (!label) return null;
+										return (
+											<span
+												key={label._id}
+												className="inline-flex items-center rounded px-2 py-1 text-xs"
+												style={{
+													backgroundColor: `${label.color}20`,
+													color: label.color,
+												}}
+											>
+												{label.name}
+											</span>
+										);
+									})}
 									<Button variant="ghost" size="sm" className="h-6 px-2">
 										<Plus className="h-3 w-3" />
 									</Button>
@@ -405,9 +452,9 @@ export function ConstructionTaskDetails({
 							{/* Project */}
 							{project && (
 								<div>
-									<label className="mb-1 block font-medium text-muted-foreground text-xs">
+									<span className="mb-1 block font-medium text-muted-foreground text-xs">
 										Проект
-									</label>
+									</span>
 									<Button
 										variant="ghost"
 										className="h-8 w-full justify-start px-2"
@@ -419,27 +466,17 @@ export function ConstructionTaskDetails({
 
 							<Separator />
 
-							{/* Documents */}
-							<div>
-								<label className="mb-2 block font-medium text-muted-foreground text-xs">
-									Документы
-								</label>
-								<ConstructionTaskDocuments taskId={task._id} />
-							</div>
-
-							<Separator />
-
 							{/* Activity */}
 							<div>
-								<label className="mb-2 block font-medium text-muted-foreground text-xs">
+								<span className="mb-2 block font-medium text-muted-foreground text-xs">
 									Активность
-								</label>
+								</span>
 								<div className="space-y-3">
 									<div className="flex items-center gap-2 text-xs">
 										<Clock className="h-3 w-3 text-muted-foreground" />
 										<span className="text-muted-foreground">Создано</span>
 										<span>
-											{format(new Date(task.createdAt), "d MMM yyyy", {
+											{format(new Date(currentTask.createdAt), "d MMM yyyy", {
 												locale: ru,
 											})}
 										</span>

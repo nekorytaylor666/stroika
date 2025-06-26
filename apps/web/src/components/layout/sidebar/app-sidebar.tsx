@@ -4,12 +4,15 @@ import * as React from "react";
 
 import { BackToApp } from "@/components/layout/sidebar/back-to-app";
 import { NavConstructionMain } from "@/components/layout/sidebar/construction/nav-construction-main";
+import { NavConstructionProjects } from "@/components/layout/sidebar/construction/nav-construction-projects";
 import { NavConstructionTeams } from "@/components/layout/sidebar/construction/nav-construction-teams";
 import { NavConstructionTools } from "@/components/layout/sidebar/construction/nav-construction-tools";
 import HelpButton from "@/components/layout/sidebar/help-button";
 import { NavAccount } from "@/components/layout/sidebar/nav-account";
 import { NavFeatures } from "@/components/layout/sidebar/nav-features";
 import { NavInbox } from "@/components/layout/sidebar/nav-inbox";
+import { NavResources } from "@/components/layout/sidebar/nav-resources";
+import { NavSettings } from "@/components/layout/sidebar/nav-settings";
 import { NavTeamsSettings } from "@/components/layout/sidebar/nav-teams-settings";
 import { OrgSwitcher } from "@/components/layout/sidebar/org-switcher";
 import { UserProfile } from "@/components/layout/sidebar/user-profile";
@@ -35,16 +38,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			<SidebarContent>
 				{isSettings ? (
 					<>
+						<NavSettings />
 						<NavAccount />
-						<NavFeatures />
 						<NavTeamsSettings />
 					</>
 				) : (
 					<>
 						<NavInbox />
 						<NavConstructionMain />
+						<NavConstructionProjects />
 						<NavConstructionTeams />
 						<NavConstructionTools />
+						<NavResources />
 					</>
 				)}
 			</SidebarContent>

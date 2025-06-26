@@ -171,3 +171,16 @@ export const getDepartmentsByLevel = query({
 		return departments;
 	},
 });
+
+// New queries needed by the member management component
+export const getAllDepartments = query({
+	handler: async (ctx) => {
+		return await ctx.db.query("departments").collect();
+	},
+});
+
+export const getAllUserDepartments = query({
+	handler: async (ctx) => {
+		return await ctx.db.query("userDepartments").collect();
+	},
+});

@@ -32,6 +32,22 @@ export interface ConstructionTask {
 	rank: string;
 	dueDate?: string;
 	isConstructionTask: boolean;
+	attachments?: Array<{
+		_id: string;
+		issueId: string;
+		fileName: string;
+		fileUrl: string;
+		fileSize: number;
+		mimeType: string;
+		uploadedBy: string;
+		uploadedAt: number;
+		uploader?: {
+			_id: string;
+			name: string;
+			email: string;
+			avatarUrl: string;
+		} | null;
+	}>;
 }
 
 export interface StatusType {

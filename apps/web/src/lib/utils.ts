@@ -16,3 +16,6 @@ export function formatBytes(bytes: number, decimals = 2) {
 
 	return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
+
+// Alias for consistency
+export const formatFileSize = formatBytes;

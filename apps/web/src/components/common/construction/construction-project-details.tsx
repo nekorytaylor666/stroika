@@ -26,9 +26,10 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Pencil, Save, X } from "lucide-react";
+import { Pencil, Save, X, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Id } from "../../../../../packages/backend/convex/_generated/dataModel";
+import { useNavigate, useParams } from "@tanstack/react-router";
 
 interface ConstructionProjectDetailsProps {
 	project: ConstructionProject;
@@ -45,6 +46,8 @@ export function ConstructionProjectDetails({
 		useConstructionData();
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const navigate = useNavigate();
+	const params = useParams({ from: "/construction/$orgId/construction-projects" });
 
 	// Form state - initialize with project data
 	const [formData, setFormData] = useState({
@@ -148,6 +151,17 @@ export function ConstructionProjectDetails({
 		setIsEditing(false);
 	};
 
+	const handleNavigateToOverview = () => {
+		navigate({
+			to: "/construction/$orgId/projects/$projectId/overview",
+			params: {
+				orgId: params.orgId,
+				projectId: project._id,
+			},
+		});
+		onOpenChange(false);
+	};
+
 	const handleTeamMemberToggle = (userId: Id<"users">) => {
 		setFormData((prev) => ({
 			...prev,
@@ -187,6 +201,16 @@ export function ConstructionProjectDetails({
 					<div className="flex items-center justify-between">
 						<DialogTitle className="text-xl">{project.name}</DialogTitle>
 						<div className="flex items-center gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleNavigateToOverview}
+								className="gap-2"
+								title="Открыть обзор проекта"
+							>
+								<ExternalLink className="h-4 w-4" />
+								Обзор
+							</Button>
 							{!isEditing ? (
 								<Button
 									variant="outline"

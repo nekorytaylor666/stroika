@@ -167,3 +167,14 @@ export const deleteUser = mutation({
 		return { success: true };
 	},
 });
+
+export const updateUserRole = mutation({
+	args: {
+		userId: v.id("users"),
+		roleId: v.id("roles"),
+	},
+	handler: async (ctx, args) => {
+		await ctx.db.patch(args.userId, { roleId: args.roleId });
+		return { success: true };
+	},
+});

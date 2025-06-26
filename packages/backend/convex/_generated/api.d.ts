@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as attachments_queries from "../attachments/queries.js";
 import type * as auth from "../auth.js";
 import type * as comments from "../comments.js";
 import type * as constructionProjects from "../constructionProjects.js";
@@ -31,6 +32,7 @@ import type * as migrations_cleanupUsers from "../migrations/cleanupUsers.js";
 import type * as migrations_migrateUsersToRoleId from "../migrations/migrateUsersToRoleId.js";
 import type * as permissions_constants from "../permissions/constants.js";
 import type * as permissions_hierarchy from "../permissions/hierarchy.js";
+import type * as permissions_queries from "../permissions/queries.js";
 import type * as permissions_seed from "../permissions/seed.js";
 import type * as permissions_types from "../permissions/types.js";
 import type * as permissions_utils from "../permissions/utils.js";
@@ -48,6 +50,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "attachments/queries": typeof attachments_queries;
   auth: typeof auth;
   comments: typeof comments;
   constructionProjects: typeof constructionProjects;
@@ -66,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;
   "permissions/constants": typeof permissions_constants;
   "permissions/hierarchy": typeof permissions_hierarchy;
+  "permissions/queries": typeof permissions_queries;
   "permissions/seed": typeof permissions_seed;
   "permissions/types": typeof permissions_types;
   "permissions/utils": typeof permissions_utils;

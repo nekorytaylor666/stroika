@@ -4,15 +4,13 @@ import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
-	"/construction/$orgId/construction-documents",
+	"/construction/$orgId/$orgId/construction-documents",
 )({
 	component: ConstructionDocumentsPage,
 });
 
 function ConstructionDocumentsPage() {
 	return (
-		<MainLayout header={<Header />}>
-			<ConstructionDocuments />
-		</MainLayout>
-	);
+		<ConstructionDocuments />
+	)
 }

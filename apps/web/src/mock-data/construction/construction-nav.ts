@@ -110,9 +110,15 @@ export const constructionSettingsItems = [
 		description: "Настройка отчетности",
 	},
 	{
+		name: "Организация",
+		url: "/lndev-ui/settings",
+		icon: Building,
+		description: "Участники, команды и права",
+	},
+	{
 		name: "Администрирование",
 		url: "/lndev-ui/settings/admin",
 		icon: Shield,
-		description: "Роли и разрешения",
+		description: "Системное администрирование",
 	},
 ];

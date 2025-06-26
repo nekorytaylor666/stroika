@@ -154,6 +154,7 @@ export default defineSchema({
 		createdAt: v.string(),
 		cycleId: v.string(),
 		projectId: v.optional(v.id("projects")),
+		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 		isConstructionTask: v.boolean(), // Flag to distinguish construction tasks
@@ -161,7 +162,8 @@ export default defineSchema({
 		.index("by_status", ["statusId"])
 		.index("by_assignee", ["assigneeId"])
 		.index("by_project", ["projectId"])
-		.index("by_construction", ["isConstructionTask"]),
+		.index("by_construction", ["isConstructionTask"])
+		.index("by_construction_project", ["constructionProjectId"]),
 
 	// Roles table
 	roles: defineTable({

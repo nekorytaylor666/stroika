@@ -1,4 +1,6 @@
+import { v } from "convex/values";
 import type { Id } from "../_generated/dataModel";
+import { mutation } from "../_generated/server";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import type { PermissionAction, PermissionResource } from "./types";
 
@@ -169,3 +171,122 @@ export async function logPermissionChange(
 		createdAt: new Date().toISOString(),
 	});
 }
+
+// Mutations for managing permissions
+
+export const updateRolePermissions = mutation({
+	args: {
+		roleId: v.id("roles"),
+		permissionIds: v.array(v.id("permissions")),
+	},
+	handler: async (ctx, args) => {
+		// TODO: Check if current user has permission to manage roles
+		// const userId = await getCurrentUserId(ctx);
+		// await requirePermission(ctx, userId, "roles", "manage");
+
+		// Get existing role permissions
+		const existingPermissions = await ctx.db
+			.query("rolePermissions")
+			.withIndex("by_role", (q) => q.eq("roleId", args.roleId))
+			.collect();
+
+		// Delete all existing permissions
+		for (const perm of existingPermissions) {
+			await ctx.db.delete(perm._id);
+		}
+
+		// Add new permissions
+		for (const permissionId of args.permissionIds) {
+			await ctx.db.insert("rolePermissions", {
+				roleId: args.roleId,
+				permissionId,
+				createdAt: new Date().toISOString(),
+			});
+		}
+
+		// Log the change
+		// await logPermissionChange(ctx, userId, "updateRolePermissions", undefined, args.roleId, {
+		// 	oldPermissions: existingPermissions.map(p => p.permissionId),
+		// 	newPermissions: args.permissionIds,
+		// });
+
+		return { success: true };
+	},
+});
+
+export const grantUserPermission = mutation({
+	args: {
+		userId: v.id("users"),
+		permissionId: v.id("permissions"),
+		type: v.union(v.literal("grant"), v.literal("revoke")),
+		expiresAt: v.optional(v.string()),
+		reason: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		// TODO: Check if current user has permission to manage user permissions
+		// const currentUserId = await getCurrentUserId(ctx);
+		// await requirePermission(ctx, currentUserId, "permissions", "manage");
+
+		// Check if user permission already exists
+		const existingUserPermissions = await ctx.db
+			.query("userPermissions")
+			.withIndex("by_user", (q) => q.eq("userId", args.userId))
+			.collect();
+
+		const existingPerm = existingUserPermissions.find(
+			(up) => up.permissionId === args.permissionId,
+		);
+
+		if (existingPerm) {
+			// Update existing permission
+			await ctx.db.patch(existingPerm._id, {
+				granted: args.type === "grant",
+				expiresAt: args.expiresAt,
+			});
+		} else {
+			// Create new user permission
+			await ctx.db.insert("userPermissions", {
+				userId: args.userId,
+				permissionId: args.permissionId,
+				granted: args.type === "grant",
+				expiresAt: args.expiresAt,
+				createdAt: new Date().toISOString(),
+			});
+		}
+
+		// Log the change
+		// await logPermissionChange(ctx, currentUserId, "grantUserPermission", args.userId, undefined, {
+		// 	permissionId: args.permissionId,
+		// 	type: args.type,
+		// 	expiresAt: args.expiresAt,
+		// 	reason: args.reason,
+		// });
+
+		return { success: true };
+	},
+});
+
+export const revokeUserPermission = mutation({
+	args: {
+		userPermissionId: v.id("userPermissions"),
+	},
+	handler: async (ctx, args) => {
+		// TODO: Check if current user has permission to manage user permissions
+		// const currentUserId = await getCurrentUserId(ctx);
+		// await requirePermission(ctx, currentUserId, "permissions", "manage");
+
+		const userPermission = await ctx.db.get(args.userPermissionId);
+		if (!userPermission) {
+			throw new Error("User permission not found");
+		}
+
+		await ctx.db.delete(args.userPermissionId);
+
+		// Log the change
+		// await logPermissionChange(ctx, currentUserId, "revokeUserPermission", userPermission.userId, undefined, {
+		// 	permissionId: userPermission.permissionId,
+		// });
+
+		return { success: true };
+	},
+});

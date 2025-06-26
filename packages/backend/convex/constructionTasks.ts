@@ -12,12 +12,25 @@ export const getAll = query({
 		// Populate related data
 		const populatedTasks = await Promise.all(
 			tasks.map(async (task) => {
-				const [status, assignee, priority, labels] = await Promise.all([
-					ctx.db.get(task.statusId),
-					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-					ctx.db.get(task.priorityId),
-					Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
-				]);
+				const [status, assignee, priority, labels, attachments] =
+					await Promise.all([
+						ctx.db.get(task.statusId),
+						task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+						ctx.db.get(task.priorityId),
+						Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+						ctx.db
+							.query("issueAttachments")
+							.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+							.collect(),
+					]);
+
+				// Get uploader info for attachments
+				const attachmentsWithUsers = await Promise.all(
+					attachments.map(async (attachment) => {
+						const uploader = await ctx.db.get(attachment.uploadedBy);
+						return { ...attachment, uploader };
+					}),
+				);
 
 				return {
 					...task,
@@ -25,6 +38,7 @@ export const getAll = query({
 					assignee,
 					priority,
 					labels: labels.filter((label) => label !== null),
+					attachments: attachmentsWithUsers,
 				};
 			}),
 		);
@@ -39,12 +53,26 @@ export const getById = query({
 		const task = await ctx.db.get(args.id);
 		if (!task || !task.isConstructionTask) return null;
 
-		const [status, assignee, priority, labels] = await Promise.all([
-			ctx.db.get(task.statusId),
-			task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-			ctx.db.get(task.priorityId),
-			Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
-		]);
+		const [status, assignee, priority, labels, attachments] = await Promise.all(
+			[
+				ctx.db.get(task.statusId),
+				task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+				ctx.db.get(task.priorityId),
+				Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+				ctx.db
+					.query("issueAttachments")
+					.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+					.collect(),
+			],
+		);
+
+		// Get uploader info for attachments
+		const attachmentsWithUsers = await Promise.all(
+			attachments.map(async (attachment) => {
+				const uploader = await ctx.db.get(attachment.uploadedBy);
+				return { ...attachment, uploader };
+			}),
+		);
 
 		return {
 			...task,
@@ -52,6 +80,67 @@ export const getById = query({
 			assignee,
 			priority,
 			labels: labels.filter((label) => label !== null),
+			attachments: attachmentsWithUsers,
+		};
+	},
+});
+
+export const getTaskRelatedDocuments = query({
+	args: { taskId: v.id("issues") },
+	handler: async (ctx, args) => {
+		const task = await ctx.db.get(args.taskId);
+		if (!task || !task.isConstructionTask) return null;
+
+		// Get both linked documents and attachments
+		const [linkedDocuments, attachments] = await Promise.all([
+			// Get linked documents through documentTasks relationship
+			ctx.db
+				.query("documentTasks")
+				.withIndex("by_task", (q) => q.eq("taskId", args.taskId))
+				.collect()
+				.then(async (links) => {
+					const docsWithDetails = await Promise.all(
+						links.map(async (link) => {
+							const [document, createdBy] = await Promise.all([
+								ctx.db.get(link.documentId),
+								ctx.db.get(link.createdBy),
+							]);
+
+							if (!document) return null;
+
+							const author = await ctx.db.get(document.authorId);
+
+							return {
+								...link,
+								document: {
+									...document,
+									author,
+								},
+								createdBy,
+							};
+						}),
+					);
+					return docsWithDetails.filter(Boolean);
+				}),
+			// Get direct attachments
+			ctx.db
+				.query("issueAttachments")
+				.withIndex("by_issue", (q) => q.eq("issueId", args.taskId))
+				.collect()
+				.then(async (attachments) => {
+					const attachmentsWithUsers = await Promise.all(
+						attachments.map(async (attachment) => {
+							const uploader = await ctx.db.get(attachment.uploadedBy);
+							return { ...attachment, uploader };
+						}),
+					);
+					return attachmentsWithUsers;
+				}),
+		]);
+
+		return {
+			linkedDocuments,
+			attachments,
 		};
 	},
 });
@@ -179,6 +268,7 @@ export const create = mutation({
 		labelIds: v.array(v.id("labels")),
 		cycleId: v.string(),
 		projectId: v.optional(v.id("projects")),
+		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 	},
@@ -205,6 +295,7 @@ export const update = mutation({
 		labelIds: v.optional(v.array(v.id("labels"))),
 		cycleId: v.optional(v.string()),
 		projectId: v.optional(v.id("projects")),
+		constructionProjectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
 	},

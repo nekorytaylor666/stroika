@@ -11,8 +11,6 @@ export const Route = createFileRoute("/construction/$orgId/construction-tasks")(
 
 function ConstructionTasksPage() {
 	return (
-		<MainLayout header={<Header />}>
-			<ConstructionTasks />
-		</MainLayout>
-	);
+		<ConstructionTasks />
+	)
 }

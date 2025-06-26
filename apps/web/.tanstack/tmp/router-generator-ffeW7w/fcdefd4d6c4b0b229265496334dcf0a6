@@ -11,8 +11,6 @@ export const Route = createFileRoute(
 
 function ConstructionProjectsPage() {
 	return (
-		<MainLayout header={<Header />}>
-			<ConstructionProjects />
-		</MainLayout>
-	);
+		<ConstructionProjects />
+	)
 }

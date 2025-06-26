@@ -117,12 +117,25 @@ export const getDocumentTasks = query({
 				if (!task) return null;
 
 				// Get task details
-				const [assignee, status, priority, labels] = await Promise.all([
-					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-					ctx.db.get(task.statusId),
-					ctx.db.get(task.priorityId),
-					Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
-				]);
+				const [assignee, status, priority, labels, attachments] =
+					await Promise.all([
+						task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+						ctx.db.get(task.statusId),
+						ctx.db.get(task.priorityId),
+						Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+						ctx.db
+							.query("issueAttachments")
+							.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+							.collect(),
+					]);
+
+				// Get uploader info for attachments
+				const attachmentsWithUsers = await Promise.all(
+					attachments.map(async (attachment) => {
+						const uploader = await ctx.db.get(attachment.uploadedBy);
+						return { ...attachment, uploader };
+					}),
+				);
 
 				return {
 					...link,
@@ -132,6 +145,7 @@ export const getDocumentTasks = query({
 						status,
 						priority,
 						labels: labels.filter(Boolean),
+						attachments: attachmentsWithUsers,
 					},
 					createdBy,
 				};

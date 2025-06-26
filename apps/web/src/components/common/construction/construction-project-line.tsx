@@ -2,10 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
-import { Building, Building2, Car, Factory, Home } from "lucide-react";
+import { Building, Building2, Car, Factory, Home, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { AssigneeUser } from "../issues/assignee-user";
 import { ConstructionProjectDetails } from "./construction-project-details";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 
 interface ConstructionProjectLineProps {
 	project: ConstructionProject;
@@ -16,6 +18,8 @@ export function ConstructionProjectLine({
 }: ConstructionProjectLineProps) {
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const { getUserById, getStatusById, getPriorityById } = useConstructionData();
+	const navigate = useNavigate();
+	const params = useParams({ from: "/construction/$orgId/construction-projects" });
 
 	// Populate relationships from store
 	const lead = project.leadId ? getUserById(project.leadId) : null;
@@ -64,11 +68,29 @@ export function ConstructionProjectLine({
 
 	const IconComponent = getProjectTypeIcon(project.projectType);
 
+	const handleNavigateToOverview = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		navigate({
+			to: "/construction/$orgId/projects/$projectId/overview",
+			params: {
+				orgId: params.orgId,
+				projectId: project._id,
+			},
+		});
+	};
+
 	return (
 		<>
 			<div
-				className="flex w-full cursor-pointer items-center gap-4 border-muted-foreground/5 border-b px-6 py-3 text-sm hover:bg-sidebar/50"
+				className="group flex w-full cursor-pointer items-center gap-4 border-muted-foreground/5 border-b px-6 py-3 text-sm hover:bg-sidebar/50"
 				onClick={() => setDetailsOpen(true)}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						setDetailsOpen(true);
+					}
+				}}
+				role="button"
+				tabIndex={0}
 			>
 				<div className="flex w-[35%] min-w-[300px] items-center gap-3 md:w-[30%] lg:w-[25%]">
 					<div className="relative">
@@ -137,8 +159,17 @@ export function ConstructionProjectLine({
 					)}
 				</div>
 
-				<div className="w-[15%] md:w-[15%] lg:w-[15%]">
+				<div className="w-[15%] flex items-center gap-2 md:w-[15%] lg:w-[15%]">
 					{lead && <AssigneeUser user={lead as any} />}
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+						onClick={handleNavigateToOverview}
+						title="Открыть обзор проекта"
+					>
+						<ExternalLink className="h-4 w-4" />
+					</Button>
 				</div>
 			</div>
 

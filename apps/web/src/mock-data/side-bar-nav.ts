@@ -2,6 +2,7 @@ import {
 	BarChart,
 	Bell,
 	Box,
+	Building,
 	Clock,
 	ContactRound,
 	FileText,
@@ -12,6 +13,7 @@ import {
 	LifeBuoy,
 	MessageSquare,
 	Package,
+	Paperclip,
 	Settings,
 	Shield,
 	Tag,
@@ -61,8 +63,13 @@ export const featuresItems = [
 ];
 
 export const settingsItems = [
-	{ name: "Участники", url: "/members", icon: Users },
-	{ name: "Команды", url: "/teams", icon: Users },
-	{ name: "Общие", url: "/settings", icon: Settings },
-	{ name: "Администрирование", url: "/settings/admin", icon: Shield },
+	{ name: "Участники", url: "/lndev-ui/members", icon: Users },
+	{ name: "Команды", url: "/lndev-ui/teams", icon: Users },
+	{ name: "Общие", url: "#", icon: Settings },
+	{ name: "Администрирование", url: "/lndev-ui/settings/admin", icon: Shield },
+	{ name: "Организация", url: "/lndev-ui/settings", icon: Building },
+];
+
+export const resourcesItems = [
+	{ name: "Вложения", url: "/lndev-ui/attachments", icon: Paperclip },
 ];
