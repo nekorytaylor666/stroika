@@ -9,11 +9,6 @@ import {
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
-import { labels } from "@/mock-data/labels";
-import { priorities } from "@/mock-data/priorities";
-import { projects } from "@/mock-data/projects";
-import { status } from "@/mock-data/status";
-import { users } from "@/mock-data/users";
 import { useIssuesStore } from "@/store/issues-store";
 import {
 	AlarmClock,

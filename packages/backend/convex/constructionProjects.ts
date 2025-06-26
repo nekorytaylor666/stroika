@@ -70,26 +70,25 @@ export const getProjectWithTasks = query({
 		if (!project) return null;
 
 		// Get all related data
-		const [status, lead, priority, monthlyRevenue, tasks, teamMembers] = await Promise.all([
-			ctx.db.get(project.statusId),
-			ctx.db.get(project.leadId),
-			ctx.db.get(project.priorityId),
-			ctx.db
-				.query("monthlyRevenue")
-				.withIndex("by_project", (q) =>
-					q.eq("constructionProjectId", project._id),
-				)
-				.collect(),
-			// Get all tasks for this construction project
-			ctx.db
-				.query("issues")
-				.withIndex("by_project", (q) =>
-					q.eq("projectId", project._id),
-				)
-				.collect(),
-			// Get team members
-			Promise.all(project.teamMemberIds.map(id => ctx.db.get(id))),
-		]);
+		const [status, lead, priority, monthlyRevenue, tasks, teamMembers] =
+			await Promise.all([
+				ctx.db.get(project.statusId),
+				ctx.db.get(project.leadId),
+				ctx.db.get(project.priorityId),
+				ctx.db
+					.query("monthlyRevenue")
+					.withIndex("by_project", (q) =>
+						q.eq("constructionProjectId", project._id),
+					)
+					.collect(),
+				// Get all tasks for this construction project
+				ctx.db
+					.query("issues")
+					.withIndex("by_project", (q) => q.eq("projectId", project._id))
+					.collect(),
+				// Get team members
+				Promise.all(project.teamMemberIds.map((id) => ctx.db.get(id))),
+			]);
 
 		// Get task-related data
 		const tasksWithDetails = await Promise.all(
@@ -98,7 +97,7 @@ export const getProjectWithTasks = query({
 					ctx.db.get(task.statusId),
 					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
 					ctx.db.get(task.priorityId),
-					Promise.all(task.labelIds.map(id => ctx.db.get(id))),
+					Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
 				]);
 
 				return {
@@ -108,7 +107,7 @@ export const getProjectWithTasks = query({
 					priority: taskPriority,
 					labels: labels.filter(Boolean),
 				};
-			})
+			}),
 		);
 
 		// Calculate task statistics
@@ -124,11 +123,22 @@ export const getProjectWithTasks = query({
 			if (!task.status) continue;
 
 			const statusName = task.status.name.toLowerCase();
-			if (statusName.includes('done') || statusName.includes('completed') || statusName.includes('завершено')) {
+			if (
+				statusName.includes("done") ||
+				statusName.includes("completed") ||
+				statusName.includes("завершено")
+			) {
 				taskStats.completed++;
-			} else if (statusName.includes('progress') || statusName.includes('работе')) {
+			} else if (
+				statusName.includes("progress") ||
+				statusName.includes("работе")
+			) {
 				taskStats.inProgress++;
-			} else if (statusName.includes('todo') || statusName.includes('backlog') || statusName.includes('сделать')) {
+			} else if (
+				statusName.includes("todo") ||
+				statusName.includes("backlog") ||
+				statusName.includes("сделать")
+			) {
 				taskStats.notStarted++;
 			}
 		}
@@ -161,10 +171,14 @@ export const getTasksForProject = query({
 
 		// Apply filters if provided
 		if (args.statusId) {
-			tasksQuery = tasksQuery.filter(q => q.eq(q.field("statusId"), args.statusId));
+			tasksQuery = tasksQuery.filter((q) =>
+				q.eq(q.field("statusId"), args.statusId),
+			);
 		}
 		if (args.assigneeId) {
-			tasksQuery = tasksQuery.filter(q => q.eq(q.field("assigneeId"), args.assigneeId));
+			tasksQuery = tasksQuery.filter((q) =>
+				q.eq(q.field("assigneeId"), args.assigneeId),
+			);
 		}
 
 		const tasks = await tasksQuery.collect();
@@ -176,7 +190,7 @@ export const getTasksForProject = query({
 					ctx.db.get(task.statusId),
 					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
 					ctx.db.get(task.priorityId),
-					Promise.all(task.labelIds.map(id => ctx.db.get(id))),
+					Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
 				]);
 
 				return {
@@ -186,7 +200,7 @@ export const getTasksForProject = query({
 					priority,
 					labels: labels.filter(Boolean),
 				};
-			})
+			}),
 		);
 
 		return tasksWithDetails;

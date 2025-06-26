@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { Settings, Shield, User, Users } from "lucide-react";
 
 import {
 	SidebarGroup,
@@ -9,7 +10,29 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { settingsItems } from "@/mock-data/side-bar-nav";
+
+const settingsItems = [
+	{
+		name: "Общие",
+		url: "/settings",
+		icon: Settings,
+	},
+	{
+		name: "Профиль",
+		url: "/settings/profile",
+		icon: User,
+	},
+	{
+		name: "Участники",
+		url: "/settings/members",
+		icon: Users,
+	},
+	{
+		name: "Безопасность",
+		url: "/settings/security",
+		icon: Shield,
+	},
+];
 
 export function NavSettings() {
 	return (

@@ -11,20 +11,22 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { teams } from "@/mock-data/teams";
+import { useConstructionData } from "@/hooks/use-construction-data";
 
 export function NavTeamsSettings() {
-	const joinedTeams = teams.filter((t) => t.joined);
+	const { teams } = useConstructionData();
+	const joinedTeams = teams?.filter((t) => t.joined) || [];
+	
 	return (
 		<SidebarGroup>
 			<SidebarGroupLabel>Your teams</SidebarGroupLabel>
 			<SidebarMenu>
 				{joinedTeams.map((team) => (
-					<SidebarMenuItem key={team.id}>
+					<SidebarMenuItem key={team._id}>
 						<SidebarMenuButton asChild>
-							<Link to={`/settings/teams/${team.id}`}>
+							<Link to={`/settings/teams/${team._id}`}>
 								<div className="inline-flex size-6 shrink-0 items-center justify-center rounded bg-muted/50">
-									<div className="text-sm">{team.icon}</div>
+									<div className="text-sm">{team.shortName.charAt(0)}</div>
 								</div>
 								<span>{team.name}</span>
 							</Link>

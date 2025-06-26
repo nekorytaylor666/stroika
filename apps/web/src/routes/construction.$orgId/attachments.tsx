@@ -8,7 +8,5 @@ export const Route = createFileRoute("/construction/$orgId/attachments")({
 });
 
 function AttachmentsPage() {
-	return (
-		<LinearAllAttachments />
-	)
+	return <LinearAllAttachments />;
 }

@@ -6,7 +6,8 @@ import { motion } from "motion/react";
 import { useGantt } from "./gantt-context";
 
 export function GanttHeader() {
-	const { getDatesInRange, viewMode, showWeekends, cellWidth, locale } = useGantt();
+	const { getDatesInRange, viewMode, showWeekends, cellWidth, locale } =
+		useGantt();
 	const dates = getDatesInRange();
 
 	const getMonthGroups = () => {
@@ -15,7 +16,10 @@ export function GanttHeader() {
 
 		dates.forEach((date) => {
 			const monthStart = startOfMonth(date);
-			if (!currentGroup || currentGroup.month.getTime() !== monthStart.getTime()) {
+			if (
+				!currentGroup ||
+				currentGroup.month.getTime() !== monthStart.getTime()
+			) {
 				currentGroup = { month: monthStart, days: [] };
 				groups.push(currentGroup);
 			}
@@ -74,7 +78,7 @@ export function GanttHeader() {
 								<>
 									<span
 										className={cn(
-											"text-[10px] font-medium uppercase text-muted-foreground",
+											"font-medium text-[10px] text-muted-foreground uppercase",
 											isToday(date) && "text-primary",
 										)}
 									>
@@ -82,7 +86,7 @@ export function GanttHeader() {
 									</span>
 									<span
 										className={cn(
-											"text-sm font-medium",
+											"font-medium text-sm",
 											isToday(date) && "text-primary",
 										)}
 									>
@@ -93,7 +97,7 @@ export function GanttHeader() {
 							{viewMode === "week" && (
 								<span
 									className={cn(
-										"text-xs font-medium",
+										"font-medium text-xs",
 										isToday(date) && "text-primary",
 									)}
 								>
@@ -101,17 +105,17 @@ export function GanttHeader() {
 								</span>
 							)}
 							{viewMode === "month" && (
-								<span className="text-xs text-muted-foreground">
+								<span className="text-muted-foreground text-xs">
 									{format(date, "d", { locale })}
 								</span>
 							)}
 							{viewMode === "quarter" && date.getDate() === 1 && (
-								<span className="text-xs text-muted-foreground">
+								<span className="text-muted-foreground text-xs">
 									{format(date, "MMM", { locale })}
 								</span>
 							)}
 							{viewMode === "year" && date.getDate() === 1 && (
-								<span className="text-xs font-medium">
+								<span className="font-medium text-xs">
 									{format(date, "MMM", { locale })}
 								</span>
 							)}
@@ -126,7 +130,9 @@ export function GanttHeader() {
 					className="absolute top-0 h-full w-0.5 bg-primary"
 					style={{
 						left:
-							dates.findIndex((d) => isToday(d)) * cellWidth + cellWidth / 2 - 1,
+							dates.findIndex((d) => isToday(d)) * cellWidth +
+							cellWidth / 2 -
+							1,
 					}}
 					initial={{ opacity: 0, scaleY: 0 }}
 					animate={{ opacity: 1, scaleY: 1 }}

@@ -55,8 +55,6 @@ export default defineSchema({
 		iconName: v.string(),
 	}),
 
-
-
 	// Construction Projects table
 	constructionProjects: defineTable({
 		name: v.string(),
@@ -118,8 +116,6 @@ export default defineSchema({
 		),
 		workload: v.number(),
 	}),
-
-
 
 	// Issues/Tasks table
 	issues: defineTable({

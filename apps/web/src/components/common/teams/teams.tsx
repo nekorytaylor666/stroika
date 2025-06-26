@@ -1,6 +1,5 @@
 "use client";
 
-import { teams } from "@/mock-data/teams";
 import TeamLine from "./team-line";
 
 export default function Teams() {
@@ -15,9 +14,9 @@ export default function Teams() {
 			</div>
 
 			<div className="w-full">
-				{teams.map((team) => (
+				{/* {teams.map((team) => (
 					<TeamLine key={team.id} team={team} />
-				))}
+				))} */}
 			</div>
 		</div>
 	);

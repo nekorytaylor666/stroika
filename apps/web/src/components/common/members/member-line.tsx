@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { type User, statusUserColors } from "@/mock-data/users";
 import { format } from "date-fns";
 import { TeamsTooltip } from "./teams-tooltip";
 
@@ -18,7 +17,7 @@ export default function MemberLine({ user }: MemberLineProps) {
 					</Avatar>
 					<span
 						className="-end-0.5 -bottom-0.5 absolute size-2.5 rounded-full border-2 border-background"
-						style={{ backgroundColor: statusUserColors[user.status] }}
+					// style={{ backgroundColor: statusUserColors[user.status] }}
 					>
 						<span className="sr-only">{user.status}</span>
 					</span>

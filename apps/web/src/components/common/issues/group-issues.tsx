@@ -1,9 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Issue } from "@/mock-data/issues";
-import { sortIssuesByPriority } from "@/mock-data/issues";
-import type { Status } from "@/mock-data/status";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useIssuesStore } from "@/store/issues-store";
 import { useViewStore } from "@/store/view-store";
@@ -16,8 +13,8 @@ import { IssueDragType, IssueGrid } from "./issue-grid";
 import { IssueLine } from "./issue-line";
 
 interface GroupIssuesProps {
-	status: Status;
-	issues: Issue[];
+	status: any;
+	issues: any[];
 	count: number;
 }
 
@@ -25,7 +22,7 @@ export function GroupIssues({ status, issues, count }: GroupIssuesProps) {
 	const { viewType } = useViewStore();
 	const isViewTypeGrid = viewType === "grid";
 	const { openModal } = useCreateIssueStore();
-	const sortedIssues = sortIssuesByPriority(issues);
+	// const sortedIssues = sortIssuesByPriority(issues);
 
 	return (
 		<div

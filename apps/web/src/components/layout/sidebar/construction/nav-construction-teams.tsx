@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import {
 	Archive,
 	Bell,
@@ -41,6 +41,7 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 
 export function NavConstructionTeams() {
 	const { teams, isLoading } = useConstructionData();
+	const params = useParams({ from: "/construction/$orgId" });
 
 	if (isLoading) {
 		return (
@@ -172,7 +173,9 @@ export function NavConstructionTeams() {
 								<SidebarMenuSub>
 									<SidebarMenuSubItem>
 										<SidebarMenuSubButton asChild>
-											<Link to="/lndev-ui/construction-projects">
+											<Link
+												to={`/construction/${params.orgId}/teams/${team._id}/all`}
+											>
 												<Building size={14} />
 												<span>Проекты отдела</span>
 											</Link>
@@ -180,7 +183,9 @@ export function NavConstructionTeams() {
 									</SidebarMenuSubItem>
 									<SidebarMenuSubItem>
 										<SidebarMenuSubButton asChild>
-											<Link to="/lndev-ui/construction-teams">
+											<Link
+												to={`/construction/${params.orgId}/teams/${team._id}`}
+											>
 												<Users size={14} />
 												<span>Сотрудники</span>
 											</Link>
@@ -188,7 +193,9 @@ export function NavConstructionTeams() {
 									</SidebarMenuSubItem>
 									<SidebarMenuSubItem>
 										<SidebarMenuSubButton asChild>
-											<Link to="/lndev-ui/construction-analytics/workload">
+											<Link
+												to={`/construction/${params.orgId}/analytics/workload`}
+											>
 												<TrendingUp size={14} />
 												<span>Загруженность</span>
 											</Link>

@@ -10,7 +10,5 @@ export const Route = createFileRoute("/construction/$orgId/settings")({
 function SettingsPage() {
 	const { orgId } = Route.useParams();
 
-	return (
-		<OrganizationSettings organizationId={orgId} />
-	)
+	return <OrganizationSettings organizationId={orgId} />;
 }

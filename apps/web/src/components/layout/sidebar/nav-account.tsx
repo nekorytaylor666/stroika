@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { Bell, CreditCard, Shield, User } from "lucide-react";
 
 import {
 	SidebarGroup,
@@ -9,7 +10,29 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { accountItems } from "@/mock-data/side-bar-nav";
+
+const accountItems = [
+	{
+		name: "Профиль",
+		url: "/account/profile",
+		icon: User,
+	},
+	{
+		name: "Подписка",
+		url: "/account/billing",
+		icon: CreditCard,
+	},
+	{
+		name: "Уведомления",
+		url: "/account/notifications",
+		icon: Bell,
+	},
+	{
+		name: "Безопасность",
+		url: "/account/security",
+		icon: Shield,
+	},
+];
 
 export function NavAccount() {
 	return (

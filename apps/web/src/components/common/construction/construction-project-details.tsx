@@ -24,12 +24,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Pencil, Save, X, ExternalLink } from "lucide-react";
+import { ExternalLink, Pencil, Save, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Id } from "../../../../../packages/backend/convex/_generated/dataModel";
-import { useNavigate, useParams } from "@tanstack/react-router";
 
 interface ConstructionProjectDetailsProps {
 	project: ConstructionProject;
@@ -47,7 +47,9 @@ export function ConstructionProjectDetails({
 	const [isEditing, setIsEditing] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const navigate = useNavigate();
-	const params = useParams({ from: "/construction/$orgId/construction-projects" });
+	const params = useParams({
+		from: "/construction/$orgId/construction-projects",
+	});
 
 	// Form state - initialize with project data
 	const [formData, setFormData] = useState({

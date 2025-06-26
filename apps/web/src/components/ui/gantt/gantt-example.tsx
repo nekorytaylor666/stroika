@@ -1,7 +1,11 @@
 "use client";
 
+import {
+	Gantt,
+	GanttControls,
+	type GanttTaskType,
+} from "@/components/ui/gantt";
 import { addDays, startOfDay } from "date-fns";
-import { Gantt, GanttControls, GanttTaskType } from "@/components/ui/gantt";
 
 // Example tasks data
 const exampleTasks: GanttTaskType[] = [

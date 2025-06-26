@@ -6,6 +6,9 @@ import { useConstructionTaskDetailsStore } from "@/store/construction/constructi
 import { useFilterStore } from "@/store/filter-store";
 import { useSearchStore } from "@/store/search-store";
 import { useViewStore } from "@/store/view-store";
+import { type Id, api } from "@stroika/backend";
+import { useParams } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
 import { type FC, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -15,9 +18,6 @@ import { ConstructionCreateIssueModal } from "./construction-create-issue-modal"
 import { ConstructionGroupIssues } from "./construction-group-issues";
 import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
-import { api, type Id } from "@stroika/backend";
-import { useQuery } from "convex/react";
-import { useParams } from "@tanstack/react-router";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -202,9 +202,11 @@ const FilteredConstructionTasksView: FC<{
 const GroupConstructionTasksListView: FC<{
 	isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-	const { projectId } = useParams({ from: "/construction/$orgId/projects/$projectId/tasks" });
+	const { projectId } = useParams({
+		from: "/construction/$orgId/projects/$projectId/tasks",
+	});
 	const tasks = useQuery(api.constructionTasks.getByProject, {
-		projectId: projectId as Id<"projects">,
+		projectId: projectId as Id<"constructionProjects">,
 	});
 	const statuses = useQuery(api.metadata.getAllStatus);
 

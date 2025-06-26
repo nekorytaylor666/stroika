@@ -15,7 +15,7 @@ import { DialogTitle } from "@radix-ui/react-dialog";
 import { RiEditLine } from "@remixicon/react";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -35,7 +35,7 @@ interface ConstructionTaskForm {
 	priorityId: Id<"priorities"> | null;
 	labelIds: Id<"labels">[];
 	cycleId: string;
-	projectId: Id<"projects"> | null;
+	projectId: Id<"constructionProjects"> | null;
 	rank: string;
 	dueDate?: string;
 	attachments?: UploadedAttachment[];
@@ -45,16 +45,12 @@ export function CreateNewIssue() {
 	const [createMore, setCreateMore] = useState<boolean>(false);
 	const { isOpen, defaultStatus, openModal, closeModal } =
 		useCreateIssueStore();
-	const {
-		createTask,
-		statuses,
-		priorities,
-		labels,
-		users,
-		projects,
-		tasks,
-		isLoading,
-	} = useConstructionData();
+	const statuses = useQuery(api.metadata.getAllStatus);
+	const priorities = useQuery(api.metadata.getAllPriorities);
+	const users = useQuery(api.users.getAll);
+	const projects = useQuery(api.constructionProjects.getAll);
+	const tasks = useQuery(api.constructionTasks.getAll);
+	const createTask = useMutation(api.constructionTasks.create);
 
 	const attachToIssue = useMutation(api.files.attachToIssue);
 
@@ -74,7 +70,7 @@ export function CreateNewIssue() {
 	const createDefaultData = useCallback((): ConstructionTaskForm => {
 		const identifier = generateUniqueIdentifier();
 		const defaultStatusId = defaultStatus
-			? statuses?.find((s) => s.name === defaultStatus) || statuses?.[0]
+			? statuses?.find((s) => s.name === "К выполнению") || statuses?.[0]
 			: statuses?.[0];
 		const defaultPriorityId =
 			priorities?.find((p) => p.name === "Средний") || priorities?.[0];
@@ -153,11 +149,15 @@ export function CreateNewIssue() {
 		}
 	};
 
-	// Show loading state while data is loading
+	const isLoading =
+		statuses === undefined ||
+		priorities === undefined ||
+		users === undefined ||
+		projects === undefined ||
+		tasks === undefined;
 	if (isLoading) {
 		return null;
 	}
-
 	return (
 		<Dialog
 			open={isOpen}
@@ -246,10 +246,7 @@ export function CreateNewIssue() {
 							}
 						/>
 						<LabelSelector
-							selectedLabels={
-								labels?.filter((l) => addTaskForm.labelIds.includes(l._id)) ||
-								[]
-							}
+							selectedLabels={[]}
 							onChange={(newLabels) =>
 								setAddTaskForm({
 									...addTaskForm,

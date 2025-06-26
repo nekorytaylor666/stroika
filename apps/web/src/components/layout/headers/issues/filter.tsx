@@ -16,11 +16,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { labels } from "@/mock-data/labels";
-import { priorities } from "@/mock-data/priorities";
-import { projects } from "@/mock-data/projects";
-import { status as allStatus } from "@/mock-data/status";
-import { users } from "@/mock-data/users";
 import { useFilterStore } from "@/store/filter-store";
 import { useIssuesStore } from "@/store/issues-store";
 import {
@@ -189,7 +184,7 @@ export function Filter() {
 						<CommandList>
 							<CommandEmpty>Статус не найден.</CommandEmpty>
 							<CommandGroup>
-								{allStatus.map((item) => (
+								{statuses.map((item) => (
 									<CommandItem
 										key={item.id}
 										value={item.id}

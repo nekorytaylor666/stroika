@@ -1,6 +1,16 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import {
+	Building,
+	Calculator,
+	Calendar,
+	FileText,
+	MapPin,
+	MoreHorizontal,
+	Settings,
+	Shield,
+	Truck,
+} from "lucide-react";
 
 import {
 	DropdownMenu,
@@ -22,13 +32,65 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-	constructionManagementItems,
-	constructionSettingsItems,
-} from "@/mock-data/construction/construction-nav";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
+
+const constructionManagementItems = [
+	{
+		name: "Календарь проектов",
+		url: "/construction/$orgId/planning/calendar",
+		icon: Calendar,
+		description: "Планирование и сроки",
+	},
+	{
+		name: "Смета и расчеты",
+		url: "/construction/$orgId/planning/estimates",
+		icon: Calculator,
+		description: "Бюджеты и расчеты",
+	},
+	{
+		name: "Объекты и локации",
+		url: "/construction/$orgId/planning/locations",
+		icon: MapPin,
+		description: "География строительства",
+	},
+	{
+		name: "Логистика",
+		url: "/construction/$orgId/planning/logistics",
+		icon: Truck,
+		description: "Снабжение и материалы",
+	},
+];
+
+const constructionSettingsItems = [
+	{
+		name: "Настройки ССП",
+		url: "/construction/$orgId/settings",
+		icon: Settings,
+		description: "Конфигурация системы",
+	},
+	{
+		name: "Отчеты",
+		url: "/construction/$orgId/settings/reports",
+		icon: FileText,
+		description: "Настройка отчетности",
+	},
+	{
+		name: "Организация",
+		url: "/construction/$orgId/members",
+		icon: Building,
+		description: "Участники, команды и права",
+	},
+	{
+		name: "Администрирование",
+		url: "/construction/$orgId/admin",
+		icon: Shield,
+		description: "Системное администрирование",
+	},
+];
 
 export function NavConstructionTools() {
+	const params = useParams({ from: "/construction/$orgId" });
+
 	return (
 		<SidebarGroup className="group-data-[collapsible=icon]:hidden">
 			<SidebarGroupLabel>Инструменты планирования</SidebarGroupLabel>
@@ -39,7 +101,7 @@ export function NavConstructionTools() {
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<SidebarMenuButton asChild>
-										<Link to={item.url}>
+										<Link to={item.url.replace("$orgId", params.orgId)}>
 											<item.icon />
 											<span>{item.name}</span>
 										</Link>
@@ -69,7 +131,7 @@ export function NavConstructionTools() {
 						>
 							{constructionManagementItems.slice(2).map((item) => (
 								<DropdownMenuItem key={item.name} asChild>
-									<Link to={item.url}>
+									<Link to={item.url.replace("$orgId", params.orgId)}>
 										<item.icon className="text-muted-foreground" />
 										<div className="flex flex-col">
 											<span>{item.name}</span>
@@ -83,7 +145,7 @@ export function NavConstructionTools() {
 							<DropdownMenuSeparator />
 							{constructionSettingsItems.map((item) => (
 								<DropdownMenuItem key={item.name} asChild>
-									<Link to={item.url}>
+									<Link to={item.url.replace("$orgId", params.orgId)}>
 										<item.icon className="text-muted-foreground" />
 										<div className="flex flex-col">
 											<span>{item.name}</span>

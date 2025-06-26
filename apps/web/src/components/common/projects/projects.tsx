@@ -1,7 +1,6 @@
 "use client";
 
 import ProjectLine from "@/components/common/projects/project-line";
-import { projects } from "@/mock-data/projects";
 
 export default function Projects() {
 	return (
@@ -16,9 +15,7 @@ export default function Projects() {
 			</div>
 
 			<div className="w-full">
-				{projects.map((project) => (
-					<ProjectLine key={project.id} project={project} />
-				))}
+
 			</div>
 		</div>
 	);

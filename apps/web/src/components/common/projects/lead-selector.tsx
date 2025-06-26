@@ -15,7 +15,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { type User, users } from "@/mock-data/users";
 import { CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
 

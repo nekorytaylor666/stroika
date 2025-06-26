@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { motion } from "motion/react";
 import React from "react";
-import { GanttProvider, GanttProviderProps } from "./gantt-context";
+import { GanttProvider, type GanttProviderProps } from "./gantt-context";
 import { GanttGrid } from "./gantt-grid";
 import { GanttHeader } from "./gantt-header";
 import { GanttSidebar } from "./gantt-sidebar";

@@ -8,7 +8,6 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { type User, statusUserColors, users } from "@/mock-data/users";
 import { CheckIcon, CircleUserRound, Send, UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 

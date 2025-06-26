@@ -81,7 +81,10 @@ export function GanttTask({ task }: GanttTaskProps) {
 	return (
 		<>
 			{/* Invisible constraints area */}
-			<div ref={constraintsRef} className="pointer-events-none absolute inset-0" />
+			<div
+				ref={constraintsRef}
+				className="pointer-events-none absolute inset-0"
+			/>
 
 			{/* Task bar */}
 			<motion.div
@@ -142,7 +145,7 @@ export function GanttTask({ task }: GanttTaskProps) {
 				{!isDragging && (
 					<>
 						<motion.div
-							className="absolute -left-1 top-1/2 h-4 w-2 -translate-y-1/2 cursor-ew-resize rounded-sm bg-white/30 opacity-0 transition-opacity hover:bg-white/50"
+							className="-left-1 -translate-y-1/2 absolute top-1/2 h-4 w-2 cursor-ew-resize rounded-sm bg-white/30 opacity-0 transition-opacity hover:bg-white/50"
 							whileHover={{ opacity: 1 }}
 							onPointerDown={(e) => {
 								e.stopPropagation();
@@ -150,7 +153,7 @@ export function GanttTask({ task }: GanttTaskProps) {
 							}}
 						/>
 						<motion.div
-							className="absolute -right-1 top-1/2 h-4 w-2 -translate-y-1/2 cursor-ew-resize rounded-sm bg-white/30 opacity-0 transition-opacity hover:bg-white/50"
+							className="-right-1 -translate-y-1/2 absolute top-1/2 h-4 w-2 cursor-ew-resize rounded-sm bg-white/30 opacity-0 transition-opacity hover:bg-white/50"
 							whileHover={{ opacity: 1 }}
 							onPointerDown={(e) => {
 								e.stopPropagation();

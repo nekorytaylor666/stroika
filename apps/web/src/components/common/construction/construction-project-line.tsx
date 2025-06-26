@@ -1,13 +1,20 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import type { ConstructionProject } from "@/store/construction/construction-convex-store";
-import { Building, Building2, Car, Factory, Home, ExternalLink } from "lucide-react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import {
+	Building,
+	Building2,
+	Car,
+	ExternalLink,
+	Factory,
+	Home,
+} from "lucide-react";
 import { useState } from "react";
 import { AssigneeUser } from "../issues/assignee-user";
 import { ConstructionProjectDetails } from "./construction-project-details";
-import { useNavigate, useParams } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
 
 interface ConstructionProjectLineProps {
 	project: ConstructionProject;
@@ -19,7 +26,9 @@ export function ConstructionProjectLine({
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const { getUserById, getStatusById, getPriorityById } = useConstructionData();
 	const navigate = useNavigate();
-	const params = useParams({ from: "/construction/$orgId/construction-projects" });
+	const params = useParams({
+		from: "/construction/$orgId/construction-projects",
+	});
 
 	// Populate relationships from store
 	const lead = project.leadId ? getUserById(project.leadId) : null;
@@ -159,12 +168,12 @@ export function ConstructionProjectLine({
 					)}
 				</div>
 
-				<div className="w-[15%] flex items-center gap-2 md:w-[15%] lg:w-[15%]">
+				<div className="flex w-[15%] items-center gap-2 md:w-[15%] lg:w-[15%]">
 					{lead && <AssigneeUser user={lead as any} />}
 					<Button
 						variant="ghost"
 						size="icon"
-						className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+						className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
 						onClick={handleNavigateToOverview}
 						title="Открыть обзор проекта"
 					>

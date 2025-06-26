@@ -195,7 +195,7 @@ export function LinearAllAttachments() {
 
 					{/* Filters */}
 					<div className="flex gap-3">
-						<div className="relative flex-1 max-w-md">
+						<div className="relative max-w-md flex-1">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 							<Input
 								placeholder="Поиск файлов..."
@@ -249,10 +249,10 @@ export function LinearAllAttachments() {
 
 					{attachments.length === 0 && attachmentsData && (
 						<div className="flex h-[400px] flex-col items-center justify-center text-muted-foreground">
-							<div className="rounded-full bg-muted p-4 mb-4">
+							<div className="mb-4 rounded-full bg-muted p-4">
 								<Files className="h-8 w-8" />
 							</div>
-							<p className="font-medium text-base mb-1">Файлы не найдены</p>
+							<p className="mb-1 font-medium text-base">Файлы не найдены</p>
 							<p className="text-sm">
 								{search || fileType !== "all"
 									? "Попробуйте изменить параметры поиска"
@@ -312,13 +312,19 @@ export function LinearAllAttachments() {
 									{selectedAttachment?.fileName}
 								</h3>
 								<div className="mt-1 flex items-center gap-3 text-muted-foreground text-sm">
-									<span>{formatFileSize(selectedAttachment?.fileSize || 0)}</span>
+									<span>
+										{formatFileSize(selectedAttachment?.fileSize || 0)}
+									</span>
 									<span className="text-muted-foreground/50">•</span>
 									<span>
 										{selectedAttachment?.uploadedAt &&
-											format(new Date(selectedAttachment.uploadedAt), "d MMMM yyyy", {
-												locale: ru,
-											})}
+											format(
+												new Date(selectedAttachment.uploadedAt),
+												"d MMMM yyyy",
+												{
+													locale: ru,
+												},
+											)}
 									</span>
 									{selectedAttachment?.uploader && (
 										<>
@@ -353,7 +359,7 @@ export function LinearAllAttachments() {
 									<img
 										src={selectedAttachment.fileUrl}
 										alt={selectedAttachment.fileName}
-										className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
+										className="max-h-full max-w-full rounded-lg object-contain shadow-sm"
 									/>
 								</div>
 							) : selectedAttachment?.mimeType === "application/pdf" ? (
@@ -364,13 +370,13 @@ export function LinearAllAttachments() {
 								/>
 							) : (
 								<div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-									<div className="rounded-full bg-muted p-6 mb-4">
+									<div className="mb-4 rounded-full bg-muted p-6">
 										<File className="h-12 w-12" />
 									</div>
-									<p className="font-medium text-base mb-1">
+									<p className="mb-1 font-medium text-base">
 										Предпросмотр недоступен
 									</p>
-									<p className="text-sm mb-4">Скачайте файл для просмотра</p>
+									<p className="mb-4 text-sm">Скачайте файл для просмотра</p>
 									<Button
 										variant="secondary"
 										onClick={() => handleDownload(selectedAttachment)}

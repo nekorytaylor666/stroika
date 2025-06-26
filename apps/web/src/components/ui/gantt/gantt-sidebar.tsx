@@ -13,8 +13,11 @@ interface GanttSidebarProps {
 }
 
 export function GanttSidebar({ headerHeight }: GanttSidebarProps) {
-	const { tasks, rowHeight, selectedTaskId, hoveredTaskId, dispatch } = useGantt();
-	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+	const { tasks, rowHeight, selectedTaskId, hoveredTaskId, dispatch } =
+		useGantt();
+	const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+		new Set(),
+	);
 
 	// Group tasks by their group property
 	const groupedTasks = tasks.reduce(
@@ -73,7 +76,7 @@ export function GanttSidebar({ headerHeight }: GanttSidebarProps) {
 										<ChevronDown className="h-3 w-3" />
 									)}
 								</Button>
-								<span className="font-medium text-xs text-muted-foreground">
+								<span className="font-medium text-muted-foreground text-xs">
 									{group}
 								</span>
 								<span className="ml-auto rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs">
@@ -93,11 +96,15 @@ export function GanttSidebar({ headerHeight }: GanttSidebarProps) {
 										hoveredTaskId === task.id && "bg-muted/30",
 									)}
 									style={{ height: rowHeight }}
-									onClick={() => dispatch({ type: "SELECT_TASK", taskId: task.id })}
+									onClick={() =>
+										dispatch({ type: "SELECT_TASK", taskId: task.id })
+									}
 									onMouseEnter={() =>
 										dispatch({ type: "HOVER_TASK", taskId: task.id })
 									}
-									onMouseLeave={() => dispatch({ type: "HOVER_TASK", taskId: null })}
+									onMouseLeave={() =>
+										dispatch({ type: "HOVER_TASK", taskId: null })
+									}
 									initial={{ opacity: 0, x: -10 }}
 									animate={{ opacity: 1, x: 0 }}
 									transition={{ delay: (groupIndex + index) * 0.02 }}

@@ -10,7 +10,5 @@ export const Route = createFileRoute(
 });
 
 function ConstructionDashboardPage() {
-	return (
-		<ConstructionDashboard />
-	)
+	return <ConstructionDashboard />;
 }

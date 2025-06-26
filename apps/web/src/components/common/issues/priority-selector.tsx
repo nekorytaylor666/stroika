@@ -14,13 +14,12 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { type Priority, priorities } from "@/mock-data/priorities";
 import { useIssuesStore } from "@/store/issues-store";
 import { CheckIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 interface PrioritySelectorProps {
-	priority: Priority;
+	priority: any;
 	issueId?: string;
 }
 
@@ -40,7 +39,7 @@ export function PrioritySelector({ priority, issueId }: PrioritySelectorProps) {
 		setOpen(false);
 
 		if (issueId) {
-			const newPriority = priorities.find((p) => p.id === priorityId);
+			const newPriority = priorities.find((p: any) => p.id === priorityId);
 			if (newPriority) {
 				updateIssuePriority(issueId, newPriority);
 			}

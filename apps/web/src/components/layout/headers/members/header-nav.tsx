@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { users } from "@/mock-data/users";
 import { Plus } from "lucide-react";
 
 export default function HeaderNav() {
@@ -13,7 +12,6 @@ export default function HeaderNav() {
 				<div className="flex items-center gap-1">
 					<span className="font-medium text-sm">Members</span>
 					<span className="rounded-md bg-accent px-1.5 py-1 text-xs">
-						{users.length}
 					</span>
 				</div>
 			</div>

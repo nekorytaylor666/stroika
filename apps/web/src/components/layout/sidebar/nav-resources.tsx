@@ -1,6 +1,7 @@
 "use client";
 
 import { Link } from "@tanstack/react-router";
+import { BookOpen, FileText, HelpCircle, MessageSquare } from "lucide-react";
 
 import {
 	SidebarGroup,
@@ -9,7 +10,29 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { resourcesItems } from "@/mock-data/side-bar-nav";
+
+const resourcesItems = [
+	{
+		name: "Документация",
+		url: "/docs",
+		icon: BookOpen,
+	},
+	{
+		name: "Руководства",
+		url: "/guides",
+		icon: FileText,
+	},
+	{
+		name: "Поддержка",
+		url: "/support",
+		icon: HelpCircle,
+	},
+	{
+		name: "Обратная связь",
+		url: "/feedback",
+		icon: MessageSquare,
+	},
+];
 
 export function NavResources() {
 	return (

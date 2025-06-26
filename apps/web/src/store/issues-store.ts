@@ -1,13 +1,4 @@
-import {
-	type Issue,
-	groupIssuesByStatus,
-	issues as mockIssues,
-} from "@/mock-data/issues";
-import type { LabelInterface } from "@/mock-data/labels";
-import type { Priority } from "@/mock-data/priorities";
-import type { Project } from "@/mock-data/projects";
-import type { Status } from "@/mock-data/status";
-import type { User } from "@/mock-data/users";
+
 import { create } from "zustand";
 
 interface FilterOptions {

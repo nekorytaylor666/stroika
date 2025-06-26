@@ -18,37 +18,36 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useConstructionCreateIssueStore } from "@/store/construction/construction-create-issue-store";
-import { useMutation } from "convex/react";
+import { api } from "@stroika/backend";
+import { useParams } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { api } from "../../../../../../packages/backend/convex/_generated/api";
-import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { ConstructionDocumentSelector } from "./construction-document-selector";
 
 export function ConstructionCreateIssueModal() {
 	const { isOpen, defaultStatus, closeModal } =
 		useConstructionCreateIssueStore();
-	const { createTask, priorities, statuses, isLoading } = useConstructionData();
+	const params = useParams({ from: "/construction/$orgId" });
+	const { createTask: handleCreateTask } = useConstructionData();
+	const priorities = useQuery(api.metadata.getAllPriorities);
+	const statuses = useQuery(api.metadata.getAllStatus);
+
 	const linkToTask = useMutation(api.documentTasks.linkToTask);
 
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-	const [assignee, setAssignee] = useState<any>(null);
-	const [selectedLabels, setSelectedLabels] = useState<any[]>([]);
-	const [priority, setPriority] = useState<any>(null);
-	const [issueStatus, setIssueStatus] = useState<any>(null);
-	const [project, setProject] = useState<any>(undefined);
-	const [selectedDocuments, setSelectedDocuments] = useState<
-		Array<{ _id: Id<"documents">; title: string }>
-	>([]);
+	const [priority, setPriority] = useState<any | null>(null);
+	const [issueStatus, setIssueStatus] = useState<any | null>(null);
+	const users = useQuery(api.users.getAll);
 
 	// Set default values when data is loaded
 	useEffect(() => {
-		if (priorities?.length > 0 && !priority) {
+		if (priorities && priorities.length > 0 && !priority) {
 			setPriority(
 				priorities.find((p) => p.name === "Средний") || priorities[0],
 			);
 		}
-		if (statuses?.length > 0 && !issueStatus) {
+		if (statuses && statuses.length > 0 && !issueStatus) {
 			setIssueStatus(
 				defaultStatus ||
 					statuses.find((s) => s.name === "К выполнению") ||
@@ -58,40 +57,45 @@ export function ConstructionCreateIssueModal() {
 	}, [priorities, statuses, priority, issueStatus, defaultStatus]);
 
 	const createIssue = async () => {
-		if (!title.trim() || !priority || !issueStatus) return;
+		if (!title.trim() || !priority || !issueStatus) {
+			console.error("Missing required fields:", {
+				title: title.trim(),
+				priority,
+				issueStatus,
+			});
+			return;
+		}
 
 		try {
-			const taskId = await createTask({
+			console.log("Creating task with data:", {
+				title: title.trim(),
+				statusId: issueStatus._id,
+				priorityId: priority._id,
+				projectId: params.orgId,
+			});
+
+			const taskId = await handleCreateTask({
 				identifier: `CONST-${Date.now()}`,
 				title: title.trim(),
 				description: description.trim(),
 				statusId: issueStatus._id,
-				assigneeId: assignee?._id,
+				assigneeId: users?.[0]?._id,
 				priorityId: priority._id,
-				labelIds: selectedLabels.map((label) => label._id),
+				labelIds: [],
 				cycleId: "construction-cycle",
-				projectId: project?._id,
+				projectId: params.orgId,
 				rank: `${Date.now()}`,
 				dueDate: undefined,
 			});
 
+			console.log("Task created with ID:", taskId);
+
 			// Link selected documents to the task
-			if (taskId && selectedDocuments.length > 0) {
-				for (const document of selectedDocuments) {
-					await linkToTask({
-						taskId: taskId as Id<"issues">,
-						documentId: document._id,
-						linkType: "attachment",
-					});
-				}
-			}
 
 			// Reset form
 			setTitle("");
 			setDescription("");
-			setAssignee(null);
-			setSelectedLabels([]);
-			setSelectedDocuments([]);
+
 			setPriority(
 				priorities?.find((p) => p.name === "Средний") || priorities?.[0],
 			);
@@ -100,7 +104,6 @@ export function ConstructionCreateIssueModal() {
 					statuses?.find((s) => s.name === "К выполнению") ||
 					statuses?.[0],
 			);
-			setProject(undefined);
 
 			closeModal();
 		} catch (error) {
@@ -151,34 +154,6 @@ export function ConstructionCreateIssueModal() {
 							<PrioritySelector priority={priority} onChange={setPriority} />
 						</div>
 					</div>
-
-					<div className="grid grid-cols-2 gap-4">
-						<div className="grid gap-2">
-							<Label>Исполнитель</Label>
-							<AssigneeSelector assignee={assignee} onChange={setAssignee} />
-						</div>
-
-						<div className="grid gap-2">
-							<Label>Проект</Label>
-							<ProjectSelector project={project} onChange={setProject} />
-						</div>
-					</div>
-
-					<div className="grid gap-2">
-						<Label>Метки</Label>
-						<LabelSelector
-							selectedLabels={selectedLabels}
-							onChange={setSelectedLabels}
-						/>
-					</div>
-
-					<div className="grid gap-2">
-						<Label>Документы</Label>
-						<ConstructionDocumentSelector
-							selectedDocuments={selectedDocuments}
-							onChange={setSelectedDocuments}
-						/>
-					</div>
 				</div>
 
 				<div className="flex justify-end gap-2">
@@ -187,9 +162,9 @@ export function ConstructionCreateIssueModal() {
 					</Button>
 					<Button
 						onClick={createIssue}
-						disabled={!title.trim() || !priority || !issueStatus || isLoading}
+						disabled={!title.trim() || !priority || !issueStatus}
 					>
-						{isLoading ? "Создаём..." : "Создать задачу"}
+						Создать задачу
 					</Button>
 				</div>
 			</DialogContent>

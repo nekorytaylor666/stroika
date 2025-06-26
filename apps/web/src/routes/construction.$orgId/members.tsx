@@ -3,7 +3,7 @@ import Header from "@/components/layout/headers/members/header";
 import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/$orgId/members")({
+export const Route = createFileRoute("/construction/$orgId/members")({
 	component: MembersPage,
 });
 

@@ -4,6 +4,8 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useViewStore } from "@/store/view-store";
+import { api } from "@stroika/backend";
+import { useQuery } from "convex/react";
 import {
 	AlertCircle,
 	CheckCircle,
@@ -13,6 +15,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useParams } from "node_modules/@tanstack/react-router/dist/esm/useParams";
 import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
@@ -25,7 +28,7 @@ import type { ConstructionTask, StatusType } from "./construction-tasks";
 // Sort construction tasks by priority
 function sortConstructionTasksByPriority(
 	tasks: ConstructionTask[],
-	priorities: Array<{ _id: string; level: number }> | undefined
+	priorities: Array<{ _id: string; level: number }> | undefined,
 ): ConstructionTask[] {
 	if (!priorities || priorities.length === 0) {
 		return tasks;
@@ -77,7 +80,7 @@ export function ConstructionGroupIssues({
 	const { viewType } = useViewStore();
 	const isViewTypeGrid = viewType === "grid";
 	const { openModal } = useCreateIssueStore();
-	const { priorities } = useConstructionData();
+	const priorities = useQuery(api.metadata.getAllPriorities);
 	const sortedIssues = sortConstructionTasksByPriority(issues, priorities);
 
 	return (
@@ -127,7 +130,7 @@ export function ConstructionGroupIssues({
 									<StatusIcon iconName={status.iconName} color={status.color} />
 								),
 							};
-							openModal(statusForModal);
+							openModal({ status: statusForModal });
 						}}
 					>
 						<Plus className="size-4" />

@@ -14,7 +14,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { type Status, status as allStatus } from "@/mock-data/status";
 import { CheckIcon } from "lucide-react";
 import { useId, useState } from "react";
 

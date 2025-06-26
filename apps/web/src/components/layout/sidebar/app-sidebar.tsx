@@ -9,7 +9,6 @@ import { NavConstructionTeams } from "@/components/layout/sidebar/construction/n
 import { NavConstructionTools } from "@/components/layout/sidebar/construction/nav-construction-tools";
 import HelpButton from "@/components/layout/sidebar/help-button";
 import { NavAccount } from "@/components/layout/sidebar/nav-account";
-import { NavFeatures } from "@/components/layout/sidebar/nav-features";
 import { NavInbox } from "@/components/layout/sidebar/nav-inbox";
 import { NavResources } from "@/components/layout/sidebar/nav-resources";
 import { NavSettings } from "@/components/layout/sidebar/nav-settings";
@@ -23,13 +22,11 @@ import {
 	SidebarFooter,
 	SidebarHeader,
 } from "@/components/ui/sidebar";
-import { useRouterState } from "@tanstack/react-router";
-import { Github, X } from "lucide-react";
+import { Github } from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const [open, setOpen] = React.useState(true);
-	const pathname = useRouterState({ select: (s) => s.location.pathname });
-	const isSettings = pathname.includes("/settings");
+	const isSettings = false;
 	return (
 		<Sidebar collapsible="offcanvas" {...props}>
 			<SidebarHeader>

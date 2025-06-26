@@ -263,7 +263,9 @@ export function LinearAttachmentCard({
 				<div className="flex items-center gap-2 text-muted-foreground text-xs">
 					<span>{formatFileSize(attachment.fileSize)}</span>
 					<span>•</span>
-					<span>{format(new Date(attachment.uploadedAt), "d MMM", { locale: ru })}</span>
+					<span>
+						{format(new Date(attachment.uploadedAt), "d MMM", { locale: ru })}
+					</span>
 				</div>
 				{attachment.issue && (
 					<div className="mt-1.5 text-xs">

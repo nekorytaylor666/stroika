@@ -9,7 +9,8 @@ interface GanttGridProps {
 }
 
 export function GanttGrid({ headerHeight }: GanttGridProps) {
-	const { tasks, getDatesInRange, showWeekends, cellWidth, rowHeight } = useGantt();
+	const { tasks, getDatesInRange, showWeekends, cellWidth, rowHeight } =
+		useGantt();
 	const dates = getDatesInRange();
 
 	// Group tasks by their group property

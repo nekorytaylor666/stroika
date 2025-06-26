@@ -1,6 +1,16 @@
 "use client";
 
-import { BarChart3, Layers, MoreHorizontal } from "lucide-react";
+import {
+	AlertTriangle,
+	BarChart3,
+	Building,
+	CheckSquare,
+	DollarSign,
+	FileText,
+	MoreHorizontal,
+	TrendingUp,
+	Users,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -24,14 +34,65 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useConstructionData } from "@/hooks/use-construction-data";
-import {
-	constructionAnalyticsItems,
-	constructionMainItems,
-} from "@/mock-data/construction/construction-nav";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
+
+const constructionMainItems = [
+	{
+		name: "Панель управления",
+		url: "/construction/$orgId/construction-dashboard",
+		icon: BarChart3,
+		description: "Общий обзор показателей компании",
+	},
+	{
+		name: "Проекты",
+		url: "/construction/$orgId/construction-projects",
+		icon: Building,
+		description: "Управление строительными проектами",
+	},
+	{
+		name: "Команды",
+		url: "/construction/$orgId/construction-teams",
+		icon: Users,
+		description: "Отделы и специалисты",
+	},
+	{
+		name: "Задачи",
+		url: "/construction/$orgId/construction-tasks",
+		icon: CheckSquare,
+		description: "Управление задачами и поручениями",
+	},
+	{
+		name: "Документы",
+		url: "/construction/$orgId/construction-documents",
+		icon: FileText,
+		description: "Проектная документация и чертежи",
+	},
+];
+
+const constructionAnalyticsItems = [
+	{
+		name: "Финансовая отчетность",
+		url: "/construction/$orgId/analytics/financial",
+		icon: DollarSign,
+		description: "Выручка и контрактная стоимость",
+	},
+	{
+		name: "Загруженность ресурсов",
+		url: "/construction/$orgId/analytics/workload",
+		icon: TrendingUp,
+		description: "Анализ загруженности команд",
+	},
+	{
+		name: "Риски проектов",
+		url: "/construction/$orgId/analytics/risks",
+		icon: AlertTriangle,
+		description: "Мониторинг проектных рисков",
+	},
+];
 
 export function NavConstructionMain() {
 	const { seedData } = useConstructionData();
+	const params = useParams({ from: "/construction/$orgId" });
 
 	const handleSeedData = async () => {
 		await seedData();
@@ -49,7 +110,7 @@ export function NavConstructionMain() {
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<SidebarMenuButton asChild>
-										<Link to={item.url}>
+										<Link to={item.url.replace("$orgId", params.orgId)}>
 											<item.icon />
 											<span>{item.name}</span>
 										</Link>
@@ -79,7 +140,7 @@ export function NavConstructionMain() {
 						>
 							{constructionAnalyticsItems.map((item, index) => (
 								<DropdownMenuItem key={item.name} asChild>
-									<Link to={item.url}>
+									<Link to={item.url.replace("$orgId", params.orgId)}>
 										<item.icon className="text-muted-foreground" />
 										<div className="flex flex-col">
 											<span>{item.name}</span>

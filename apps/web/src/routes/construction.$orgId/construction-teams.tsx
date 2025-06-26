@@ -10,7 +10,5 @@ export const Route = createFileRoute("/construction/$orgId/construction-teams")(
 );
 
 function ConstructionTeamsPage() {
-	return (
-		<ConstructionTeams />
-	)
+	return <ConstructionTeams />;
 }

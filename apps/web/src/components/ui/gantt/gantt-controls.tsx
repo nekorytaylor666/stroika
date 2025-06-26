@@ -11,7 +11,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { CalendarDays, Minus, Plus, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
-import { ViewMode, useGantt } from "./gantt-context";
+import { type ViewMode, useGantt } from "./gantt-context";
 
 export function GanttControls() {
 	const { viewMode, cellWidth, dispatch } = useGantt();
@@ -115,7 +115,12 @@ export function GanttControls() {
 					<Plus className="h-3 w-3" />
 				</Button>
 
-				<Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomReset}>
+				<Button
+					variant="ghost"
+					size="icon"
+					className="h-7 w-7"
+					onClick={handleZoomReset}
+				>
 					<RotateCcw className="h-3 w-3" />
 				</Button>
 

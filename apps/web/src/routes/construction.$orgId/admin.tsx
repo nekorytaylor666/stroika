@@ -122,5 +122,5 @@ function AdminSettings() {
 				</TabsContent>
 			</Tabs>
 		</div>
-	)
+	);
 }

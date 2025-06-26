@@ -2,7 +2,8 @@
 
 import { addDays, differenceInDays, format, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
-import React, { createContext, useContext, useReducer } from "react";
+import type React from "react";
+import { createContext, useContext, useReducer } from "react";
 
 export interface GanttTask {
 	id: string;
@@ -183,7 +184,9 @@ export function GanttProvider({
 		getDatesInRange,
 	};
 
-	return <GanttContext.Provider value={value}>{children}</GanttContext.Provider>;
+	return (
+		<GanttContext.Provider value={value}>{children}</GanttContext.Provider>
+	);
 }
 
 export function useGantt() {

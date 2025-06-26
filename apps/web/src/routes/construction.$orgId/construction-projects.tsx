@@ -10,7 +10,5 @@ export const Route = createFileRoute(
 });
 
 function ConstructionProjectsPage() {
-	return (
-		<ConstructionProjects />
-	)
+	return <ConstructionProjects />;
 }

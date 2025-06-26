@@ -1,8 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Issue } from "@/mock-data/issues";
-import { status } from "@/mock-data/status";
 import { useFilterStore } from "@/store/filter-store";
 import { useIssuesStore } from "@/store/issues-store";
 import { useSearchStore } from "@/store/search-store";
@@ -30,7 +28,7 @@ export default function AllIssues() {
 			) : isFiltering ? (
 				<FilteredIssuesView isViewTypeGrid={isViewTypeGrid} />
 			) : (
-				<GroupIssuesListView isViewTypeGrid={isViewTypeGrid} />
+				<GroupIssues />
 			)}
 		</div>
 	);
@@ -106,9 +104,9 @@ const FilteredIssuesView: FC<{
 
 	// Group filtered issues by status
 	const filteredIssuesByStatus = useMemo(() => {
-		const result: Record<string, Issue[]> = {};
+		const result: Record<string, any[]> = {};
 
-		for (const statusItem of status) {
+		for (const statusItem of statuses) {
 			result[statusItem.id] = filteredIssues.filter(
 				(issue) => issue.status.id === statusItem.id,
 			);
@@ -138,27 +136,4 @@ const FilteredIssuesView: FC<{
 	);
 };
 
-const GroupIssuesListView: FC<{
-	isViewTypeGrid: boolean;
-}> = ({ isViewTypeGrid = false }) => {
-	const { issuesByStatus } = useIssuesStore();
-	return (
-		<DndProvider backend={HTML5Backend}>
-			<CustomDragLayer />
-			<div
-				className={cn(
-					isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
-				)}
-			>
-				{status.map((statusItem) => (
-					<GroupIssues
-						key={statusItem.id}
-						status={statusItem}
-						issues={issuesByStatus[statusItem.id] || []}
-						count={issuesByStatus[statusItem.id]?.length || 0}
-					/>
-				))}
-			</div>
-		</DndProvider>
-	);
-};
+

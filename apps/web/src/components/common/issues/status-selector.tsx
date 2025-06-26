@@ -14,7 +14,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { type Status, status as allStatus } from "@/mock-data/status";
 import { useIssuesStore } from "@/store/issues-store";
 import { CheckIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
@@ -40,7 +39,7 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 		setOpen(false);
 
 		if (issueId) {
-			const newStatus = allStatus.find((s) => s.id === statusId);
+			const newStatus = statuses.find((s) => s.id === statusId);
 			if (newStatus) {
 				updateIssueStatus(issueId, newStatus);
 			}
@@ -60,7 +59,7 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 						aria-expanded={open}
 					>
 						{(() => {
-							const selectedItem = allStatus.find((item) => item.id === value);
+							const selectedItem = statuses.find((item) => item.id === value);
 							if (selectedItem) {
 								const Icon = selectedItem.icon;
 								return <Icon />;
@@ -78,7 +77,7 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 						<CommandList>
 							<CommandEmpty>No status found.</CommandEmpty>
 							<CommandGroup>
-								{allStatus.map((item) => (
+								{/* {statuses.map((item) => (
 									<CommandItem
 										key={item.id}
 										value={item.id}
@@ -96,7 +95,7 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 											{filterByStatus(item.id).length}
 										</span>
 									</CommandItem>
-								))}
+								))} */}
 							</CommandGroup>
 						</CommandList>
 					</Command>

@@ -1,6 +1,5 @@
 "use client";
 
-import { users } from "@/mock-data/users";
 import MemberLine from "./member-line";
 
 export default function Members() {
@@ -16,9 +15,9 @@ export default function Members() {
 			</div>
 
 			<div className="w-full">
-				{users.map((user) => (
+				{/* {users.map((user) => (
 					<MemberLine key={user.id} user={user} />
-				))}
+				))} */}
 			</div>
 		</div>
 	);

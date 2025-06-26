@@ -3,7 +3,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { teams } from "@/mock-data/teams";
 import { ContactRound } from "lucide-react";
 
 interface TeamsTooltipProps {

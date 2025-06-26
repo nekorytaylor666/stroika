@@ -607,7 +607,6 @@ async function createConstructionTeams(ctx: MutationCtx) {
 	};
 }
 
-
 async function createConstructionProjects(ctx: MutationCtx) {
 	const now = new Date().toISOString();
 
