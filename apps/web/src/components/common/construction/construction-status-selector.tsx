@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/popover";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import {
+	BacklogIcon,
+	CompletedIcon,
+	InProgressIcon,
+	PausedIcon,
+	TechnicalReviewIcon,
+	ToDoIcon,
+} from "@/lib/status";
+import {
 	AlertCircle,
 	CheckCircle,
 	CheckIcon,
@@ -27,18 +35,14 @@ import { motion } from "motion/react";
 import { type FC, useEffect, useId, useState } from "react";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 
-interface ConstructionStatusSelectorProps {
-	statusId: string;
-	issueId: string;
-}
-
 // Status icon mapping
 const StatusIconMap = {
-	circle: Circle,
-	timer: Clock,
-	"alert-circle": AlertCircle,
-	"check-circle": CheckCircle,
-	"x-circle": XCircle,
+	BacklogIcon: BacklogIcon,
+	PausedIcon: PausedIcon,
+	ToDoIcon: ToDoIcon,
+	InProgressIcon: InProgressIcon,
+	TechnicalReviewIcon: TechnicalReviewIcon,
+	CompletedIcon: CompletedIcon,
 };
 
 const StatusIcon: FC<{ iconName: string; color?: string }> = ({
@@ -55,9 +59,16 @@ const StatusIcon: FC<{ iconName: string; color?: string }> = ({
 	);
 };
 
+interface ConstructionStatusSelectorProps {
+	statusId: string;
+	issueId: string;
+	showLabel?: boolean;
+}
+
 export function ConstructionStatusSelector({
 	statusId,
 	issueId,
+	showLabel = false,
 }: ConstructionStatusSelectorProps) {
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
@@ -94,13 +105,17 @@ export function ConstructionStatusSelector({
 	};
 
 	return (
-		<div className="*:not-first:mt-2">
+		<div>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
 						id={id}
-						className="flex size-7 items-center justify-center"
-						size="icon"
+						className={
+							showLabel
+								? "h-8 w-full justify-start px-2"
+								: "flex size-7 items-center justify-center"
+						}
+						size={showLabel ? "sm" : "icon"}
 						variant="ghost"
 						role="combobox"
 						aria-expanded={open}
@@ -110,6 +125,7 @@ export function ConstructionStatusSelector({
 							initial={{ scale: 0.8, rotate: -180 }}
 							animate={{ scale: 1, rotate: 0 }}
 							transition={{ duration: 0.2 }}
+							className={showLabel ? "" : ""}
 						>
 							{currentStatus && (
 								<StatusIcon
@@ -118,6 +134,9 @@ export function ConstructionStatusSelector({
 								/>
 							)}
 						</motion.div>
+						{showLabel && currentStatus && (
+							<span className="ml-2 text-sm">{currentStatus.name}</span>
+						)}
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent

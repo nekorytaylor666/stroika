@@ -10,7 +10,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, formatFileSize } from "@/lib/utils";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { AttachmentPreview } from "../attachment-preview";
 
 interface LinearAttachmentCardProps {
 	attachment: any;
@@ -42,33 +43,8 @@ export function LinearAttachmentCard({
 	onDelete,
 }: LinearAttachmentCardProps) {
 	const [isHovered, setIsHovered] = useState(false);
-	const [imageError, setImageError] = useState(false);
 
-	const isImage = attachment.fileType?.startsWith("image/");
-	const isVideo = attachment.fileType?.startsWith("video/");
-	const isDocument =
-		attachment.fileType?.includes("pdf") ||
-		attachment.fileType?.includes("document") ||
-		attachment.fileType?.includes("msword") ||
-		attachment.fileType?.includes("ms-excel") ||
-		attachment.fileType?.includes("ms-powerpoint") ||
-		attachment.fileType?.includes("text/");
 
-	const getFileIcon = () => {
-		if (isImage) return ImageIcon;
-		if (isVideo) return Video;
-		return FileText;
-	};
-
-	const FileIcon = getFileIcon();
-
-	const formatFileSize = (bytes: number) => {
-		if (!bytes) return "0 KB";
-		const k = 1024;
-		const sizes = ["Bytes", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
-	};
 
 	const handleDownload = () => {
 		const link = document.createElement("a");
@@ -96,18 +72,12 @@ export function LinearAttachmentCard({
 					<div className="flex items-center gap-4 p-4">
 						{/* Thumbnail */}
 						<div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-							{isImage && !imageError ? (
-								<img
-									src={attachment.fileUrl}
-									alt={attachment.fileName}
-									className="h-full w-full object-cover"
-									onError={() => setImageError(true)}
-								/>
-							) : (
-								<div className="flex h-full w-full items-center justify-center">
-									<FileIcon className="h-6 w-6 text-muted-foreground" />
-								</div>
-							)}
+							<AttachmentPreview
+								fileUrl={attachment.fileUrl}
+								fileName={attachment.fileName}
+								mimeType={attachment.mimeType}
+								className="h-full w-full"
+							/>
 						</div>
 
 						{/* File Info */}
@@ -198,20 +168,12 @@ export function LinearAttachmentCard({
 					className="aspect-square cursor-pointer overflow-hidden bg-muted"
 					onClick={onPreview}
 				>
-					{isImage && !imageError ? (
-						<motion.img
-							src={attachment.fileUrl}
-							alt={attachment.fileName}
-							className="h-full w-full object-cover transition-transform group-hover:scale-110"
-							onError={() => setImageError(true)}
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-						/>
-					) : (
-						<div className="flex h-full w-full items-center justify-center">
-							<FileIcon className="h-12 w-12 text-muted-foreground" />
-						</div>
-					)}
+					<AttachmentPreview
+						fileUrl={attachment.fileUrl}
+						fileName={attachment.fileName}
+						mimeType={attachment.mimeType || attachment.fileType || "application/octet-stream"}
+						className="h-full w-full transition-transform group-hover:scale-110"
+					/>
 
 					{/* Overlay Actions */}
 					<motion.div

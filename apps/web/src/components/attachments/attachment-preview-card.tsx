@@ -14,13 +14,10 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
 	Download,
-	File,
-	FileSpreadsheet,
-	FileText,
-	Image,
+	Eye,
 	MoreVertical,
 } from "lucide-react";
-import { useState } from "react";
+import { AttachmentPreview } from "./attachment-preview";
 
 interface AttachmentPreviewCardProps {
 	attachment: {
@@ -56,32 +53,6 @@ export function AttachmentPreviewCard({
 	onPreview,
 	onDownload,
 }: AttachmentPreviewCardProps) {
-	const [imageError, setImageError] = useState(false);
-
-	const getFileIcon = () => {
-		const mimeType = attachment.mimeType.toLowerCase();
-		if (mimeType.startsWith("image/")) return Image;
-		if (mimeType === "application/pdf") return FileText;
-		if (
-			mimeType.includes("word") ||
-			mimeType.includes("document") ||
-			mimeType.includes("text")
-		) {
-			return FileText;
-		}
-		if (
-			mimeType.includes("excel") ||
-			mimeType.includes("spreadsheet") ||
-			mimeType === "text/csv"
-		) {
-			return FileSpreadsheet;
-		}
-		return File;
-	};
-
-	const FileIcon = getFileIcon();
-	const isImage = attachment.mimeType.toLowerCase().startsWith("image/");
-	const isPdf = attachment.mimeType.toLowerCase() === "application/pdf";
 
 	const getIssueUrl = () => {
 		if (!attachment.issue) return null;
@@ -99,18 +70,12 @@ export function AttachmentPreviewCard({
 				className="aspect-square cursor-pointer overflow-hidden bg-muted/50"
 				onClick={onPreview}
 			>
-				{isImage && !imageError ? (
-					<img
-						src={attachment.fileUrl}
-						alt={attachment.fileName}
-						className="h-full w-full object-cover transition-transform group-hover:scale-105"
-						onError={() => setImageError(true)}
-					/>
-				) : (
-					<div className="flex h-full w-full items-center justify-center">
-						<FileIcon className="h-16 w-16 text-muted-foreground" />
-					</div>
-				)}
+				<AttachmentPreview
+					fileUrl={attachment.fileUrl}
+					fileName={attachment.fileName}
+					mimeType={attachment.mimeType}
+					className="h-full w-full transition-transform group-hover:scale-105"
+				/>
 			</div>
 
 			<div className="p-4">
@@ -129,7 +94,7 @@ export function AttachmentPreviewCard({
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem onClick={onPreview}>
-								<Image className="mr-2 h-4 w-4" />
+								<Eye className="mr-2 h-4 w-4" />
 								Просмотр
 							</DropdownMenuItem>
 							<DropdownMenuItem onClick={onDownload}>

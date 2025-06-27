@@ -93,9 +93,10 @@ export const getAllAttachments = query({
 		// Fetch related data for each attachment
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
-				const [issue, uploader] = await Promise.all([
+				const [issue, uploader, fileUrl] = await Promise.all([
 					ctx.db.get(attachment.issueId),
 					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 
 				// Check if it's a construction task
@@ -110,6 +111,7 @@ export const getAllAttachments = query({
 
 				return {
 					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
 								_id: issue._id,
@@ -318,13 +320,15 @@ export const getProjectAttachments = query({
 		const project = await ctx.db.get(args.projectId);
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
-				const [issue, uploader] = await Promise.all([
+				const [issue, uploader, fileUrl] = await Promise.all([
 					ctx.db.get(attachment.issueId),
 					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 
 				return {
 					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
 								_id: issue._id,
@@ -370,13 +374,15 @@ export const getAttachmentById = query({
 			throw new Error("Attachment not found");
 		}
 
-		const [issue, uploader] = await Promise.all([
+		const [issue, uploader, fileUrl] = await Promise.all([
 			ctx.db.get(attachment.issueId),
 			ctx.db.get(attachment.uploadedBy),
+			ctx.storage.getUrl(attachment.fileUrl as any),
 		]);
 
 		return {
 			...attachment,
+			fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 			issue,
 			uploader,
 		};

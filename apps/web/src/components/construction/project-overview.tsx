@@ -36,6 +36,7 @@ import {
 	Bar,
 	BarChart,
 	CartesianGrid,
+	ReferenceLine,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -461,6 +462,34 @@ export function ConstructionProjectOverview({
 																stopOpacity={0}
 															/>
 														</linearGradient>
+														<linearGradient
+															id="deadlineGradient"
+															x1="0"
+															y1="0"
+															x2="1"
+															y2="0"
+														>
+															<stop
+																offset="0%"
+																stopColor="#EF4444"
+																stopOpacity={0}
+															/>
+															<stop
+																offset="70%"
+																stopColor="#EF4444"
+																stopOpacity={0.1}
+															/>
+															<stop
+																offset="90%"
+																stopColor="#EF4444"
+																stopOpacity={0.2}
+															/>
+															<stop
+																offset="100%"
+																stopColor="#EF4444"
+																stopOpacity={0.3}
+															/>
+														</linearGradient>
 													</defs>
 													<XAxis
 														dataKey="date"
@@ -476,7 +505,10 @@ export function ConstructionProjectOverview({
 														axisLine={false}
 													/>
 													<Tooltip
-														formatter={(value: number) => `${value} задач`}
+														formatter={(value: number) => {
+															const taskCount = Number.isNaN(value) ? 0 : value;
+															return `${taskCount} ${taskCount === 1 ? 'задача' : 'задач'}`;
+														}}
 														contentStyle={{
 															backgroundColor: "var(--background)",
 															border: "1px solid var(--border)",
@@ -508,6 +540,30 @@ export function ConstructionProjectOverview({
 														fill="url(#colorCompleted)"
 														strokeWidth={2}
 													/>
+													{/* Deadline marker */}
+													{projectData.targetDate && (
+														<ReferenceLine
+															x={format(new Date(projectData.targetDate), "d MMM", { locale: ru })}
+															stroke="#EF4444"
+															strokeWidth={2}
+															strokeDasharray="5 5"
+															label={{
+																value: "Дедлайн",
+																position: "top",
+																fill: "#EF4444",
+																fontSize: 12,
+																fontWeight: 600,
+															}}
+														>
+															<rect
+																x="-50"
+																y="0"
+																width="50"
+																height="100%"
+																fill="url(#deadlineGradient)"
+															/>
+														</ReferenceLine>
+													)}
 												</AreaChart>
 											</ResponsiveContainer>
 										</div>
@@ -539,6 +595,20 @@ export function ConstructionProjectOverview({
 													Завершено
 												</span>
 											</div>
+											{projectData.targetDate && (
+												<div className="flex items-center gap-2">
+													<div
+														className="h-3 w-0.5"
+														style={{ 
+															backgroundColor: "#EF4444",
+															backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #EF4444 3px, #EF4444 6px)"
+														}}
+													/>
+													<span className="text-muted-foreground text-xs">
+														Дедлайн
+													</span>
+												</div>
+											)}
 										</div>
 									</Card>
 								</div>
@@ -944,9 +1014,21 @@ function generateTimelineData(projectData: {
 
 	// Generate data points from start to current date
 	const dataPoints = [];
-	const totalDays = differenceInDays(targetDate, startDate);
-	const daysPassed = differenceInDays(currentDate, startDate);
+	const totalDays = Math.max(differenceInDays(targetDate, startDate), 1);
+	const daysPassed = Math.max(differenceInDays(currentDate, startDate), 0);
 	const daysToShow = Math.min(daysPassed, totalDays);
+
+	// If no tasks yet, return empty chart data
+	if (projectData.taskStats.total === 0) {
+		return [{
+			date: format(currentDate, "d MMM", { locale: ru }),
+			total: 0,
+			completed: 0,
+			inProgress: 0,
+			notStarted: 0,
+			expected: 0,
+		}];
+	}
 
 	// Create data points for every 7 days (weekly)
 	for (let i = 0; i <= daysToShow; i += 7) {
@@ -954,11 +1036,13 @@ function generateTimelineData(projectData: {
 		date.setDate(date.getDate() + i);
 
 		// Calculate expected completion based on linear progress
-		const expectedProgress = (i / totalDays) * projectData.taskStats.total;
+		const expectedProgress = totalDays > 0 
+			? (i / totalDays) * projectData.taskStats.total 
+			: 0;
 
 		// For demo purposes, show gradual completion
 		// In real implementation, this would come from historical task data
-		const progressRatio = i / daysToShow;
+		const progressRatio = daysToShow > 0 ? i / daysToShow : 0;
 
 		// Simulate task progression over time
 		const completedTasks = Math.min(
@@ -989,7 +1073,7 @@ function generateTimelineData(projectData: {
 	}
 
 	// Add current state as the last point
-	if (daysToShow > 0) {
+	if (daysToShow > 0 && projectData.taskStats.total > 0) {
 		dataPoints.push({
 			date: format(currentDate, "d MMM", { locale: ru }),
 			total: projectData.taskStats.total,
@@ -998,8 +1082,22 @@ function generateTimelineData(projectData: {
 				projectData.taskStats.completed + projectData.taskStats.inProgress,
 			notStarted: projectData.taskStats.total,
 			expected: Math.round(
-				(daysPassed / totalDays) * projectData.taskStats.total,
+				totalDays > 0 
+					? (daysPassed / totalDays) * projectData.taskStats.total 
+					: 0
 			),
+		});
+	}
+
+	// Add deadline point if it's in the future
+	if (projectData.targetDate && targetDate > currentDate) {
+		dataPoints.push({
+			date: format(targetDate, "d MMM", { locale: ru }),
+			total: projectData.taskStats.total,
+			completed: projectData.taskStats.total, // Expected to be complete by deadline
+			inProgress: projectData.taskStats.total,
+			notStarted: projectData.taskStats.total,
+			expected: projectData.taskStats.total,
 		});
 	}
 

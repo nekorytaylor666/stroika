@@ -24,11 +24,18 @@ export const getAll = query({
 							.collect(),
 					]);
 
-				// Get uploader info for attachments
+				// Get uploader info for attachments and resolve URLs
 				const attachmentsWithUsers = await Promise.all(
 					attachments.map(async (attachment) => {
-						const uploader = await ctx.db.get(attachment.uploadedBy);
-						return { ...attachment, uploader };
+						const [uploader, fileUrl] = await Promise.all([
+							ctx.db.get(attachment.uploadedBy),
+							ctx.storage.getUrl(attachment.fileUrl as any),
+						]);
+						return { 
+							...attachment, 
+							fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+							uploader 
+						};
 					}),
 				);
 
@@ -66,11 +73,18 @@ export const getById = query({
 			],
 		);
 
-		// Get uploader info for attachments
+		// Get uploader info for attachments and resolve URLs
 		const attachmentsWithUsers = await Promise.all(
 			attachments.map(async (attachment) => {
-				const uploader = await ctx.db.get(attachment.uploadedBy);
-				return { ...attachment, uploader };
+				const [uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+				return { 
+					...attachment, 
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+					uploader 
+				};
 			}),
 		);
 
@@ -130,8 +144,15 @@ export const getTaskRelatedDocuments = query({
 				.then(async (attachments) => {
 					const attachmentsWithUsers = await Promise.all(
 						attachments.map(async (attachment) => {
-							const uploader = await ctx.db.get(attachment.uploadedBy);
-							return { ...attachment, uploader };
+							const [uploader, fileUrl] = await Promise.all([
+								ctx.db.get(attachment.uploadedBy),
+								ctx.storage.getUrl(attachment.fileUrl as any),
+							]);
+							return { 
+								...attachment, 
+								fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+								uploader 
+							};
 						}),
 					);
 					return attachmentsWithUsers;

@@ -19,7 +19,6 @@ import { useMouse, useThrottle, useWindowScroll } from "@uidotdev/usehooks";
 import { formatDate, getDate } from "date-fns";
 import { formatDistance, isSameDay } from "date-fns";
 import { format } from "date-fns";
-import { ru } from "date-fns/locale";
 import {
 	addDays,
 	addMonths,
@@ -32,6 +31,7 @@ import {
 	startOfDay,
 	startOfMonth,
 } from "date-fns";
+import { ru } from "date-fns/locale";
 import { atom, useAtom } from "jotai";
 import throttle from "lodash.throttle";
 import { PlusIcon, TrashIcon } from "lucide-react";
@@ -354,18 +354,22 @@ const DailyHeader: FC = () => {
 			.map((month, index) => (
 				<div className="relative flex flex-col" key={`${year.year}-${index}`}>
 					<GanttContentHeader
-						title={format(new Date(year.year, index, 1), "MMMM yyyy", { locale: ru })}
+						title={format(new Date(year.year, index, 1), "MMMM yyyy", {
+							locale: ru,
+						})}
 						columns={month.days}
 						renderHeaderItem={(item: number) => (
 							<div className="flex items-center justify-center gap-1">
 								<p>
-									{format(addDays(new Date(year.year, index, 1), item), "d", { locale: ru })}
+									{format(addDays(new Date(year.year, index, 1), item), "d", {
+										locale: ru,
+									})}
 								</p>
 								<p className="text-muted-foreground">
 									{format(
 										addDays(new Date(year.year, index, 1), item),
 										"EEEEE",
-										{ locale: ru }
+										{ locale: ru },
 									)}
 								</p>
 							</div>
@@ -417,7 +421,9 @@ const QuarterlyHeader: FC = () => {
 					columns={quarter.months.length}
 					renderHeaderItem={(item: number) => (
 						<p>
-							{format(new Date(year.year, quarterIndex * 3 + item, 1), "MMM", { locale: ru })}
+							{format(new Date(year.year, quarterIndex * 3 + item, 1), "MMM", {
+								locale: ru,
+							})}
 						</p>
 					)}
 				/>
@@ -634,8 +640,8 @@ export const GanttColumn: FC<GanttColumnProps> = ({
 
 	const top = useThrottle(
 		mousePosition.y -
-		(mouseRef.current?.getBoundingClientRect().y ?? 0) -
-		(windowScroll.y ?? 0),
+			(mouseRef.current?.getBoundingClientRect().y ?? 0) -
+			(windowScroll.y ?? 0),
 		10,
 	);
 
@@ -700,8 +706,8 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProps> = ({
 	const [windowScroll] = useWindowScroll();
 	const x = useThrottle(
 		mousePosition.x -
-		(mouseRef.current?.getBoundingClientRect().x ?? 0) -
-		(windowScroll.x ?? 0),
+			(mouseRef.current?.getBoundingClientRect().x ?? 0) -
+			(windowScroll.x ?? 0),
 		10,
 	);
 

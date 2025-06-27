@@ -78,8 +78,15 @@ export const getDocumentAttachments = query({
 
 		const attachmentsWithUsers = await Promise.all(
 			attachments.map(async (attachment) => {
-				const uploader = await ctx.db.get(attachment.uploadedBy);
-				return { ...attachment, uploader };
+				const [uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+				return { 
+					...attachment, 
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+					uploader 
+				};
 			}),
 		);
 
@@ -156,8 +163,15 @@ export const getIssueAttachments = query({
 
 		const attachmentsWithUsers = await Promise.all(
 			attachments.map(async (attachment) => {
-				const uploader = await ctx.db.get(attachment.uploadedBy);
-				return { ...attachment, uploader };
+				const [uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+				return { 
+					...attachment, 
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+					uploader 
+				};
 			}),
 		);
 

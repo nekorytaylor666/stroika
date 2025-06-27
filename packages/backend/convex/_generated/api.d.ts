@@ -28,6 +28,7 @@ import type * as documents from "../documents.js";
 import type * as files from "../files.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
+import type * as issueComments from "../issueComments.js";
 import type * as metadata from "../metadata.js";
 import type * as migrations_cleanupUsers from "../migrations/cleanupUsers.js";
 import type * as migrations_migrateUsersToRoleId from "../migrations/migrateUsersToRoleId.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   healthCheck: typeof healthCheck;
   http: typeof http;
+  issueComments: typeof issueComments;
   metadata: typeof metadata;
   "migrations/cleanupUsers": typeof migrations_cleanupUsers;
   "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;

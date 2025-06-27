@@ -17,6 +17,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
+import { useParams } from "@tanstack/react-router";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { Button } from "../../ui/button";
 import { IssueDragType } from "../issues/issue-grid";
@@ -81,6 +82,10 @@ export function ConstructionGroupIssues({
 	const { openModal } = useCreateIssueStore();
 	const priorities = useQuery(api.metadata.getAllPriorities);
 	const sortedIssues = sortConstructionTasksByPriority(issues, priorities);
+	
+	// Get projectId from route params if we're in a project view
+	const params = useParams({ strict: false });
+	const projectId = (params as any)?.projectId as Id<"constructionProjects"> | undefined;
 
 	return (
 		<div
@@ -122,14 +127,17 @@ export function ConstructionGroupIssues({
 							e.stopPropagation();
 							// Convert StatusType to Status type expected by openModal
 							const statusForModal = {
-								id: status._id,
+								id: status._id as Id<"status">,
 								name: status.name,
 								color: status.color,
 								icon: () => (
 									<StatusIcon iconName={status.iconName} color={status.color} />
 								),
 							};
-							openModal({ status: statusForModal as any });
+							openModal({ 
+								status: statusForModal as any,
+								projectId: projectId 
+							});
 						}}
 					>
 						<Plus className="size-4" />

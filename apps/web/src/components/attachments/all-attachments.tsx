@@ -33,6 +33,7 @@ import {
 import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
+import { AttachmentPreviewDialog } from "./attachment-preview-dialog";
 
 type ViewMode = "grid" | "list";
 type FileType = "all" | "image" | "pdf" | "document" | "spreadsheet" | "other";
@@ -343,34 +344,12 @@ export function AllAttachments() {
 								</Button>
 							</div>
 						</div>
-						<div className="flex-1 overflow-hidden p-4">
-							{selectedAttachment?.mimeType.startsWith("image/") ? (
-								<img
-									src={selectedAttachment.fileUrl}
-									alt={selectedAttachment.fileName}
-									className="h-full w-full object-contain"
+						<div className="flex-1 overflow-hidden">
+							{selectedAttachment && (
+								<AttachmentPreviewDialog
+									attachment={selectedAttachment}
+									onDownload={() => handleDownload(selectedAttachment)}
 								/>
-							) : selectedAttachment?.mimeType === "application/pdf" ? (
-								<iframe
-									src={selectedAttachment.fileUrl}
-									className="h-full w-full"
-									title={selectedAttachment.fileName}
-								/>
-							) : (
-								<div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-									<File className="mb-4 h-16 w-16" />
-									<p className="font-medium text-lg">
-										Предпросмотр недоступен для этого типа файла
-									</p>
-									<Button
-										variant="outline"
-										className="mt-4"
-										onClick={() => handleDownload(selectedAttachment)}
-									>
-										<Download className="mr-2 h-4 w-4" />
-										Скачать файл
-									</Button>
-								</div>
 							)}
 						</div>
 					</div>

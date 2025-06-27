@@ -31,12 +31,7 @@ import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { parseISO } from "date-fns";
-import {
-	BarChart3,
-	Briefcase,
-	Search,
-	Users,
-} from "lucide-react";
+import { BarChart3, Briefcase, Search, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 
@@ -95,7 +90,9 @@ function ProjectAnalyticsPage() {
 		if (!features.length || !filteredTasks.length) return [];
 
 		const filteredTaskIds = new Set(filteredTasks.map((t) => t._id));
-		return features.filter((feature) => filteredTaskIds.has(feature.id as Id<"issues">));
+		return features.filter((feature) =>
+			filteredTaskIds.has(feature.id as Id<"issues">),
+		);
 	}, [features, filteredTasks]);
 
 	// Prepare timeline markers for Gantt
@@ -120,7 +117,10 @@ function ProjectAnalyticsPage() {
 
 		// Add task deadline markers
 		for (const task of filteredTasks) {
-			if (task.dueDate && task.priority?.name.toLowerCase().includes("критическая")) {
+			if (
+				task.dueDate &&
+				task.priority?.name.toLowerCase().includes("критическая")
+			) {
 				markers.push({
 					id: `task-deadline-${task._id}`,
 					date: parseISO(task.dueDate),
@@ -241,10 +241,7 @@ function ProjectAnalyticsPage() {
 												([statusName, statusFeatures]) => (
 													<GanttFeatureListGroup key={statusName}>
 														{statusFeatures.map((feature) => (
-															<GanttFeatureItem
-																key={feature.id}
-																{...feature}
-															/>
+															<GanttFeatureItem key={feature.id} {...feature} />
 														))}
 													</GanttFeatureListGroup>
 												),
@@ -259,7 +256,7 @@ function ProjectAnalyticsPage() {
 													marker.id === "project-deadline" && "bg-red-500",
 													marker.id === "project-start" && "bg-green-500",
 													marker.id.startsWith("task-deadline") &&
-													"bg-orange-500",
+														"bg-orange-500",
 												)}
 											/>
 										))}

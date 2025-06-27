@@ -24,7 +24,7 @@ import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
 import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
-import { StatusSelector } from "./status-selector";
+import { ConstructionStatusSelector } from "./construction-status-selector";
 
 interface ConstructionTaskForm {
 	identifier: string;
@@ -43,7 +43,7 @@ interface ConstructionTaskForm {
 
 export function CreateNewIssue() {
 	const [createMore, setCreateMore] = useState<boolean>(false);
-	const { isOpen, defaultStatus, openModal, closeModal } =
+	const { isOpen, defaultStatus, defaultProjectId, openModal, closeModal } =
 		useCreateIssueStore();
 	const statuses = useQuery(api.metadata.getAllStatus);
 	const priorities = useQuery(api.metadata.getAllPriorities);
@@ -69,26 +69,27 @@ export function CreateNewIssue() {
 
 	const createDefaultData = useCallback((): ConstructionTaskForm => {
 		const identifier = generateUniqueIdentifier();
+		// Use the defaultStatus from store if available, otherwise fallback
 		const defaultStatusId = defaultStatus
-			? statuses?.find((s) => s.name === "К выполнению") || statuses?.[0]
-			: statuses?.[0];
+			? defaultStatus.id
+			: statuses?.find((s) => s.name === "К выполнению")?._id || statuses?.[0]?._id;
 		const defaultPriorityId =
-			priorities?.find((p) => p.name === "Средний") || priorities?.[0];
+			priorities?.find((p) => p.name === "Средний")?._id || priorities?.[0]?._id;
 
 		return {
 			identifier: `СТРФ-${identifier}`,
 			title: "",
 			description: "",
-			statusId: defaultStatusId?._id || null,
+			statusId: defaultStatusId || null,
 			assigneeId: null,
-			priorityId: defaultPriorityId?._id || null,
+			priorityId: defaultPriorityId || null,
 			labelIds: [],
 			cycleId: "cycle-1",
-			projectId: null,
+			projectId: defaultProjectId || null, // Use project from store
 			rank: `rank-${Date.now()}`,
 			attachments: [],
 		};
-	}, [defaultStatus, generateUniqueIdentifier, statuses, priorities]);
+	}, [defaultStatus, defaultProjectId, generateUniqueIdentifier, statuses, priorities]);
 
 	const [addTaskForm, setAddTaskForm] = useState<ConstructionTaskForm>(
 		createDefaultData(),
@@ -161,7 +162,7 @@ export function CreateNewIssue() {
 	return (
 		<Dialog
 			open={isOpen}
-			onOpenChange={(value) => (value ? openModal() : closeModal())}
+			onOpenChange={(value) => (value ? openModal({}) : closeModal())}
 		>
 			<DialogTrigger asChild>
 				<Button className="size-8 shrink-0" variant="secondary" size="icon">
@@ -200,7 +201,7 @@ export function CreateNewIssue() {
 					/>
 
 					<div className="flex w-full flex-wrap items-center justify-start gap-1.5">
-						<StatusSelector
+						<ConstructionStatusSelector
 							status={
 								statuses?.find((s) => s._id === addTaskForm.statusId) || null
 							}

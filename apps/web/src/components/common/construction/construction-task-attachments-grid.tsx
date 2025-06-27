@@ -24,6 +24,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ConstructionTask } from "./construction-tasks";
+import { AttachmentPreview } from "@/components/attachments/attachment-preview";
+import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
 
 interface ConstructionTaskAttachmentsGridProps {
 	task: ConstructionTask;
@@ -240,27 +242,13 @@ export function ConstructionTaskAttachmentsGrid({
 									onClick={() => openPreview(attachment)}
 								>
 									{/* Preview Area */}
-									<div className="relative aspect-square bg-muted/30 p-8">
-										{attachment.mimeType.startsWith("image/") ? (
-											<div className="h-full w-full">
-												<img
-													src="#"
-													alt={attachment.fileName}
-													className="h-full w-full object-cover opacity-0"
-													onLoad={(e) => {
-														// We'll load the actual image URL when implementing preview
-														e.currentTarget.style.opacity = "1";
-													}}
-												/>
-												<div className="absolute inset-0 flex items-center justify-center">
-													<FileImage className="h-16 w-16 text-muted-foreground" />
-												</div>
-											</div>
-										) : (
-											<div className="flex h-full items-center justify-center">
-												<FileIcon className="h-16 w-16 text-muted-foreground" />
-											</div>
-										)}
+									<div className="relative aspect-square bg-muted/30">
+										<AttachmentPreview
+											fileUrl={attachment.fileUrl}
+											fileName={attachment.fileName}
+											mimeType={attachment.mimeType}
+											className="h-full w-full"
+										/>
 
 										{/* Hover Overlay */}
 										{canPreview && (
@@ -403,43 +391,14 @@ export function ConstructionTaskAttachmentsGrid({
 							</div>
 
 							{/* Preview Content */}
-							<div className="flex-1 overflow-auto bg-muted/20 p-4">
-								{previewUrl &&
-									selectedAttachment.mimeType.startsWith("image/") && (
-										<div className="flex h-full items-center justify-center">
-											<img
-												src={previewUrl}
-												alt={selectedAttachment.fileName}
-												className="h-auto max-h-full max-w-full object-contain"
-											/>
-										</div>
-									)}
-								{previewUrl &&
-									selectedAttachment.mimeType === "application/pdf" && (
-										<iframe
-											src={previewUrl}
-											className="h-full w-full rounded-lg"
-											title={selectedAttachment.fileName}
-										/>
-									)}
-								{previewUrl &&
-									selectedAttachment.mimeType.startsWith("text/") && (
-										<iframe
-											src={previewUrl}
-											className="h-full w-full rounded-lg bg-white dark:bg-gray-900"
-											title={selectedAttachment.fileName}
-										/>
-									)}
-								{!isPreviewable(selectedAttachment.mimeType) && (
-									<div className="flex h-full items-center justify-center">
-										<div className="text-center">
-											<File className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-											<p className="text-muted-foreground">
-												Предпросмотр недоступен для этого типа файла
-											</p>
-										</div>
-									</div>
-								)}
+							<div className="flex-1 overflow-hidden">
+								<AttachmentPreviewDialog
+									attachment={{
+										...selectedAttachment,
+										fileUrl: previewUrl || selectedAttachment.fileUrl,
+									}}
+									onDownload={() => handleDownload(selectedAttachment, {} as any)}
+								/>
 							</div>
 						</div>
 					)}

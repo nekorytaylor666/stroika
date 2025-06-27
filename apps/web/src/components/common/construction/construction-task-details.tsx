@@ -1,7 +1,6 @@
 "use client";
 
 import { DocumentDetailsModal } from "@/components/documents/document-details-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
@@ -32,11 +31,9 @@ import {
 	Copy,
 	FileText,
 	Link2,
-	MessageSquare,
 	MoreHorizontal,
 	Paperclip,
 	Plus,
-	Send,
 	User,
 	X,
 } from "lucide-react";
@@ -46,6 +43,7 @@ import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionStatusSelector } from "./construction-status-selector";
 import { ConstructionTaskAttachmentsGrid } from "./construction-task-attachments-grid";
+import { ConstructionTaskComments } from "./construction-task-comments";
 import type { ConstructionTask } from "./construction-tasks";
 
 interface ConstructionTaskDetailsProps {
@@ -73,7 +71,6 @@ export function ConstructionTaskDetails({
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
 	const [title, setTitle] = useState(task?.title || "");
 	const [description, setDescription] = useState(task?.description || "");
-	const [comment, setComment] = useState("");
 	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
 	// Query to get fresh task data
@@ -294,66 +291,7 @@ export function ConstructionTaskDetails({
 
 								{/* Comments Section */}
 								<div>
-									<div className="mb-4 flex items-center gap-2">
-										<MessageSquare className="h-4 w-4 text-muted-foreground" />
-										<span className="font-medium text-sm">Комментарии</span>
-									</div>
-
-									{/* Comment Input */}
-									<div className="mb-4 flex gap-3">
-										<Avatar className="h-8 w-8">
-											<AvatarImage src="/api/placeholder/32/32" />
-											<AvatarFallback>ME</AvatarFallback>
-										</Avatar>
-										<div className="flex-1">
-											<Textarea
-												value={comment}
-												onChange={(e) => setComment(e.target.value)}
-												placeholder="Написать комментарий..."
-												className="min-h-[80px] resize-none"
-											/>
-											{comment && (
-												<div className="mt-2 flex justify-end gap-2">
-													<Button
-														size="sm"
-														variant="ghost"
-														onClick={() => setComment("")}
-													>
-														Отмена
-													</Button>
-													<Button size="sm">
-														<Send className="mr-1 h-3 w-3" />
-														Отправить
-													</Button>
-												</div>
-											)}
-										</div>
-									</div>
-
-									{/* Comments List */}
-									<div className="space-y-4">
-										<motion.div
-											initial={{ opacity: 0, y: 10 }}
-											animate={{ opacity: 1, y: 0 }}
-											className="flex gap-3"
-										>
-											<Avatar className="h-8 w-8">
-												<AvatarImage src="/api/placeholder/32/32" />
-												<AvatarFallback>АИ</AvatarFallback>
-											</Avatar>
-											<div className="flex-1">
-												<div className="mb-1 flex items-center gap-2">
-													<span className="font-medium text-sm">
-														Александр Иванов
-													</span>
-													<span className="text-muted-foreground text-xs">
-														2 часа назад
-													</span>
-												</div>
-												<p className="text-sm">Начал работу над задачей</p>
-											</div>
-										</motion.div>
-									</div>
+									<ConstructionTaskComments issueId={currentTask._id as Id<"issues">} />
 								</div>
 							</div>
 						</div>
@@ -362,12 +300,13 @@ export function ConstructionTaskDetails({
 						<div className="w-80 space-y-4 overflow-y-auto border-l bg-muted/30 p-4">
 							{/* Status */}
 							<div>
-								<span className="mb-1 block font-medium text-muted-foreground text-xs">
+								<span className="mb-2 block font-medium text-muted-foreground text-xs">
 									Статус
 								</span>
 								<ConstructionStatusSelector
 									statusId={currentTask.statusId}
 									issueId={currentTask._id}
+									showLabel={true}
 								/>
 							</div>
 
@@ -495,12 +434,12 @@ export function ConstructionTaskDetails({
 											<span className="text-sm">
 												{currentTask.dueDate
 													? format(
-														new Date(currentTask.dueDate),
-														"d MMM yyyy",
-														{
-															locale: ru,
-														},
-													)
+															new Date(currentTask.dueDate),
+															"d MMM yyyy",
+															{
+																locale: ru,
+															},
+														)
 													: "Не указан"}
 											</span>
 										</Button>
@@ -515,7 +454,7 @@ export function ConstructionTaskDetails({
 											}
 											onSelect={async (date) => {
 												if (updateTask) {
-													await (updateTask)({
+													await updateTask({
 														id: currentTask._id as Id<"issues">,
 														dueDate: date
 															? date.toISOString().split("T")[0]
@@ -524,7 +463,6 @@ export function ConstructionTaskDetails({
 													setIsDatePickerOpen(false);
 												}
 											}}
-											initialFocus
 											locale={ru}
 										/>
 										{currentTask.dueDate && (
@@ -535,7 +473,7 @@ export function ConstructionTaskDetails({
 													className="w-full justify-start text-muted-foreground"
 													onClick={async () => {
 														if (updateTask) {
-															await (updateTask)({
+															await updateTask({
 																id: currentTask._id as Id<"issues">,
 																dueDate: undefined,
 															});

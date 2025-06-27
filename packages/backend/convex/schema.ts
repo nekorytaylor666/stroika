@@ -401,4 +401,31 @@ export default defineSchema({
 		uploadedBy: v.id("users"),
 		uploadedAt: v.number(),
 	}).index("by_issue", ["issueId"]),
+
+	// Issue comments
+	issueComments: defineTable({
+		issueId: v.id("issues"),
+		authorId: v.id("users"),
+		content: v.string(),
+		parentCommentId: v.optional(v.id("issueComments")),
+		isResolved: v.boolean(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_issue", ["issueId"])
+		.index("by_parent", ["parentCommentId"]),
+
+	// Issue mentions for notifications
+	issueMentions: defineTable({
+		commentId: v.id("issueComments"),
+		issueId: v.id("issues"),
+		mentionedUserId: v.id("users"),
+		mentionedBy: v.id("users"),
+		isRead: v.boolean(),
+		createdAt: v.number(),
+	})
+		.index("by_comment", ["commentId"])
+		.index("by_issue", ["issueId"])
+		.index("by_mentioned_user", ["mentionedUserId"])
+		.index("by_unread", ["mentionedUserId", "isRead"]),
 });
