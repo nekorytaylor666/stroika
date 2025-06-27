@@ -124,7 +124,7 @@ export const getProjectWithTasks = query({
 
 			const statusName = task.status.name.toLowerCase();
 			if (
-				statusName.includes("завершена") ||
+				statusName.includes("завершено") ||
 				statusName.includes("done") ||
 				statusName.includes("completed")
 			) {

@@ -19,6 +19,7 @@ import { useMouse, useThrottle, useWindowScroll } from "@uidotdev/usehooks";
 import { formatDate, getDate } from "date-fns";
 import { formatDistance, isSameDay } from "date-fns";
 import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 import {
 	addDays,
 	addMonths,
@@ -353,17 +354,18 @@ const DailyHeader: FC = () => {
 			.map((month, index) => (
 				<div className="relative flex flex-col" key={`${year.year}-${index}`}>
 					<GanttContentHeader
-						title={format(new Date(year.year, index, 1), "MMMM yyyy")}
+						title={format(new Date(year.year, index, 1), "MMMM yyyy", { locale: ru })}
 						columns={month.days}
 						renderHeaderItem={(item: number) => (
 							<div className="flex items-center justify-center gap-1">
 								<p>
-									{format(addDays(new Date(year.year, index, 1), item), "d")}
+									{format(addDays(new Date(year.year, index, 1), item), "d", { locale: ru })}
 								</p>
 								<p className="text-muted-foreground">
 									{format(
 										addDays(new Date(year.year, index, 1), item),
 										"EEEEE",
+										{ locale: ru }
 									)}
 								</p>
 							</div>
@@ -391,7 +393,7 @@ const MonthlyHeader: FC = () => {
 				title={`${year.year}`}
 				columns={year.quarters.flatMap((quarter) => quarter.months).length}
 				renderHeaderItem={(item: number) => (
-					<p>{format(new Date(year.year, item, 1), "MMM")}</p>
+					<p>{format(new Date(year.year, item, 1), "MMM", { locale: ru })}</p>
 				)}
 			/>
 			<GanttColumns
@@ -415,7 +417,7 @@ const QuarterlyHeader: FC = () => {
 					columns={quarter.months.length}
 					renderHeaderItem={(item: number) => (
 						<p>
-							{format(new Date(year.year, quarterIndex * 3 + item, 1), "MMM")}
+							{format(new Date(year.year, quarterIndex * 3 + item, 1), "MMM", { locale: ru })}
 						</p>
 					)}
 				/>
@@ -467,8 +469,8 @@ export const GanttSidebarItem: FC<GanttSidebarItemProps> = ({
 			? addDays(feature.endAt, 1)
 			: feature.endAt;
 	const duration = tempEndAt
-		? formatDistance(feature.startAt, tempEndAt)
-		: `${formatDistance(feature.startAt, new Date())} so far`;
+		? formatDistance(feature.startAt, tempEndAt, { locale: ru })
+		: `${formatDistance(feature.startAt, new Date(), { locale: ru })} пока что`;
 
 	const handleClick: MouseEventHandler<HTMLDivElement> = (event) => {
 		if (event.target === event.currentTarget) {
@@ -519,8 +521,8 @@ export const GanttSidebarHeader: FC = () => (
 		style={{ height: "var(--gantt-header-height)" }}
 	>
 		{/* <Checkbox className="shrink-0" /> */}
-		<p className="flex-1 truncate text-left">Issues</p>
-		<p className="shrink-0">Duration</p>
+		<p className="flex-1 truncate text-left">Задачи</p>
+		<p className="shrink-0">Длительность</p>
 	</div>
 );
 
@@ -632,8 +634,8 @@ export const GanttColumn: FC<GanttColumnProps> = ({
 
 	const top = useThrottle(
 		mousePosition.y -
-			(mouseRef.current?.getBoundingClientRect().y ?? 0) -
-			(windowScroll.y ?? 0),
+		(mouseRef.current?.getBoundingClientRect().y ?? 0) -
+		(windowScroll.y ?? 0),
 		10,
 	);
 
@@ -698,8 +700,8 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProps> = ({
 	const [windowScroll] = useWindowScroll();
 	const x = useThrottle(
 		mousePosition.x -
-			(mouseRef.current?.getBoundingClientRect().x ?? 0) -
-			(windowScroll.x ?? 0),
+		(mouseRef.current?.getBoundingClientRect().x ?? 0) -
+		(windowScroll.x ?? 0),
 		10,
 	);
 
@@ -727,7 +729,7 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProps> = ({
 					<PlusIcon size={12} className="text-muted-foreground" />
 				</button>
 				<div className="whitespace-nowrap rounded-full border border-border/50 bg-background/90 px-2 py-1 text-foreground text-xs backdrop-blur-lg">
-					{formatDate(date, "MMM dd, yyyy")}
+					{formatDate(date, "d MMM yyyy", { locale: ru })}
 				</div>
 			</div>
 		</div>
@@ -781,7 +783,7 @@ export const GanttFeatureDragHelper: FC<GanttFeatureDragHelperProps> = ({
 						isPressed && "block",
 					)}
 				>
-					{format(date, "MMM dd, yyyy")}
+					{format(date, "d MMM yyyy", { locale: ru })}
 				</div>
 			)}
 		</div>
@@ -1014,7 +1016,7 @@ export const GanttMarker: FC<
 					>
 						{label}
 						<span className="max-h-[0] overflow-hidden opacity-80 transition-all group-hover:max-h-[2rem]">
-							{formatDate(date, "MMM dd, yyyy")}
+							{formatDate(date, "d MMM yyyy", { locale: ru })}
 						</span>
 					</div>
 				</ContextMenuTrigger>
@@ -1025,7 +1027,7 @@ export const GanttMarker: FC<
 							onClick={handleRemove}
 						>
 							<TrashIcon size={16} />
-							Remove marker
+							Удалить маркер
 						</ContextMenuItem>
 					) : null}
 				</ContextMenuContent>
@@ -1224,7 +1226,7 @@ export type GanttTodayProps = {
 };
 
 export const GanttToday: FC<GanttTodayProps> = ({ className }) => {
-	const label = "Today";
+	const label = "Сегодня";
 	const date = new Date();
 	const gantt = useContext(GanttContext);
 	const differenceIn = getDifferenceIn(gantt.range);
@@ -1252,7 +1254,7 @@ export const GanttToday: FC<GanttTodayProps> = ({ className }) => {
 			>
 				{label}
 				<span className="max-h-[0] overflow-hidden opacity-80 transition-all group-hover:max-h-[2rem]">
-					{formatDate(date, "MMM dd, yyyy")}
+					{formatDate(date, "d MMM yyyy", { locale: ru })}
 				</span>
 			</div>
 			<div className={cn("h-full w-px bg-card", className)} />

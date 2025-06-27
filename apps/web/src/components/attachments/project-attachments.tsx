@@ -55,7 +55,7 @@ export function ProjectAttachments({
 			startDate: attachmentDateRange?.from?.toISOString() || undefined,
 			endDate: attachmentDateRange?.to?.toISOString() || undefined,
 		},
-		{ initialNumItems: 24 }
+		{ initialNumItems: 24 },
 	);
 
 	const attachments = results ?? [];
@@ -71,7 +71,7 @@ export function ProjectAttachments({
 	return (
 		<div className={cn("mx-auto flex-1 p-6", className)}>
 			<div className="mb-6 flex items-center justify-between">
-				<h1 className="font-semibold text-2xl w-auto">Файлы проекта</h1>
+				<h1 className="w-auto font-semibold text-2xl">Файлы проекта</h1>
 				<div className="flex items-center gap-2">
 					<ToggleGroup
 						type="single"
@@ -115,7 +115,6 @@ export function ProjectAttachments({
 					<AttachmentFilterPopover />
 				</div>
 			</div>
-
 
 			{isLoading && attachments.length === 0 ? (
 				<div className="grid gap-4 lg:grid-cols-3">

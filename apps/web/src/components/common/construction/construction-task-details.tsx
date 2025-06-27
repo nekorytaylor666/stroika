@@ -23,7 +23,7 @@ import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -64,10 +64,11 @@ export function ConstructionTaskDetails({
 		priorities,
 		labels,
 		projects,
-		updateTask,
+		// updateTask,
 		updateTaskAssignee,
 		updateTaskPriority,
 	} = useConstructionData();
+	const updateTask = useMutation(api.constructionTasks.update);
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
 	const [title, setTitle] = useState(task?.title || "");
@@ -494,12 +495,12 @@ export function ConstructionTaskDetails({
 											<span className="text-sm">
 												{currentTask.dueDate
 													? format(
-															new Date(currentTask.dueDate),
-															"d MMM yyyy",
-															{
-																locale: ru,
-															},
-														)
+														new Date(currentTask.dueDate),
+														"d MMM yyyy",
+														{
+															locale: ru,
+														},
+													)
 													: "Не указан"}
 											</span>
 										</Button>
@@ -514,7 +515,7 @@ export function ConstructionTaskDetails({
 											}
 											onSelect={async (date) => {
 												if (updateTask) {
-													await (updateTask as any)({
+													await (updateTask)({
 														id: currentTask._id as Id<"issues">,
 														dueDate: date
 															? date.toISOString().split("T")[0]
@@ -534,7 +535,7 @@ export function ConstructionTaskDetails({
 													className="w-full justify-start text-muted-foreground"
 													onClick={async () => {
 														if (updateTask) {
-															await (updateTask as any)({
+															await (updateTask)({
 																id: currentTask._id as Id<"issues">,
 																dueDate: undefined,
 															});

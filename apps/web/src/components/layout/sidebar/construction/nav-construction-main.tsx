@@ -63,7 +63,7 @@ const constructionMainItems = [
 	},
 	{
 		name: "Документы",
-		url: "/construction/$orgId/construction-documents",
+		url: "/construction/$orgId/attachments",
 		icon: FileText,
 		description: "Проектная документация и чертежи",
 	},

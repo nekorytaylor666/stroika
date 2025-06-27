@@ -1,249 +1,272 @@
 import { v } from "convex/values";
+import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
-// Queries
-export const getAll = query({
-	handler: async (ctx) => {
-		const teams = await ctx.db.query("constructionTeams").collect();
+// Get team members for a specific project with task statistics
+export const getProjectTeamWithStats = query({
+	args: { projectId: v.id("constructionProjects") },
+	handler: async (ctx, args) => {
+		// Get the project
+		const project = await ctx.db.get(args.projectId);
+		if (!project) {
+			throw new Error("Project not found");
+		}
 
-		// Populate related data
-		const populatedTeams = await Promise.all(
-			teams.map(async (team) => {
-				const [members, projects] = await Promise.all([
-					Promise.all(team.memberIds.map((id) => ctx.db.get(id))),
-					Promise.all(team.projectIds.map((id) => ctx.db.get(id))),
-				]);
+		// Get all team members (including lead)
+		const allMemberIds = [
+			...new Set([...(project.teamMemberIds || []), project.leadId]),
+		];
+
+		// Get all tasks for this project
+		const projectTasks = await ctx.db
+			.query("issues")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("isConstructionTask"), true),
+					q.eq(q.field("projectId"), args.projectId),
+				),
+			)
+			.collect();
+
+		// Get statuses for task categorization
+		const statuses = await ctx.db.query("status").collect();
+		const statusMap = new Map(statuses.map((s) => [s._id, s]));
+
+		// Calculate statistics for each member
+		const teamMembers = await Promise.all(
+			allMemberIds.map(async (userId) => {
+				const user = await ctx.db.get(userId);
+				if (!user) return null;
+
+				// Get all tasks assigned to this user
+				const userTasks = projectTasks.filter(
+					(task) => task.assigneeId === userId,
+				);
+
+				// Calculate task statistics
+				const taskStats = {
+					total: userTasks.length,
+					completed: 0,
+					inProgress: 0,
+					todo: 0,
+					overdue: 0,
+				};
+
+				// Categorize tasks by status
+				for (const task of userTasks) {
+					if (task.statusId) {
+						const status = statusMap.get(task.statusId);
+						if (status) {
+							if (status.name === "Завершено" || status.name === "Done") {
+								taskStats.completed++;
+							} else if (
+								status.name === "В работе" ||
+								status.name === "In Progress"
+							) {
+								taskStats.inProgress++;
+							} else {
+								taskStats.todo++;
+							}
+						}
+					} else {
+						taskStats.todo++;
+					}
+
+					// Check if overdue
+					if (
+						task.dueDate &&
+						new Date(task.dueDate) < new Date() &&
+						task.statusId &&
+						statusMap.get(task.statusId)?.name !== "Завершено"
+					) {
+						taskStats.overdue++;
+					}
+				}
+
+				// Get user's department/position from userDepartments table
+				const userDepartment = await ctx.db
+					.query("userDepartments")
+					.withIndex("by_user", (q) => q.eq("userId", userId))
+					.filter((q) => q.eq(q.field("isPrimary"), true))
+					.first();
+
+				const department = userDepartment?.departmentId
+					? await ctx.db.get(userDepartment.departmentId)
+					: null;
+				const position = userDepartment?.positionId
+					? await ctx.db.get(userDepartment.positionId)
+					: null;
 
 				return {
-					...team,
-					members: members.filter((member) => member !== null),
-					projects: projects.filter((project) => project !== null),
+					_id: user._id,
+					name: user.name,
+					email: user.email,
+					avatarUrl: user.avatarUrl,
+					isLead: user._id === project.leadId,
+					department: department
+						? {
+								_id: department._id,
+								name: department.displayName || department.name,
+							}
+						: null,
+					position: position
+						? {
+								_id: position._id,
+								name: position.displayName || position.name,
+							}
+						: null,
+					taskStats,
+					// Recent tasks (last 5)
+					recentTasks: userTasks
+						.sort((a, b) => b._creationTime - a._creationTime)
+						.slice(0, 5)
+						.map((task) => ({
+							_id: task._id,
+							title: task.title,
+							identifier: task.identifier,
+							status: task.statusId ? statusMap.get(task.statusId) : null,
+							dueDate: task.dueDate,
+							priority: task.priorityId,
+						})),
 				};
 			}),
 		);
 
-		return populatedTeams;
-	},
-});
+		// Filter out null values and sort by total tasks
+		const validMembers = teamMembers.filter(
+			(m): m is NonNullable<typeof m> => m !== null,
+		);
+		validMembers.sort((a, b) => b.taskStats.total - a.taskStats.total);
 
-export const getById = query({
-	args: { id: v.id("constructionTeams") },
-	handler: async (ctx, args) => {
-		const team = await ctx.db.get(args.id);
-		if (!team) return null;
-
-		const [members, projects] = await Promise.all([
-			Promise.all(team.memberIds.map((id) => ctx.db.get(id))),
-			Promise.all(team.projectIds.map((id) => ctx.db.get(id))),
-		]);
+		// Calculate overall team statistics
+		const teamStats = {
+			totalMembers: validMembers.length,
+			totalTasks: projectTasks.length,
+			assignedTasks: projectTasks.filter((t) => t.assigneeId).length,
+			unassignedTasks: projectTasks.filter((t) => !t.assigneeId).length,
+			completedTasks: validMembers.reduce(
+				(sum, m) => sum + m.taskStats.completed,
+				0,
+			),
+			inProgressTasks: validMembers.reduce(
+				(sum, m) => sum + m.taskStats.inProgress,
+				0,
+			),
+			todoTasks: validMembers.reduce((sum, m) => sum + m.taskStats.todo, 0),
+			overdueTasks: validMembers.reduce(
+				(sum, m) => sum + m.taskStats.overdue,
+				0,
+			),
+		};
 
 		return {
-			...team,
-			members: members.filter((member) => member !== null),
-			projects: projects.filter((project) => project !== null),
-		};
-	},
-});
-
-export const getByDepartment = query({
-	args: {
-		department: v.union(
-			v.literal("design"),
-			v.literal("construction"),
-			v.literal("engineering"),
-			v.literal("management"),
-		),
-	},
-	handler: async (ctx, args) => {
-		return await ctx.db
-			.query("constructionTeams")
-			.filter((q) => q.eq(q.field("department"), args.department))
-			.collect();
-	},
-});
-
-export const getUserTeams = query({
-	args: { userId: v.id("users") },
-	handler: async (ctx, args) => {
-		const teams = await ctx.db.query("constructionTeams").collect();
-		return teams.filter((team) => team.memberIds.includes(args.userId));
-	},
-});
-
-export const getTotalWorkload = query({
-	handler: async (ctx) => {
-		const teams = await ctx.db.query("constructionTeams").collect();
-		return teams.reduce((total, team) => total + team.workload, 0);
-	},
-});
-
-export const getTeamStats = query({
-	handler: async (ctx) => {
-		const teams = await ctx.db.query("constructionTeams").collect();
-
-		const stats = {
-			totalTeams: teams.length,
-			totalMembers: 0,
-			totalProjects: 0,
-			departmentStats: {
-				design: 0,
-				construction: 0,
-				engineering: 0,
-				management: 0,
+			project: {
+				_id: project._id,
+				name: project.name,
+				client: project.client,
 			},
-			averageWorkload: 0,
+			members: validMembers,
+			teamStats,
 		};
+	},
+});
 
-		teams.forEach((team) => {
-			stats.totalMembers += team.memberIds.length;
-			stats.totalProjects += team.projectIds.length;
-			stats.departmentStats[team.department]++;
+// Add member to project team
+export const addTeamMember = mutation({
+	args: {
+		projectId: v.id("constructionProjects"),
+		userId: v.id("users"),
+	},
+	handler: async (ctx, args) => {
+		const project = await ctx.db.get(args.projectId);
+		if (!project) {
+			throw new Error("Project not found");
+		}
+
+		// Check if user already in team
+		if (project.teamMemberIds?.includes(args.userId)) {
+			throw new Error("User is already a team member");
+		}
+
+		// Add user to team
+		await ctx.db.patch(args.projectId, {
+			teamMemberIds: [...(project.teamMemberIds || []), args.userId],
 		});
 
-		stats.averageWorkload =
-			teams.length > 0
-				? teams.reduce((sum, team) => sum + team.workload, 0) / teams.length
-				: 0;
-
-		return stats;
+		return { success: true };
 	},
 });
 
-// Mutations
-export const create = mutation({
+// Remove member from project team
+export const removeTeamMember = mutation({
 	args: {
-		name: v.string(),
-		shortName: v.string(),
-		icon: v.string(),
-		joined: v.boolean(),
-		color: v.string(),
-		memberIds: v.array(v.id("users")),
-		projectIds: v.array(v.id("constructionProjects")),
-		department: v.union(
-			v.literal("design"),
-			v.literal("construction"),
-			v.literal("engineering"),
-			v.literal("management"),
-		),
-		workload: v.number(),
+		projectId: v.id("constructionProjects"),
+		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
-		return await ctx.db.insert("constructionTeams", args);
-	},
-});
+		const project = await ctx.db.get(args.projectId);
+		if (!project) {
+			throw new Error("Project not found");
+		}
 
-export const update = mutation({
-	args: {
-		id: v.id("constructionTeams"),
-		name: v.optional(v.string()),
-		shortName: v.optional(v.string()),
-		icon: v.optional(v.string()),
-		joined: v.optional(v.boolean()),
-		color: v.optional(v.string()),
-		memberIds: v.optional(v.array(v.id("users"))),
-		projectIds: v.optional(v.array(v.id("constructionProjects"))),
-		department: v.optional(
-			v.union(
-				v.literal("design"),
-				v.literal("construction"),
-				v.literal("engineering"),
-				v.literal("management"),
+		// Can't remove the lead
+		if (project.leadId === args.userId) {
+			throw new Error("Cannot remove the project lead");
+		}
+
+		// Remove user from team
+		await ctx.db.patch(args.projectId, {
+			teamMemberIds: (project.teamMemberIds || []).filter(
+				(id) => id !== args.userId,
 			),
-		),
-		workload: v.optional(v.number()),
-	},
-	handler: async (ctx, args) => {
-		const { id, ...updates } = args;
-		await ctx.db.patch(id, updates);
-		return { success: true };
-	},
-});
+		});
 
-export const addMember = mutation({
-	args: {
-		teamId: v.id("constructionTeams"),
-		userId: v.id("users"),
-	},
-	handler: async (ctx, args) => {
-		const team = await ctx.db.get(args.teamId);
-		if (!team) throw new Error("Team not found");
+		// Unassign all tasks from this user in this project
+		const userTasks = await ctx.db
+			.query("issues")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("isConstructionTask"), true),
+					q.eq(q.field("projectId"), args.projectId),
+					q.eq(q.field("assigneeId"), args.userId),
+				),
+			)
+			.collect();
 
-		if (!team.memberIds.includes(args.userId)) {
-			const updatedMemberIds = [...team.memberIds, args.userId];
-			await ctx.db.patch(args.teamId, { memberIds: updatedMemberIds });
-		}
-
-		return { success: true };
-	},
-});
-
-export const removeMember = mutation({
-	args: {
-		teamId: v.id("constructionTeams"),
-		userId: v.id("users"),
-	},
-	handler: async (ctx, args) => {
-		const team = await ctx.db.get(args.teamId);
-		if (!team) throw new Error("Team not found");
-
-		const updatedMemberIds = team.memberIds.filter((id) => id !== args.userId);
-		await ctx.db.patch(args.teamId, { memberIds: updatedMemberIds });
-
-		return { success: true };
-	},
-});
-
-export const addProject = mutation({
-	args: {
-		teamId: v.id("constructionTeams"),
-		projectId: v.id("constructionProjects"),
-	},
-	handler: async (ctx, args) => {
-		const team = await ctx.db.get(args.teamId);
-		if (!team) throw new Error("Team not found");
-
-		if (!team.projectIds.includes(args.projectId)) {
-			const updatedProjectIds = [...team.projectIds, args.projectId];
-			await ctx.db.patch(args.teamId, { projectIds: updatedProjectIds });
-		}
-
-		return { success: true };
-	},
-});
-
-export const removeProject = mutation({
-	args: {
-		teamId: v.id("constructionTeams"),
-		projectId: v.id("constructionProjects"),
-	},
-	handler: async (ctx, args) => {
-		const team = await ctx.db.get(args.teamId);
-		if (!team) throw new Error("Team not found");
-
-		const updatedProjectIds = team.projectIds.filter(
-			(id) => id !== args.projectId,
+		// Unassign each task
+		await Promise.all(
+			userTasks.map((task) =>
+				ctx.db.patch(task._id, { assigneeId: undefined }),
+			),
 		);
-		await ctx.db.patch(args.teamId, { projectIds: updatedProjectIds });
 
-		return { success: true };
+		return { success: true, unassignedTasks: userTasks.length };
 	},
 });
 
-export const updateWorkload = mutation({
-	args: {
-		id: v.id("constructionTeams"),
-		workload: v.number(),
-	},
-	handler: async (ctx, args) => {
-		await ctx.db.patch(args.id, { workload: args.workload });
-		return { success: true };
-	},
-});
+// Get all teams (existing function remains)
+export const getAll = query({
+	handler: async (ctx) => {
+		const teams = await ctx.db.query("constructionTeams").collect();
 
-export const deleteTeam = mutation({
-	args: { id: v.id("constructionTeams") },
-	handler: async (ctx, args) => {
-		await ctx.db.delete(args.id);
-		return { success: true };
+		// Enrich with member and project data
+		const enrichedTeams = await Promise.all(
+			teams.map(async (team) => {
+				const members = await Promise.all(
+					team.memberIds.map((id) => ctx.db.get(id)),
+				);
+				const projects = await Promise.all(
+					team.projectIds.map((id) => ctx.db.get(id)),
+				);
+
+				return {
+					...team,
+					members: members.filter(Boolean),
+					projects: projects.filter(Boolean),
+				};
+			}),
+		);
+
+		return enrichedTeams;
 	},
 });

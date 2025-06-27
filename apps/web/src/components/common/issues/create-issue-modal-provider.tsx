@@ -4,7 +4,7 @@ import { CreateNewIssue } from "@/components/layout/sidebar/create-new-issue";
 
 export function CreateIssueModalProvider() {
 	return (
-		<div className="hidden">
+		<div className="">
 			<CreateNewIssue />
 		</div>
 	);

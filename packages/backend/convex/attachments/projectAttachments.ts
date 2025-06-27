@@ -1,6 +1,6 @@
+import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 import { query } from "../_generated/server";
-import { paginationOptsValidator } from "convex/server";
 
 // Get paginated attachments for a construction project
 export const getPaginated = query({
@@ -41,8 +41,8 @@ export const getPaginated = query({
 			.paginate(args.paginationOpts);
 
 		// Filter to only include attachments from our project's tasks
-		let filteredItems = result.page.filter((attachment) => 
-			taskIds.has(attachment.issueId)
+		let filteredItems = result.page.filter((attachment) =>
+			taskIds.has(attachment.issueId),
 		);
 
 		// Apply search filter
@@ -109,25 +109,25 @@ export const getPaginated = query({
 					...attachment,
 					issue: issue
 						? {
-							_id: issue._id,
-							identifier: issue.identifier,
-							title: issue.title,
-							isConstructionTask: true,
-						}
+								_id: issue._id,
+								identifier: issue.identifier,
+								title: issue.title,
+								isConstructionTask: true,
+							}
 						: null,
 					uploader: uploader
 						? {
-							_id: uploader._id,
-							name: uploader.name,
-							email: uploader.email,
-							image: uploader.avatarUrl,
-						}
+								_id: uploader._id,
+								name: uploader.name,
+								email: uploader.email,
+								image: uploader.avatarUrl,
+							}
 						: null,
 					constructionProject: project
 						? {
-							_id: project._id,
-							name: project.name,
-						}
+								_id: project._id,
+								name: project.name,
+							}
 						: null,
 				};
 			}),
@@ -167,13 +167,11 @@ export const getStats = query({
 		}
 
 		// Get all attachments for these tasks
-		const allAttachments = await ctx.db
-			.query("issueAttachments")
-			.collect();
+		const allAttachments = await ctx.db.query("issueAttachments").collect();
 
 		// Filter to project attachments
-		const projectAttachments = allAttachments.filter(att => 
-			taskIds.has(att.issueId)
+		const projectAttachments = allAttachments.filter((att) =>
+			taskIds.has(att.issueId),
 		);
 
 		// Calculate stats
