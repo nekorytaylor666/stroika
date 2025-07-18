@@ -26,11 +26,9 @@ export function SeedButton() {
 		try {
 			// First cleanup users to fix schema
 			const cleanupResult = await cleanupUsers();
-			console.log("Cleanup result:", cleanupResult);
 
 			// Then run the seed
 			const result = await seedAll();
-			console.log("Seed result:", result);
 
 			// Show success message
 			toast.success("База данных успешно инициализирована", {

@@ -192,7 +192,6 @@ export const useConstructionData = () => {
 	const handleSeedData = async () => {
 		try {
 			const result = await seedData({});
-			console.log("Data seeded:", result);
 			return result;
 		} catch (error) {
 			console.error("Failed to seed data:", error);

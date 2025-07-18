@@ -67,12 +67,6 @@ export function ConstructionCreateIssueModal() {
 		}
 
 		try {
-			console.log("Creating task with data:", {
-				title: title.trim(),
-				statusId: issueStatus._id,
-				priorityId: priority._id,
-				projectId: params.orgId,
-			});
 
 			const taskId = await handleCreateTask({
 				identifier: `CONST-${Date.now()}`,
@@ -88,7 +82,6 @@ export function ConstructionCreateIssueModal() {
 				dueDate: undefined,
 			});
 
-			console.log("Task created with ID:", taskId);
 
 			// Link selected documents to the task
 
