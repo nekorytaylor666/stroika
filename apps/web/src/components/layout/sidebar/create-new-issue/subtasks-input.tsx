@@ -156,78 +156,80 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 							}
 						}}
 					/>
-					<div className="flex gap-2">
-						{/* Assignee selector */}
-						<Popover open={isAssigneeOpen} onOpenChange={setIsAssigneeOpen}>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									className="h-8 justify-start"
-								>
-									{selectedAssigneeId ? (
-										<>
-											<User className="mr-2 h-3 w-3" />
-											{getAssigneeName(selectedAssigneeId) || "Не назначен"}
-										</>
-									) : (
-										<>
-											<User className="mr-2 h-3 w-3" />
-											Назначить
-										</>
-									)}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-56 p-0" align="start">
-								<div className="max-h-64 overflow-y-auto">
-									{users?.map((user) => (
-										<button
-											key={user._id}
-											className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
-											onClick={() => {
-												setSelectedAssigneeId(user._id as Id<"users">);
-												setIsAssigneeOpen(false);
-											}}
-										>
-											<ConstructionAssigneeUser user={user} />
-											<span className="truncate">{user.name}</span>
-										</button>
-									))}
-								</div>
-							</PopoverContent>
-						</Popover>
+					<div className="flex flex-wrap gap-2">
+						<div className="flex flex-1 flex-wrap gap-2">
+							{/* Assignee selector */}
+							<Popover open={isAssigneeOpen} onOpenChange={setIsAssigneeOpen}>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-8 justify-start"
+									>
+										{selectedAssigneeId ? (
+											<>
+												<User className="mr-2 h-3 w-3" />
+												{getAssigneeName(selectedAssigneeId) || "Не назначен"}
+											</>
+										) : (
+											<>
+												<User className="mr-2 h-3 w-3" />
+												Назначить
+											</>
+										)}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-56 p-0" align="start">
+									<div className="max-h-64 overflow-y-auto">
+										{users?.map((user) => (
+											<button
+												key={user._id}
+												className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+												onClick={() => {
+													setSelectedAssigneeId(user._id as Id<"users">);
+													setIsAssigneeOpen(false);
+												}}
+											>
+												<ConstructionAssigneeUser user={user} />
+												<span className="truncate">{user.name}</span>
+											</button>
+										))}
+									</div>
+								</PopoverContent>
+							</Popover>
 
-						{/* Date picker */}
-						<Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-							<PopoverTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									className="h-8 justify-start"
-								>
-									<Calendar className="mr-2 h-3 w-3" />
-									{selectedDueDate
-										? format(selectedDueDate, "d MMM", { locale: ru })
-										: "Срок"}
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-auto p-0" align="start">
-								<CalendarComponent
-									mode="single"
-									selected={selectedDueDate}
-									onSelect={setSelectedDueDate}
-									locale={ru}
-								/>
-							</PopoverContent>
-						</Popover>
+							{/* Date picker */}
+							<Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+								<PopoverTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-8 justify-start"
+									>
+										<Calendar className="mr-2 h-3 w-3" />
+										{selectedDueDate
+											? format(selectedDueDate, "d MMM", { locale: ru })
+											: "Срок"}
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-auto p-0" align="start">
+									<CalendarComponent
+										mode="single"
+										selected={selectedDueDate}
+										onSelect={setSelectedDueDate}
+										locale={ru}
+									/>
+								</PopoverContent>
+							</Popover>
 
-						{/* File upload */}
-						<AttachmentUpload
-							onAttachmentsChange={setSelectedAttachments}
-							className="w-fit"
-						/>
+							{/* File upload */}
+							<AttachmentUpload
+								onAttachmentsChange={setSelectedAttachments}
+								className=""
+							/>
+						</div>
 
-						<div className="ml-auto flex gap-2">
+						<div className="flex gap-2">
 							<Button
 								size="sm"
 								onClick={handleAddSubtask}
@@ -252,6 +254,30 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 							</Button>
 						</div>
 					</div>
+					
+					{/* Show selected attachments */}
+					{selectedAttachments.length > 0 && (
+						<div className="mt-2 flex flex-wrap gap-1">
+							{selectedAttachments.map((attachment, index) => (
+								<div
+									key={index}
+									className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs"
+								>
+									<File className="h-3 w-3" />
+									<span className="truncate max-w-[150px]">{attachment.fileName}</span>
+									<button
+										type="button"
+										onClick={() => {
+											setSelectedAttachments(prev => prev.filter((_, i) => i !== index));
+										}}
+										className="ml-1 hover:text-destructive"
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</div>
+							))}
+						</div>
+					)}
 				</div>
 			) : (
 				<div className="pl-6">
