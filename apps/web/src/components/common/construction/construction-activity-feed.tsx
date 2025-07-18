@@ -283,27 +283,28 @@ export function ConstructionActivityFeed({
 														{getActivityIcon(activity.type)}
 													</div>
 
-													<div className="flex-1 min-w-0">
+													<div className="min-w-0 flex-1">
 														<div className="flex items-baseline gap-2">
-															<span className="text-sm font-medium">
+															<span className="font-medium text-sm">
 																{activity.user?.name || "Пользователь"}
 															</span>
-															<span className="text-sm text-muted-foreground">
+															<span className="text-muted-foreground text-sm">
 																{getActivityDescription(activity)}
 															</span>
 														</div>
 														{activity.task && (
-															<p className="text-xs text-muted-foreground truncate">
-																{activity.task.identifier} • {activity.task.title}
+															<p className="truncate text-muted-foreground text-xs">
+																{activity.task.identifier} •{" "}
+																{activity.task.title}
 															</p>
 														)}
 													</div>
 
-													<span className="text-xs text-muted-foreground whitespace-nowrap">
-														{formatDistanceToNow(
-															new Date(activity.createdAt),
-															{ addSuffix: true, locale: ru },
-														)}
+													<span className="whitespace-nowrap text-muted-foreground text-xs">
+														{formatDistanceToNow(new Date(activity.createdAt), {
+															addSuffix: true,
+															locale: ru,
+														})}
 													</span>
 												</div>
 											</Card>
