@@ -199,12 +199,17 @@ const FilteredConstructionTasksView: FC<{
 const GroupConstructionTasksListView: FC<{
 	isViewTypeGrid: boolean;
 }> = ({ isViewTypeGrid = false }) => {
-	const { projectId } = useParams({
-		from: "/construction/$orgId/projects/$projectId/tasks",
-	});
-	const tasks = useQuery(api.constructionTasks.getByProject, {
-		projectId: projectId as Id<"constructionProjects">,
-	});
+	// Try to get projectId from the route params - it will be undefined for org-wide view
+	const params = useParams({ strict: false });
+	const projectId = (params as any).projectId;
+
+	// Use different queries based on whether we have a projectId
+	const tasks = projectId
+		? useQuery(api.constructionTasks.getByProject, {
+				projectId: projectId as Id<"constructionProjects">,
+			})
+		: useQuery(api.constructionTasks.getAll);
+
 	const statuses = useQuery(api.metadata.getAllStatus);
 
 	// Group tasks by status
