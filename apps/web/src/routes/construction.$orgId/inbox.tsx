@@ -79,7 +79,7 @@ function ConstructionTasksPage() {
 			</div>
 
 			{/* Tasks content */}
-			<div className="flex-1 overflow-hidden">
+			<div className="flex-1 overflow-auto">
 				<ConstructionTasks />
 			</div>
 		</div>
