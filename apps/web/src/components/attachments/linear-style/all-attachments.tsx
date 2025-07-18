@@ -1,8 +1,15 @@
 "use client";
 
+import { FileUpload } from "@/components/attachments/file-upload";
 import { LinearAttachmentCard } from "@/components/attachments/linear-style/attachment-card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -26,6 +33,7 @@ import {
 	Grid2X2,
 	List,
 	Loader2,
+	Plus,
 	Search,
 	X,
 } from "lucide-react";
@@ -45,6 +53,7 @@ export function LinearAllAttachments() {
 	const [cursor, setCursor] = useState<number | null>(null);
 	const [hasMore, setHasMore] = useState(true);
 	const [isLoadingMore, setIsLoadingMore] = useState(false);
+	const [showUploadDialog, setShowUploadDialog] = useState(false);
 
 	const { ref: loadMoreRef, inView } = useInView({
 		threshold: 0,
@@ -106,6 +115,14 @@ export function LinearAllAttachments() {
 
 	const closePreview = () => setSelectedAttachment(null);
 
+	const handleUploadComplete = useCallback(() => {
+		// Reset pagination to reload with new files
+		setAttachments([]);
+		setCursor(null);
+		setHasMore(true);
+		setShowUploadDialog(false);
+	}, []);
+
 	const getFileTypeIcon = (type: string) => {
 		switch (type) {
 			case "image":
@@ -145,23 +162,33 @@ export function LinearAllAttachments() {
 				<div className="flex flex-col gap-4 px-8 py-6">
 					<div className="flex items-center justify-between">
 						<h1 className="font-semibold text-2xl">Вложения</h1>
-						<div className="flex items-center gap-1 rounded-lg border p-1">
+						<div className="flex items-center gap-3">
 							<Button
-								variant={viewMode === "grid" ? "secondary" : "ghost"}
+								onClick={() => setShowUploadDialog(true)}
 								size="sm"
-								onClick={() => setViewMode("grid")}
-								className="h-7 px-2"
+								className="h-8"
 							>
-								<Grid2X2 className="h-4 w-4" />
+								<Plus className="mr-2 h-4 w-4" />
+								Загрузить файлы
 							</Button>
-							<Button
-								variant={viewMode === "list" ? "secondary" : "ghost"}
-								size="sm"
-								onClick={() => setViewMode("list")}
-								className="h-7 px-2"
-							>
-								<List className="h-4 w-4" />
-							</Button>
+							<div className="flex items-center gap-1 rounded-lg border p-1">
+								<Button
+									variant={viewMode === "grid" ? "secondary" : "ghost"}
+									size="sm"
+									onClick={() => setViewMode("grid")}
+									className="h-7 px-2"
+								>
+									<Grid2X2 className="h-4 w-4" />
+								</Button>
+								<Button
+									variant={viewMode === "list" ? "secondary" : "ghost"}
+									size="sm"
+									onClick={() => setViewMode("list")}
+									className="h-7 px-2"
+								>
+									<List className="h-4 w-4" />
+								</Button>
+							</div>
 						</div>
 					</div>
 
@@ -388,6 +415,23 @@ export function LinearAllAttachments() {
 							)}
 						</div>
 					</div>
+				</DialogContent>
+			</Dialog>
+
+			{/* Upload Dialog */}
+			<Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+				<DialogContent className="max-w-2xl">
+					<DialogHeader>
+						<DialogTitle>Загрузить файлы</DialogTitle>
+						<DialogDescription>
+							Загрузите файлы в систему. Они будут доступны всем пользователям.
+						</DialogDescription>
+					</DialogHeader>
+					<FileUpload
+						onUploadComplete={handleUploadComplete}
+						maxFiles={10}
+						maxFileSize={50 * 1024 * 1024} // 50MB
+					/>
 				</DialogContent>
 			</Dialog>
 		</div>

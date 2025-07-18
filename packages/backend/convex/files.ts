@@ -192,3 +192,69 @@ export const removeIssueAttachment = mutation({
 		await ctx.db.delete(args.attachmentId);
 	},
 });
+
+// Upload file without linking to specific issue (for general attachments page)
+export const uploadToGeneral = mutation({
+	args: {
+		storageId: v.id("_storage"),
+		fileName: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+	},
+	handler: async (ctx, args) => {
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
+
+		// For now, use a default user ID
+		const users = await ctx.db.query("users").take(1);
+		const user = users[0];
+		if (!user) throw new Error("No users found in database");
+
+		// Create a placeholder issue for general attachments
+		// This could be improved in the future by having a separate attachments table
+		const generalIssue = await ctx.db
+			.query("issues")
+			.filter((q) => q.eq(q.field("title"), "[General Attachments]"))
+			.first();
+
+		let issueId = generalIssue?._id;
+
+		if (!issueId) {
+			// Create a general attachments issue if it doesn't exist
+			issueId = await ctx.db.insert("issues", {
+				title: "[General Attachments]",
+				description: "Container for general file attachments",
+				identifier: "GENERAL-001",
+				projectId: null as any,
+				statusId: null as any,
+				priorityId: null as any,
+				assignedTo: null,
+				createdBy: user._id,
+				updatedBy: user._id,
+				dueDate: null,
+				stateId: null as any,
+				estimate: null,
+				sortOrder: 0,
+				completedAt: null,
+				canceledAt: null,
+				archivedAt: null,
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				startsAt: null,
+				organizationId: null as any,
+				isConstructionTask: true,
+			});
+		}
+
+		await ctx.db.insert("issueAttachments", {
+			issueId,
+			fileName: args.fileName,
+			fileUrl: args.storageId,
+			fileSize: args.fileSize,
+			mimeType: args.mimeType,
+			uploadedBy: user._id,
+			uploadedAt: Date.now(),
+		});
+	},
+});
