@@ -3,7 +3,7 @@ import ConstructionHeader from "@/components/layout/headers/construction/constru
 import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/construction/$orgId/construction-tasks")(
+export const Route = createFileRoute("/construction/$orgId/inbox")(
 	{
 		component: ConstructionTasksPage,
 	},
@@ -23,5 +23,5 @@ function ConstructionTasksPage() {
 
 			<ConstructionActivityFeed limit={100} />
 		</div>
-	);
+	)
 }

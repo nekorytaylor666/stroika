@@ -42,7 +42,6 @@ import type * as permissions_utils from "../permissions/utils.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
 import type * as subtasks from "../subtasks.js";
-import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
 /**
@@ -83,7 +82,6 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   seedData: typeof seedData;
   subtasks: typeof subtasks;
-  todos: typeof todos;
   users: typeof users;
 }>;
 export declare const api: FilterApi<
