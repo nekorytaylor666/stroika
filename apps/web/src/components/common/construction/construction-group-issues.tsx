@@ -16,7 +16,6 @@ import {
 	Plus,
 	XCircle,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
 import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
@@ -204,30 +203,9 @@ const ConstructionIssueGridList: FC<{
 			className={cn(
 				"relative h-full flex-1 space-y-2 overflow-y-auto bg-zinc-50/50 p-2 dark:bg-zinc-900/50",
 				sortedIssues.length === 0 && "min-h-[200px]",
+				isOver && "ring-2 ring-primary/50 ring-offset-2",
 			)}
 		>
-			<AnimatePresence>
-				{isOver && (
-					<motion.div
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						transition={{ duration: 0.1 }}
-						className="pointer-events-none fixed top-0 right-0 bottom-0 left-0 z-10 flex items-center justify-center bg-background/90"
-						style={{
-							width: ref.current?.getBoundingClientRect().width || "100%",
-							height: ref.current?.getBoundingClientRect().height || "100%",
-							transform: `translate(${ref.current?.getBoundingClientRect().left || 0}px, ${ref.current?.getBoundingClientRect().top || 0}px)`,
-						}}
-					>
-						<div className="max-w-[90%] rounded-md border border-border bg-background p-3 shadow-md">
-							<p className="text-center font-medium text-sm">
-								Задачи отсортированы по приоритету
-							</p>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
 			{sortedIssues.map((issue) => (
 				<ConstructionIssueGrid key={issue._id} issue={issue} />
 			))}

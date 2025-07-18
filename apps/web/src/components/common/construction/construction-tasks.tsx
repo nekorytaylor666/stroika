@@ -75,7 +75,7 @@ export default function ConstructionTasks() {
 
 	return (
 		<>
-			<div className={cn("h-full w-full", isViewTypeGrid && "overflow-x-auto")}>
+			<div className={cn("h-full w-full", isViewTypeGrid ? "overflow-x-auto" : "overflow-y-auto")}>
 				{isSearching ? (
 					<div className="px-6 py-4">
 						<SearchConstructionTasks />
