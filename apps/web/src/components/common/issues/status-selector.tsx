@@ -76,8 +76,7 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 						<CommandInput placeholder="Set status..." />
 						<CommandList>
 							<CommandEmpty>No status found.</CommandEmpty>
-							<CommandGroup>
-							</CommandGroup>
+							<CommandGroup></CommandGroup>
 						</CommandList>
 					</Command>
 				</PopoverContent>

@@ -8,7 +8,7 @@ import { useViewStore } from "@/store/view-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { Grid3X3, List, Plus, Search } from "lucide-react";
 
-export const Route = createFileRoute("/construction/$orgId/construction-tasks")(
+export const Route = createFileRoute("/construction/$orgId/inbox")(
 	{
 		component: ConstructionTasksPage,
 	},
@@ -83,5 +83,5 @@ function ConstructionTasksPage() {
 				<ConstructionTasks />
 			</div>
 		</div>
-	);
+	)
 }

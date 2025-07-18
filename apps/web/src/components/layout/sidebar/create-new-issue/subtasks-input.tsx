@@ -14,13 +14,15 @@ import { cn } from "@/lib/utils";
 import type { Id } from "@stroika/backend";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar, ListTree, Plus, User, X } from "lucide-react";
+import { Calendar, File, ListTree, Plus, User, X } from "lucide-react";
 import { useState } from "react";
+import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
 
 export interface SubtaskData {
 	title: string;
 	assigneeId?: Id<"users"> | null;
 	dueDate?: string | null;
+	attachments?: UploadedAttachment[];
 }
 
 interface SubtasksInputProps {
@@ -34,6 +36,9 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 	const [selectedAssigneeId, setSelectedAssigneeId] =
 		useState<Id<"users"> | null>(null);
 	const [selectedDueDate, setSelectedDueDate] = useState<Date | undefined>();
+	const [selectedAttachments, setSelectedAttachments] = useState<
+		UploadedAttachment[]
+	>([]);
 	const [isAssigneeOpen, setIsAssigneeOpen] = useState(false);
 	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 	const { users } = useConstructionData();
@@ -46,11 +51,13 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 					title: newSubtask.trim(),
 					assigneeId: selectedAssigneeId,
 					dueDate: selectedDueDate?.toISOString().split("T")[0],
+					attachments: selectedAttachments,
 				},
 			]);
 			setNewSubtask("");
 			setSelectedAssigneeId(null);
 			setSelectedDueDate(undefined);
+			setSelectedAttachments([]);
 			setIsAdding(false);
 		}
 	};
@@ -106,6 +113,12 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 											</span>
 										</div>
 									)}
+									{subtask.attachments && subtask.attachments.length > 0 && (
+										<div className="flex items-center gap-1">
+											<File className="h-3 w-3" />
+											<span>{subtask.attachments.length}</span>
+										</div>
+									)}
 								</div>
 								<Button
 									size="xs"
@@ -139,6 +152,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 								setNewSubtask("");
 								setSelectedAssigneeId(null);
 								setSelectedDueDate(undefined);
+								setSelectedAttachments([]);
 							}
 						}}
 					/>
@@ -207,6 +221,12 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 							</PopoverContent>
 						</Popover>
 
+						{/* File upload */}
+						<AttachmentUpload
+							onAttachmentsChange={setSelectedAttachments}
+							className="w-fit"
+						/>
+
 						<div className="ml-auto flex gap-2">
 							<Button
 								size="sm"
@@ -224,6 +244,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 									setNewSubtask("");
 									setSelectedAssigneeId(null);
 									setSelectedDueDate(undefined);
+									setSelectedAttachments([]);
 								}}
 								className="h-8"
 							>
