@@ -4,10 +4,6 @@ import { v } from "convex/values";
 
 export default defineSchema({
 	...authTables,
-	todos: defineTable({
-		text: v.string(),
-		completed: v.boolean(),
-	}),
 
 	// Users table
 	users: defineTable({

@@ -77,25 +77,6 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 						<CommandList>
 							<CommandEmpty>No status found.</CommandEmpty>
 							<CommandGroup>
-								{/* {statuses.map((item) => (
-									<CommandItem
-										key={item.id}
-										value={item.id}
-										onSelect={handleStatusChange}
-										className="flex items-center justify-between"
-									>
-										<div className="flex items-center gap-2">
-											<item.icon />
-											{item.name}
-										</div>
-										{value === item.id && (
-											<CheckIcon size={16} className="ml-auto" />
-										)}
-										<span className="text-muted-foreground text-xs">
-											{filterByStatus(item.id).length}
-										</span>
-									</CommandItem>
-								))} */}
 							</CommandGroup>
 						</CommandList>
 					</Command>

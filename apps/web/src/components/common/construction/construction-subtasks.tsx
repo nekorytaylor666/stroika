@@ -100,14 +100,6 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 	const handleCreateSubtask = async () => {
 		if (!newSubtaskTitle.trim()) return;
 
-		// Debug logging
-		console.log("Available statuses:", statuses);
-		console.log("Default status:", defaultStatus);
-		console.log("Task:", task);
-		console.log(
-			"Task priority ID:",
-			task.priorityId || (task as any).priority?._id,
-		);
 
 		if (!defaultStatus) {
 			toast.error(
