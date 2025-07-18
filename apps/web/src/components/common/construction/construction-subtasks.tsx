@@ -100,7 +100,6 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 	const handleCreateSubtask = async () => {
 		if (!newSubtaskTitle.trim()) return;
 
-
 		if (!defaultStatus) {
 			toast.error(
 				"Не удалось найти статус по умолчанию. Доступные статусы: " +
