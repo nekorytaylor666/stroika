@@ -67,7 +67,6 @@ export function ConstructionCreateIssueModal() {
 		}
 
 		try {
-
 			const taskId = await handleCreateTask({
 				identifier: `CONST-${Date.now()}`,
 				title: title.trim(),
@@ -81,7 +80,6 @@ export function ConstructionCreateIssueModal() {
 				rank: `${Date.now()}`,
 				dueDate: undefined,
 			});
-
 
 			// Link selected documents to the task
 

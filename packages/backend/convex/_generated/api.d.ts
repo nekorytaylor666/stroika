@@ -9,9 +9,9 @@
  */
 
 import type {
-  ApiFromModules,
-  FilterApi,
-  FunctionReference,
+	ApiFromModules,
+	FilterApi,
+	FunctionReference,
 } from "convex/server";
 import type * as activities from "../activities.js";
 import type * as attachments_projectAttachments from "../attachments/projectAttachments.js";
@@ -54,43 +54,43 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  activities: typeof activities;
-  "attachments/projectAttachments": typeof attachments_projectAttachments;
-  "attachments/queries": typeof attachments_queries;
-  auth: typeof auth;
-  comments: typeof comments;
-  constructionProjects: typeof constructionProjects;
-  constructionTasks: typeof constructionTasks;
-  constructionTeams: typeof constructionTeams;
-  "departments/mutations": typeof departments_mutations;
-  "departments/queries": typeof departments_queries;
-  "departments/seed": typeof departments_seed;
-  documentTasks: typeof documentTasks;
-  documents: typeof documents;
-  files: typeof files;
-  healthCheck: typeof healthCheck;
-  http: typeof http;
-  issueComments: typeof issueComments;
-  metadata: typeof metadata;
-  "migrations/cleanupUsers": typeof migrations_cleanupUsers;
-  "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;
-  "permissions/constants": typeof permissions_constants;
-  "permissions/hierarchy": typeof permissions_hierarchy;
-  "permissions/queries": typeof permissions_queries;
-  "permissions/seed": typeof permissions_seed;
-  "permissions/types": typeof permissions_types;
-  "permissions/utils": typeof permissions_utils;
-  seed: typeof seed;
-  seedData: typeof seedData;
-  subtasks: typeof subtasks;
-  todos: typeof todos;
-  users: typeof users;
+	activities: typeof activities;
+	"attachments/projectAttachments": typeof attachments_projectAttachments;
+	"attachments/queries": typeof attachments_queries;
+	auth: typeof auth;
+	comments: typeof comments;
+	constructionProjects: typeof constructionProjects;
+	constructionTasks: typeof constructionTasks;
+	constructionTeams: typeof constructionTeams;
+	"departments/mutations": typeof departments_mutations;
+	"departments/queries": typeof departments_queries;
+	"departments/seed": typeof departments_seed;
+	documentTasks: typeof documentTasks;
+	documents: typeof documents;
+	files: typeof files;
+	healthCheck: typeof healthCheck;
+	http: typeof http;
+	issueComments: typeof issueComments;
+	metadata: typeof metadata;
+	"migrations/cleanupUsers": typeof migrations_cleanupUsers;
+	"migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;
+	"permissions/constants": typeof permissions_constants;
+	"permissions/hierarchy": typeof permissions_hierarchy;
+	"permissions/queries": typeof permissions_queries;
+	"permissions/seed": typeof permissions_seed;
+	"permissions/types": typeof permissions_types;
+	"permissions/utils": typeof permissions_utils;
+	seed: typeof seed;
+	seedData: typeof seedData;
+	subtasks: typeof subtasks;
+	todos: typeof todos;
+	users: typeof users;
 }>;
 export declare const api: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "public">
+	typeof fullApi,
+	FunctionReference<any, "public">
 >;
 export declare const internal: FilterApi<
-  typeof fullApi,
-  FunctionReference<any, "internal">
+	typeof fullApi,
+	FunctionReference<any, "internal">
 >;

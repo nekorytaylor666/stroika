@@ -156,7 +156,7 @@ export function CreateNewIssue() {
 			// Create subtasks if any
 			if (addTaskForm.subtasks.length > 0) {
 				for (const subtask of addTaskForm.subtasks) {
-					await createSubtask({
+					const subtaskId = await createSubtask({
 						parentTaskId: taskId as Id<"issues">,
 						title: subtask.title,
 						description: "",
@@ -169,6 +169,19 @@ export function CreateNewIssue() {
 						dueDate: subtask.dueDate || undefined,
 						userId: currentUser?._id as Id<"users">,
 					});
+
+					// Attach files to subtask if any
+					if (subtask.attachments && subtask.attachments.length > 0) {
+						for (const attachment of subtask.attachments) {
+							await attachToIssue({
+								issueId: subtaskId as Id<"issues">,
+								storageId: attachment.storageId,
+								fileName: attachment.fileName,
+								fileSize: attachment.fileSize,
+								mimeType: attachment.mimeType,
+							});
+						}
+					}
 				}
 			}
 
