@@ -1,5 +1,7 @@
 "use client";
 
+import { AttachmentPreview } from "@/components/attachments/attachment-preview";
+import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { cn, formatBytes } from "@/lib/utils";
@@ -24,8 +26,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { ConstructionTask } from "./construction-tasks";
-import { AttachmentPreview } from "@/components/attachments/attachment-preview";
-import { AttachmentPreviewDialog } from "@/components/attachments/attachment-preview-dialog";
 
 interface ConstructionTaskAttachmentsGridProps {
 	task: ConstructionTask;
@@ -397,7 +397,9 @@ export function ConstructionTaskAttachmentsGrid({
 										...selectedAttachment,
 										fileUrl: previewUrl || selectedAttachment.fileUrl,
 									}}
-									onDownload={() => handleDownload(selectedAttachment, {} as any)}
+									onDownload={() =>
+										handleDownload(selectedAttachment, {} as any)
+									}
 								/>
 							</div>
 						</div>

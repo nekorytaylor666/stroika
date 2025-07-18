@@ -56,7 +56,7 @@ const statusStyles = {
 		bg: "bg-yellow-100",
 		borderColor: "border-yellow-200",
 	},
-	Завершено: {
+	завершено: {
 		icon: CheckCircle2,
 		color: "text-green-600",
 		bg: "bg-green-100",
@@ -115,7 +115,7 @@ export function ConstructionProjectOverview({
 	// Data for pie chart
 	const pieData = [
 		{
-			name: "Завершено",
+			name: "завершено",
 			value: taskStats.completed,
 			color: "hsl(142, 76%, 36%)",
 		},
@@ -330,7 +330,7 @@ export function ConstructionProjectOverview({
 											<div className="mb-2 flex items-center justify-between">
 												<div className="h-2 w-2 rounded-full bg-green-500" />
 												<span className="text-muted-foreground text-xs">
-													Завершено
+													завершено
 												</span>
 											</div>
 											<div className="space-y-1">
@@ -348,7 +348,9 @@ export function ConstructionProjectOverview({
 														%
 													</span>
 												</div>
-												<p className="text-muted-foreground text-xs">Готово</p>
+												<p className="text-muted-foreground text-xs">
+													завершено
+												</p>
 											</div>
 										</Card>
 									</div>
@@ -503,12 +505,12 @@ export function ConstructionProjectOverview({
 												<div
 													className={cn(
 														"flex h-8 w-8 items-center justify-center rounded-full",
-														task.status?.name.includes("Завершено")
+														task.status?.name.includes("завершено")
 															? "bg-green-100"
 															: "bg-gray-100",
 													)}
 												>
-													{task.status?.name.includes("Завершено") ? (
+													{task.status?.name.includes("завершено") ? (
 														<CheckCircle2 className="h-4 w-4 text-green-600" />
 													) : (
 														<Circle className="h-4 w-4 text-gray-600" />

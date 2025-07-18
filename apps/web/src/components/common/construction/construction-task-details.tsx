@@ -19,6 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
@@ -40,11 +41,14 @@ import {
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
+import { ParentTaskDisplay } from "./construction-parent-task";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionStatusSelector } from "./construction-status-selector";
+import { ConstructionSubtasks } from "./construction-subtasks";
 import { ConstructionTaskAttachmentsGrid } from "./construction-task-attachments-grid";
 import { ConstructionTaskComments } from "./construction-task-comments";
 import type { ConstructionTask } from "./construction-tasks";
+import { TimelineChart } from "./construction-timeline-chart";
 
 interface ConstructionTaskDetailsProps {
 	task: ConstructionTask | null;
@@ -72,6 +76,7 @@ export function ConstructionTaskDetails({
 	const [title, setTitle] = useState(task?.title || "");
 	const [description, setDescription] = useState(task?.description || "");
 	const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+	const currentUser = useCurrentUser();
 
 	// Query to get fresh task data
 	const freshTask = useQuery(
@@ -81,6 +86,12 @@ export function ConstructionTaskDetails({
 
 	// Use fresh task data if available, otherwise fall back to prop
 	const currentTask = freshTask || task;
+
+	// Fetch subtasks for timeline chart
+	const subtasks = useQuery(
+		api.subtasks.getSubtasks,
+		currentTask?._id ? { taskId: currentTask._id as Id<"issues"> } : "skip",
+	);
 
 	useEffect(() => {
 		if (currentTask) {
@@ -101,13 +112,13 @@ export function ConstructionTaskDetails({
 	const project = currentTask.projectId
 		? projects?.find((p) => p._id === currentTask.projectId)
 		: null;
-
 	const handleTitleSave = async () => {
 		if (title !== currentTask.title && updateTask) {
 			try {
 				await (updateTask as any)({
 					id: currentTask._id as Id<"issues">,
 					title,
+					userId: currentUser?._id as Id<"users">,
 				});
 			} catch (error) {
 				console.error("Error updating title:", error);
@@ -122,6 +133,7 @@ export function ConstructionTaskDetails({
 				await (updateTask as any)({
 					id: currentTask._id as Id<"issues">,
 					description,
+					userId: currentUser?._id as Id<"users">,
 				});
 			} catch (error) {
 				console.error("Error updating description:", error);
@@ -273,6 +285,35 @@ export function ConstructionTaskDetails({
 
 								<Separator />
 
+								{/* Parent Task Section - show if this is a subtask */}
+								{(currentTask as any).parentTaskId && (
+									<>
+										<div>
+											<ParentTaskDisplay
+												parentTaskId={(currentTask as any).parentTaskId}
+											/>
+										</div>
+										<Separator />
+									</>
+								)}
+
+								{/* Subtasks Section */}
+								<div className="space-y-4">
+									<ConstructionSubtasks
+										task={currentTask as ConstructionTask}
+									/>
+
+									{/* Timeline chart - show if task has subtasks */}
+									{subtasks && subtasks.length > 0 && (
+										<TimelineChart
+											subtasks={subtasks}
+											parentTask={currentTask}
+										/>
+									)}
+								</div>
+
+								<Separator />
+
 								{/* Attachments Section */}
 								<div>
 									<div className="mb-4 flex items-center gap-2">
@@ -291,7 +332,9 @@ export function ConstructionTaskDetails({
 
 								{/* Comments Section */}
 								<div>
-									<ConstructionTaskComments issueId={currentTask._id as Id<"issues">} />
+									<ConstructionTaskComments
+										issueId={currentTask._id as Id<"issues">}
+									/>
 								</div>
 							</div>
 						</div>
@@ -459,6 +502,7 @@ export function ConstructionTaskDetails({
 														dueDate: date
 															? date.toISOString().split("T")[0]
 															: undefined,
+														userId: currentUser?._id as Id<"users">,
 													});
 													setIsDatePickerOpen(false);
 												}
@@ -476,6 +520,7 @@ export function ConstructionTaskDetails({
 															await updateTask({
 																id: currentTask._id as Id<"issues">,
 																dueDate: undefined,
+																userId: currentUser?._id as Id<"users">,
 															});
 															setIsDatePickerOpen(false);
 														}

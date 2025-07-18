@@ -54,7 +54,7 @@ export function EditableComponentsExample() {
 		},
 		{
 			value: "completed",
-			label: "Завершено",
+			label: "завершено",
 			icon: <CheckCircle2 className="h-3.5 w-3.5" />,
 			color: "#10B981",
 		},

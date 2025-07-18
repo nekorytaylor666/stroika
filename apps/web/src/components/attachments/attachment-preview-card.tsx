@@ -12,11 +12,7 @@ import { cn, formatFileSize } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import {
-	Download,
-	Eye,
-	MoreVertical,
-} from "lucide-react";
+import { Download, Eye, MoreVertical } from "lucide-react";
 import { AttachmentPreview } from "./attachment-preview";
 
 interface AttachmentPreviewCardProps {
@@ -53,7 +49,6 @@ export function AttachmentPreviewCard({
 	onPreview,
 	onDownload,
 }: AttachmentPreviewCardProps) {
-
 	const getIssueUrl = () => {
 		if (!attachment.issue) return null;
 		if (attachment.issue.isConstructionTask) {

@@ -44,8 +44,6 @@ export function LinearAttachmentCard({
 }: LinearAttachmentCardProps) {
 	const [isHovered, setIsHovered] = useState(false);
 
-
-
 	const handleDownload = () => {
 		const link = document.createElement("a");
 		link.href = attachment.fileUrl;
@@ -171,7 +169,11 @@ export function LinearAttachmentCard({
 					<AttachmentPreview
 						fileUrl={attachment.fileUrl}
 						fileName={attachment.fileName}
-						mimeType={attachment.mimeType || attachment.fileType || "application/octet-stream"}
+						mimeType={
+							attachment.mimeType ||
+							attachment.fileType ||
+							"application/octet-stream"
+						}
 						className="h-full w-full transition-transform group-hover:scale-110"
 					/>
 

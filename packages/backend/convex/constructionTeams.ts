@@ -46,6 +46,8 @@ export const getProjectTeamWithStats = query({
 				// Calculate task statistics
 				const taskStats = {
 					total: userTasks.length,
+					plan: userTasks.length, // All assigned tasks are planned
+					fact: 0, // Only completed tasks count as fact
 					completed: 0,
 					inProgress: 0,
 					todo: 0,
@@ -57,8 +59,13 @@ export const getProjectTeamWithStats = query({
 					if (task.statusId) {
 						const status = statusMap.get(task.statusId);
 						if (status) {
-							if (status.name === "Завершено" || status.name === "Done") {
+							if (
+								status.name === "завершено" ||
+								status.name === "Done" ||
+								status.name === "Completed"
+							) {
 								taskStats.completed++;
+								taskStats.fact++; // Completed tasks count as fact
 							} else if (
 								status.name === "В работе" ||
 								status.name === "In Progress"
@@ -77,7 +84,7 @@ export const getProjectTeamWithStats = query({
 						task.dueDate &&
 						new Date(task.dueDate) < new Date() &&
 						task.statusId &&
-						statusMap.get(task.statusId)?.name !== "Завершено"
+						statusMap.get(task.statusId)?.name !== "завершено"
 					) {
 						taskStats.overdue++;
 					}
@@ -144,6 +151,7 @@ export const getProjectTeamWithStats = query({
 			totalTasks: projectTasks.length,
 			assignedTasks: projectTasks.filter((t) => t.assigneeId).length,
 			unassignedTasks: projectTasks.filter((t) => !t.assigneeId).length,
+			plannedTasks: validMembers.reduce((sum, m) => sum + m.taskStats.plan, 0),
 			completedTasks: validMembers.reduce(
 				(sum, m) => sum + m.taskStats.completed,
 				0,

@@ -82,10 +82,10 @@ export const getDocumentAttachments = query({
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
-				return { 
-					...attachment, 
+				return {
+					...attachment,
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-					uploader 
+					uploader,
 				};
 			}),
 		);
@@ -167,10 +167,10 @@ export const getIssueAttachments = query({
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
-				return { 
-					...attachment, 
+				return {
+					...attachment,
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-					uploader 
+					uploader,
 				};
 			}),
 		);

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 
 // Queries
@@ -12,7 +13,7 @@ export const getAll = query({
 		// Populate related data
 		const populatedTasks = await Promise.all(
 			tasks.map(async (task) => {
-				const [status, assignee, priority, labels, attachments] =
+				const [status, assignee, priority, labels, attachments, subtasks] =
 					await Promise.all([
 						ctx.db.get(task.statusId),
 						task.assigneeId ? ctx.db.get(task.assigneeId) : null,
@@ -21,6 +22,12 @@ export const getAll = query({
 						ctx.db
 							.query("issueAttachments")
 							.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+							.collect(),
+						ctx.db
+							.query("issues")
+							.withIndex("by_parent_task", (q) =>
+								q.eq("parentTaskId", task._id),
+							)
 							.collect(),
 					]);
 
@@ -31,10 +38,10 @@ export const getAll = query({
 							ctx.db.get(attachment.uploadedBy),
 							ctx.storage.getUrl(attachment.fileUrl as any),
 						]);
-						return { 
-							...attachment, 
+						return {
+							...attachment,
 							fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-							uploader 
+							uploader,
 						};
 					}),
 				);
@@ -46,6 +53,7 @@ export const getAll = query({
 					priority,
 					labels: labels.filter((label) => label !== null),
 					attachments: attachmentsWithUsers,
+					subtaskCount: subtasks.length,
 				};
 			}),
 		);
@@ -80,10 +88,10 @@ export const getById = query({
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
-				return { 
-					...attachment, 
+				return {
+					...attachment,
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-					uploader 
+					uploader,
 				};
 			}),
 		);
@@ -148,10 +156,10 @@ export const getTaskRelatedDocuments = query({
 								ctx.db.get(attachment.uploadedBy),
 								ctx.storage.getUrl(attachment.fileUrl as any),
 							]);
-							return { 
-								...attachment, 
+							return {
+								...attachment,
 								fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-								uploader 
+								uploader,
 							};
 						}),
 					);
@@ -191,11 +199,28 @@ export const getByAssignee = query({
 export const getByProject = query({
 	args: { projectId: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
-		return await ctx.db
+		const tasks = await ctx.db
 			.query("issues")
 			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
 			.filter((q) => q.eq(q.field("isConstructionTask"), true))
 			.collect();
+
+		// Add subtask count to each task
+		const tasksWithSubtaskCount = await Promise.all(
+			tasks.map(async (task) => {
+				const subtasks = await ctx.db
+					.query("issues")
+					.withIndex("by_parent_task", (q) => q.eq("parentTaskId", task._id))
+					.collect();
+
+				return {
+					...task,
+					subtaskCount: subtasks.length,
+				};
+			}),
+		);
+
+		return tasksWithSubtaskCount;
 	},
 });
 
@@ -291,15 +316,28 @@ export const create = mutation({
 		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
+		parentTaskId: v.optional(v.id("issues")), // For creating subtasks
+		userId: v.id("users"), // User creating the task
 	},
 	handler: async (ctx, args) => {
-		const taskData = {
-			...args,
+		const { userId, ...taskData } = args;
+		const fullTaskData = {
+			...taskData,
 			createdAt: new Date().toISOString(),
 			isConstructionTask: true,
 		};
 
-		return await ctx.db.insert("issues", taskData);
+		const taskId = await ctx.db.insert("issues", fullTaskData);
+
+		// Track activity
+		await ctx.runMutation(api.activities.createActivity, {
+			issueId: taskId,
+			userId,
+			type: "created",
+			newValue: args.title,
+		});
+
+		return taskId;
 	},
 });
 
@@ -317,9 +355,89 @@ export const update = mutation({
 		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
+		userId: v.id("users"), // User making the update
 	},
 	handler: async (ctx, args) => {
-		const { id, ...updates } = args;
+		const { id, userId, ...updates } = args;
+
+		// Get the current task to track changes
+		const currentTask = await ctx.db.get(id);
+		if (!currentTask) throw new Error("Task not found");
+
+		// Track specific changes
+		if (updates.statusId && updates.statusId !== currentTask.statusId) {
+			const [oldStatus, newStatus] = await Promise.all([
+				ctx.db.get(currentTask.statusId),
+				ctx.db.get(updates.statusId),
+			]);
+
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: id,
+				userId,
+				type: "status_changed",
+				oldValue: oldStatus?.name,
+				newValue: newStatus?.name,
+				metadata: {
+					oldStatusId: currentTask.statusId,
+					newStatusId: updates.statusId,
+				},
+			});
+
+			// Check if task was completed
+			if (
+				newStatus?.name === "завершено" ||
+				newStatus?.name === "Done" ||
+				newStatus?.name === "Completed"
+			) {
+				await ctx.runMutation(api.activities.createActivity, {
+					issueId: id,
+					userId,
+					type: "completed",
+					newValue: new Date().toISOString(),
+				});
+			}
+		}
+
+		if (
+			updates.assigneeId !== undefined &&
+			updates.assigneeId !== currentTask.assigneeId
+		) {
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: id,
+				userId,
+				type: "assignee_changed",
+				metadata: {
+					oldAssigneeId: currentTask.assigneeId,
+					newAssigneeId: updates.assigneeId,
+				},
+			});
+		}
+
+		if (updates.priorityId && updates.priorityId !== currentTask.priorityId) {
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: id,
+				userId,
+				type: "priority_changed",
+				metadata: {
+					oldPriorityId: currentTask.priorityId,
+					newPriorityId: updates.priorityId,
+				},
+			});
+		}
+
+		if (
+			updates.dueDate !== undefined &&
+			updates.dueDate !== currentTask.dueDate
+		) {
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: id,
+				userId,
+				type: "due_date_changed",
+				oldValue: currentTask.dueDate || undefined,
+				newValue: updates.dueDate || undefined,
+			});
+		}
+
 		await ctx.db.patch(id, updates);
 		return { success: true };
 	},
@@ -329,8 +447,46 @@ export const updateStatus = mutation({
 	args: {
 		id: v.id("issues"),
 		statusId: v.id("status"),
+		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
+		// Get current task to track changes
+		const currentTask = await ctx.db.get(args.id);
+		if (!currentTask) throw new Error("Task not found");
+
+		if (args.statusId !== currentTask.statusId) {
+			const [oldStatus, newStatus] = await Promise.all([
+				ctx.db.get(currentTask.statusId),
+				ctx.db.get(args.statusId),
+			]);
+
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: args.id,
+				userId: args.userId,
+				type: "status_changed",
+				oldValue: oldStatus?.name,
+				newValue: newStatus?.name,
+				metadata: {
+					oldStatusId: currentTask.statusId,
+					newStatusId: args.statusId,
+				},
+			});
+
+			// Check if task was completed
+			if (
+				newStatus?.name === "завершено" ||
+				newStatus?.name === "Done" ||
+				newStatus?.name === "Completed"
+			) {
+				await ctx.runMutation(api.activities.createActivity, {
+					issueId: args.id,
+					userId: args.userId,
+					type: "completed",
+					newValue: new Date().toISOString(),
+				});
+			}
+		}
+
 		await ctx.db.patch(args.id, { statusId: args.statusId });
 		return { success: true };
 	},

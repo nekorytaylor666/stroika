@@ -41,7 +41,7 @@ export function NavConstructionProjects() {
 	const [isOpen, setIsOpen] = useState(true);
 
 	// Get the 5 most recent projects
-	const recentProjects = projects?.slice(0, 5) || [];
+	const recentProjects = projects;
 
 	// Filter favorite projects
 	const favProjects =

@@ -2,12 +2,15 @@
 
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
-import { format } from "date-fns";
+import { differenceInDays, format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { ListTree } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { IssueContextMenu } from "../issues/issue-context-menu";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
+import { ConstructionContextMenu } from "./construction-context-menu";
 import { ConstructionLabelBadge } from "./construction-label-badge";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionProjectBadge } from "./construction-project-badge";
@@ -64,6 +67,12 @@ export function ConstructionIssueLine({
 		? projects?.find((p) => p._id === issue.projectId)
 		: null;
 
+	// Calculate days until deadline
+	const daysUntilDeadline = issue.dueDate
+		? differenceInDays(new Date(issue.dueDate), new Date())
+		: null;
+	const isNearDeadline = daysUntilDeadline !== null && daysUntilDeadline <= 1;
+
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
@@ -117,10 +126,16 @@ export function ConstructionIssueLine({
 								</motion.div>
 							</AnimatePresence>
 						</div>
-						<span className="mr-1 ml-0.5 flex min-w-0 items-center justify-start">
+						<span className="mr-1 ml-0.5 flex min-w-0 items-center justify-start gap-2">
 							<span className="truncate font-medium text-xs sm:font-semibold sm:text-sm">
 								{issue.title}
 							</span>
+							{issue.subtaskCount !== undefined && issue.subtaskCount > 0 && (
+								<span className="flex items-center gap-1 text-muted-foreground text-xs">
+									<ListTree className="h-3 w-3" />
+									<span>{issue.subtaskCount}</span>
+								</span>
+							)}
 						</span>
 						<div className="ml-auto flex items-center justify-end gap-2 sm:w-fit">
 							<div className="w-3 shrink-0"></div>
@@ -130,15 +145,27 @@ export function ConstructionIssueLine({
 								)}
 								{project && <ConstructionProjectBadge project={project} />}
 							</div>
+							{issue.dueDate && (
+								<span
+									className={cn(
+										"hidden shrink-0 text-xs sm:inline-block",
+										isNearDeadline
+											? "font-semibold text-red-600"
+											: "text-muted-foreground",
+									)}
+								>
+									{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
+								</span>
+							)}
 							<span className="hidden shrink-0 text-muted-foreground text-xs sm:inline-block">
-								{format(new Date(issue.createdAt), "MMM dd")}
+								{format(new Date(issue.createdAt), "MMM dd", { locale: ru })}
 							</span>
-							<ConstructionAssigneeUser user={assignee} />
+							<ConstructionAssigneeUser user={assignee || null} />
 						</div>
 					</div>
 				</motion.div>
 			</ContextMenuTrigger>
-			{/* <IssueContextMenu issueId={issue._id} /> */}
+			<ConstructionContextMenu task={issue} />
 		</ContextMenu>
 	);
 }

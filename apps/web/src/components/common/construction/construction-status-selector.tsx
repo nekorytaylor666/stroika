@@ -15,6 +15,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import {
 	BacklogIcon,
 	CompletedIcon,
@@ -60,39 +61,53 @@ const StatusIcon: FC<{ iconName: string; color?: string }> = ({
 };
 
 interface ConstructionStatusSelectorProps {
-	statusId: string;
-	issueId: string;
+	statusId?: string;
+	issueId?: string;
 	showLabel?: boolean;
+	status?: any; // Alternative prop for direct status object
+	onChange?: (status: any) => void | Promise<void>; // Alternative change handler
+	size?: "default" | "xs"; // Size variant
 }
 
 export function ConstructionStatusSelector({
 	statusId,
 	issueId,
 	showLabel = false,
+	status,
+	onChange,
+	size = "default",
 }: ConstructionStatusSelectorProps) {
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
-	const [value, setValue] = useState<string>(statusId);
+	const [value, setValue] = useState<string>(statusId || status?._id || "");
 	const { statuses, updateTaskStatus, tasks } = useConstructionData();
+	const currentUser = useCurrentUser();
 
 	useEffect(() => {
-		setValue(statusId);
-	}, [statusId]);
+		setValue(statusId || status?._id || "");
+	}, [statusId, status]);
 
 	const handleStatusChange = async (newStatusId: string) => {
 		setValue(newStatusId);
 		setOpen(false);
 
-		if (issueId && newStatusId !== statusId) {
+		// Use custom onChange handler if provided
+		if (onChange) {
+			const newStatus = statuses?.find((s) => s._id === newStatusId);
+			if (newStatus) {
+				await onChange(newStatus);
+			}
+		} else if (issueId && newStatusId !== statusId && currentUser) {
 			try {
 				await updateTaskStatus({
 					id: issueId as Id<"issues">,
 					statusId: newStatusId as Id<"status">,
+					userId: currentUser._id as Id<"users">,
 				});
 			} catch (error) {
 				console.error("Failed to update status:", error);
 				// Revert on error
-				setValue(statusId);
+				setValue(statusId || "");
 			}
 		}
 	};
@@ -111,11 +126,13 @@ export function ConstructionStatusSelector({
 					<Button
 						id={id}
 						className={
-							showLabel
-								? "h-8 w-full justify-start px-2"
-								: "flex size-7 items-center justify-center"
+							size === "xs"
+								? "flex h-6 w-6 items-center justify-center p-0"
+								: showLabel
+									? "h-8 w-full justify-start px-2"
+									: "flex size-7 items-center justify-center"
 						}
-						size={showLabel ? "sm" : "icon"}
+						size={size === "xs" ? "icon" : showLabel ? "sm" : "icon"}
 						variant="ghost"
 						role="combobox"
 						aria-expanded={open}

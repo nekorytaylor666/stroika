@@ -1,10 +1,12 @@
 "use client";
 
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useViewStore } from "@/store/view-store";
 import { api } from "@stroika/backend";
+import { useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import {
 	AlertCircle,
@@ -17,7 +19,6 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
-import { useParams } from "@tanstack/react-router";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { Button } from "../../ui/button";
 import { IssueDragType } from "../issues/issue-grid";
@@ -82,10 +83,12 @@ export function ConstructionGroupIssues({
 	const { openModal } = useCreateIssueStore();
 	const priorities = useQuery(api.metadata.getAllPriorities);
 	const sortedIssues = sortConstructionTasksByPriority(issues, priorities);
-	
+
 	// Get projectId from route params if we're in a project view
 	const params = useParams({ strict: false });
-	const projectId = (params as any)?.projectId as Id<"constructionProjects"> | undefined;
+	const projectId = (params as any)?.projectId as
+		| Id<"constructionProjects">
+		| undefined;
 
 	return (
 		<div
@@ -134,9 +137,9 @@ export function ConstructionGroupIssues({
 									<StatusIcon iconName={status.iconName} color={status.color} />
 								),
 							};
-							openModal({ 
+							openModal({
 								status: statusForModal as any,
-								projectId: projectId 
+								projectId: projectId,
 							});
 						}}
 					>
@@ -168,16 +171,19 @@ const ConstructionIssueGridList: FC<{
 }> = ({ issues, status }) => {
 	const ref = useRef<HTMLDivElement>(null);
 	const { updateTaskStatus, priorities } = useConstructionData();
+	const currentUser = useCurrentUser();
 
 	// Set up drop functionality to accept only issue items.
 	const [{ isOver }, drop] = useDrop(() => ({
 		accept: IssueDragType,
 		drop: async (item: ConstructionTask, monitor) => {
-			if (monitor.didDrop() && item.statusId !== status._id) {
+			// Don't process if already dropped or same status
+			if (!monitor.didDrop() && item.statusId !== status._id && currentUser) {
 				try {
 					await updateTaskStatus({
 						id: item._id as Id<"issues">,
 						statusId: status._id as Id<"status">,
+						userId: currentUser._id as Id<"users">,
 					});
 				} catch (error) {
 					console.error("Failed to update task status:", error);
@@ -195,7 +201,10 @@ const ConstructionIssueGridList: FC<{
 	return (
 		<div
 			ref={ref}
-			className="relative h-full flex-1 space-y-2 overflow-y-auto bg-zinc-50/50 p-2 dark:bg-zinc-900/50"
+			className={cn(
+				"relative h-full flex-1 space-y-2 overflow-y-auto bg-zinc-50/50 p-2 dark:bg-zinc-900/50",
+				sortedIssues.length === 0 && "min-h-[200px]",
+			)}
 		>
 			<AnimatePresence>
 				{isOver && (

@@ -1,21 +1,21 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
 	Download,
 	File,
-	FileText,
-	FileSpreadsheet,
-	FileCode,
-	FileVideo,
-	FileAudio,
 	FileArchive,
+	FileAudio,
+	FileCode,
+	FileSpreadsheet,
+	FileText,
+	FileVideo,
 	Image as ImageIcon,
 	Loader2,
+	RotateCw,
 	ZoomIn,
 	ZoomOut,
-	RotateCw,
 } from "lucide-react";
+import { useState } from "react";
 
 interface AttachmentPreviewDialogProps {
 	attachment: {
@@ -106,19 +106,19 @@ const mimeTypeCategories = {
 // Get file category from MIME type
 function getFileCategory(mimeType: string): string {
 	const normalizedMimeType = mimeType.toLowerCase();
-	
+
 	for (const [category, types] of Object.entries(mimeTypeCategories)) {
-		if (types.some(type => normalizedMimeType.includes(type))) {
+		if (types.some((type) => normalizedMimeType.includes(type))) {
 			return category;
 		}
 	}
-	
+
 	// Check by common patterns
 	if (normalizedMimeType.startsWith("image/")) return "image";
 	if (normalizedMimeType.startsWith("video/")) return "video";
 	if (normalizedMimeType.startsWith("audio/")) return "audio";
 	if (normalizedMimeType.startsWith("text/")) return "code";
-	
+
 	return "other";
 }
 
@@ -153,31 +153,31 @@ export function AttachmentPreviewDialog({
 	const [error, setError] = useState(false);
 	const [scale, setScale] = useState(1);
 	const [rotation, setRotation] = useState(0);
-	
+
 	const category = getFileCategory(attachment.mimeType);
 	const FileIcon = getFileIcon(category);
-	
+
 	const handleZoomIn = () => {
-		setScale(prev => Math.min(prev + 0.25, 3));
+		setScale((prev) => Math.min(prev + 0.25, 3));
 	};
-	
+
 	const handleZoomOut = () => {
-		setScale(prev => Math.max(prev - 0.25, 0.5));
+		setScale((prev) => Math.max(prev - 0.25, 0.5));
 	};
-	
+
 	const handleRotate = () => {
-		setRotation(prev => (prev + 90) % 360);
+		setRotation((prev) => (prev + 90) % 360);
 	};
-	
+
 	const handleLoad = () => {
 		setLoading(false);
 	};
-	
+
 	const handleError = () => {
 		setLoading(false);
 		setError(true);
 	};
-	
+
 	// For images, show with zoom controls
 	if (category === "image" && !error) {
 		return (
@@ -203,11 +203,7 @@ export function AttachmentPreviewDialog({
 						>
 							<ZoomIn className="h-4 w-4" />
 						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={handleRotate}
-						>
+						<Button variant="ghost" size="icon" onClick={handleRotate}>
 							<RotateCw className="h-4 w-4" />
 						</Button>
 					</div>
@@ -238,9 +234,13 @@ export function AttachmentPreviewDialog({
 			</div>
 		);
 	}
-	
+
 	// For PDFs, show in iframe
-	if (category === "document" && attachment.mimeType === "application/pdf" && !error) {
+	if (
+		category === "document" &&
+		attachment.mimeType === "application/pdf" &&
+		!error
+	) {
 		return (
 			<div className="flex h-full flex-col">
 				<div className="flex items-center justify-end border-b p-2">
@@ -266,7 +266,7 @@ export function AttachmentPreviewDialog({
 			</div>
 		);
 	}
-	
+
 	// For videos, show video player
 	if (category === "video" && !error) {
 		return (
@@ -292,7 +292,7 @@ export function AttachmentPreviewDialog({
 			</div>
 		);
 	}
-	
+
 	// For audio, show audio player
 	if (category === "audio" && !error) {
 		return (
@@ -328,7 +328,7 @@ export function AttachmentPreviewDialog({
 			</div>
 		);
 	}
-	
+
 	// For code files, show with syntax highlighting (basic)
 	if (category === "code" && !error) {
 		return (
@@ -360,14 +360,12 @@ export function AttachmentPreviewDialog({
 			</div>
 		);
 	}
-	
+
 	// For other files, show download prompt
 	return (
 		<div className="flex h-full flex-col items-center justify-center p-8 text-muted-foreground">
 			<FileIcon className="mb-4 h-20 w-20" />
-			<h3 className="mb-2 font-medium text-lg">
-				{attachment.fileName}
-			</h3>
+			<h3 className="mb-2 font-medium text-lg">{attachment.fileName}</h3>
 			<p className="mb-6 text-center text-sm">
 				Предпросмотр недоступен для этого типа файла
 			</p>

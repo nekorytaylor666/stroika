@@ -13,11 +13,11 @@ import { type FC, useMemo } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { CreateIssueModalProvider } from "../issues/create-issue-modal-provider";
-// import { SearchIssues } from "../issues/search-issues";
 import { ConstructionCreateIssueModal } from "./construction-create-issue-modal";
 import { ConstructionGroupIssues } from "./construction-group-issues";
 import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
+import { SearchConstructionTasks } from "./search-construction-tasks";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -35,6 +35,8 @@ export interface ConstructionTask {
 	rank: string;
 	dueDate?: string;
 	isConstructionTask: boolean;
+	parentTaskId?: string; // For subtask hierarchy
+	subtaskCount?: number; // Number of subtasks
 	attachments?: Array<{
 		_id: string;
 		issueId: string;
@@ -74,10 +76,17 @@ export default function ConstructionTasks() {
 	return (
 		<>
 			<div className={cn("h-full w-full", isViewTypeGrid && "overflow-x-auto")}>
-				<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} />
+				{isSearching ? (
+					<div className="px-6 py-4">
+						<SearchConstructionTasks />
+					</div>
+				) : isFiltering ? (
+					<FilteredConstructionTasksView isViewTypeGrid={isViewTypeGrid} />
+				) : (
+					<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} />
+				)}
 			</div>
-			{/* <ConstructionCreateIssueModal /> */}
-			{/* <CreateIssueModalProvider /> */}
+			<CreateIssueModalProvider />
 			<ConstructionTaskDetails
 				task={selectedTask}
 				open={isOpen}

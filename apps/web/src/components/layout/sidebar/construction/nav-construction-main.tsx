@@ -4,6 +4,7 @@ import {
 	AlertTriangle,
 	BarChart3,
 	Building,
+	CalendarRange,
 	CheckSquare,
 	DollarSign,
 	FileText,
@@ -66,6 +67,12 @@ const constructionMainItems = [
 		url: "/construction/$orgId/attachments",
 		icon: FileText,
 		description: "Проектная документация и чертежи",
+	},
+	{
+		name: "Диаграмма Ганта",
+		url: "/construction/$orgId/gantt",
+		icon: CalendarRange,
+		description: "Визуализация сроков проектов и задач",
 	},
 ];
 

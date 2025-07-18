@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
 import type { Id } from "@stroika/backend";
-import { 
+import {
 	Building,
 	Building2,
 	Calendar,
@@ -38,7 +38,7 @@ import {
 	Plus,
 	Sparkles,
 	Users,
-	X
+	X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -156,7 +156,10 @@ export function ConstructionProjectCreateDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="flex h-[90vh] max-h-[900px] w-full max-w-4xl flex-col overflow-hidden p-0" hideCloseButton>
+			<DialogContent
+				className="flex h-[90vh] max-h-[900px] w-full max-w-4xl flex-col overflow-hidden p-0"
+				hideCloseButton
+			>
 				{/* Header */}
 				<div className="flex-shrink-0 border-b bg-muted/30 px-8 py-6">
 					<DialogHeader>
@@ -166,7 +169,9 @@ export function ConstructionProjectCreateDialog({
 									<Building className="h-6 w-6 text-primary" />
 								</div>
 								<div>
-									<DialogTitle className="text-xl">Новый строительный проект</DialogTitle>
+									<DialogTitle className="text-xl">
+										Новый строительный проект
+									</DialogTitle>
 									<DialogDescription>
 										Создайте новый проект и начните отслеживать прогресс
 									</DialogDescription>
@@ -185,355 +190,370 @@ export function ConstructionProjectCreateDialog({
 				</div>
 
 				{/* Form Content */}
-				<form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-0">
-						{/* Project Details Section */}
-						<div className="px-8 py-6">
-							<div className="mb-6 flex items-center gap-2">
-								<Sparkles className="h-4 w-4 text-muted-foreground" />
-								<h3 className="font-medium text-sm text-muted-foreground">Основная информация</h3>
+				<form
+					onSubmit={handleSubmit}
+					className="flex-1 space-y-0 overflow-y-auto"
+				>
+					{/* Project Details Section */}
+					<div className="px-8 py-6">
+						<div className="mb-6 flex items-center gap-2">
+							<Sparkles className="h-4 w-4 text-muted-foreground" />
+							<h3 className="font-medium text-muted-foreground text-sm">
+								Основная информация
+							</h3>
+						</div>
+
+						<div className="grid gap-6">
+							<div className="space-y-2">
+								<Label htmlFor="name" className="font-medium text-sm">
+									Название проекта
+								</Label>
+								<Input
+									id="name"
+									value={formData.name}
+									onChange={(e) =>
+										setFormData({ ...formData, name: e.target.value })
+									}
+									placeholder="Жилой комплекс 'Алматы'"
+									className="h-10"
+									required
+								/>
 							</div>
-							
-							<div className="grid gap-6">
+
+							<div className="grid grid-cols-2 gap-6">
 								<div className="space-y-2">
-									<Label htmlFor="name" className="text-sm font-medium">
-										Название проекта
+									<Label htmlFor="client" className="font-medium text-sm">
+										Заказчик
 									</Label>
 									<Input
-										id="name"
-										value={formData.name}
+										id="client"
+										value={formData.client}
 										onChange={(e) =>
-											setFormData({ ...formData, name: e.target.value })
+											setFormData({ ...formData, client: e.target.value })
 										}
-										placeholder="Жилой комплекс 'Алматы'"
+										placeholder="ТОО 'Строй Инвест'"
 										className="h-10"
 										required
 									/>
 								</div>
 
-								<div className="grid grid-cols-2 gap-6">
-									<div className="space-y-2">
-										<Label htmlFor="client" className="text-sm font-medium">
-											Заказчик
-										</Label>
-										<Input
-											id="client"
-											value={formData.client}
-											onChange={(e) =>
-												setFormData({ ...formData, client: e.target.value })
-											}
-											placeholder="ТОО 'Строй Инвест'"
-											className="h-10"
-											required
-										/>
-									</div>
-
-									<div className="space-y-2">
-										<Label htmlFor="projectType" className="text-sm font-medium">
-											Тип проекта
-										</Label>
-										<Select
-											value={formData.projectType}
-											onValueChange={(value: any) =>
-												setFormData({ ...formData, projectType: value })
-											}
-										>
-											<SelectTrigger className="h-10">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value="residential">
-													<div className="flex items-center gap-2">
-														<Home className="h-4 w-4" />
-														Жилое
-													</div>
-												</SelectItem>
-												<SelectItem value="commercial">
-													<div className="flex items-center gap-2">
-														<Building2 className="h-4 w-4" />
-														Коммерческое
-													</div>
-												</SelectItem>
-												<SelectItem value="industrial">
-													<div className="flex items-center gap-2">
-														<Factory className="h-4 w-4" />
-														Промышленное
-													</div>
-												</SelectItem>
-												<SelectItem value="infrastructure">
-													<div className="flex items-center gap-2">
-														<Building className="h-4 w-4" />
-														Инфраструктура
-													</div>
-												</SelectItem>
-											</SelectContent>
-										</Select>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* Location & Budget Section */}
-						<Separator />
-						<div className="px-8 py-6">
-							<div className="mb-6 flex items-center gap-2">
-								<MapPin className="h-4 w-4 text-muted-foreground" />
-								<h3 className="font-medium text-sm text-muted-foreground">Местоположение и бюджет</h3>
-							</div>
-							
-							<div className="grid grid-cols-2 gap-6">
 								<div className="space-y-2">
-									<Label htmlFor="location" className="text-sm font-medium">
-										Местоположение
-									</Label>
-									<div className="relative">
-										<MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-										<Input
-											id="location"
-											value={formData.location}
-											onChange={(e) =>
-												setFormData({ ...formData, location: e.target.value })
-											}
-											placeholder="г. Алматы, ул. Абая 150"
-											className="h-10 pl-10"
-											required
-										/>
-									</div>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="contractValue" className="text-sm font-medium">
-										Стоимость контракта
-									</Label>
-									<div className="relative">
-										<DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-										<Input
-											id="contractValue"
-											type="number"
-											value={formData.contractValue}
-											onChange={(e) =>
-												setFormData({ ...formData, contractValue: e.target.value })
-											}
-											placeholder="1 000 000 000"
-											className="h-10 pl-10"
-											required
-										/>
-										<span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-											₸
-										</span>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						{/* Project Management Section */}
-						<Separator />
-						<div className="px-8 py-6">
-							<div className="mb-6 flex items-center gap-2">
-								<Flag className="h-4 w-4 text-muted-foreground" />
-								<h3 className="font-medium text-sm text-muted-foreground">Управление проектом</h3>
-							</div>
-							
-							<div className="grid grid-cols-2 gap-6">
-								<div className="space-y-2">
-									<Label htmlFor="statusId" className="text-sm font-medium">
-										Статус
+									<Label htmlFor="projectType" className="font-medium text-sm">
+										Тип проекта
 									</Label>
 									<Select
-										value={formData.statusId}
-										onValueChange={(value) =>
-											setFormData({ ...formData, statusId: value })
+										value={formData.projectType}
+										onValueChange={(value: any) =>
+											setFormData({ ...formData, projectType: value })
 										}
 									>
 										<SelectTrigger className="h-10">
-											<SelectValue placeholder="Выберите статус" />
+											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{statuses?.map((status) => (
-												<SelectItem key={status._id} value={status._id}>
-													<div className="flex items-center gap-2">
-														<div
-															className="h-2 w-2 rounded-full"
-															style={{ backgroundColor: status.color }}
-														/>
-														{status.name}
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="priorityId" className="text-sm font-medium">
-										Приоритет
-									</Label>
-									<Select
-										value={formData.priorityId}
-										onValueChange={(value) =>
-											setFormData({ ...formData, priorityId: value })
-										}
-									>
-										<SelectTrigger className="h-10">
-											<SelectValue placeholder="Выберите приоритет" />
-										</SelectTrigger>
-										<SelectContent>
-											{priorities?.map((priority) => (
-												<SelectItem key={priority._id} value={priority._id}>
-													<div className="flex items-center gap-2">
-														<div className="h-2 w-2 rounded-full bg-muted-foreground" />
-														{priority.name}
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-
-								<div className="col-span-2 space-y-2">
-									<Label htmlFor="leadId" className="text-sm font-medium">
-										Руководитель проекта
-									</Label>
-									<Select
-										value={formData.leadId}
-										onValueChange={(value) =>
-											setFormData({ ...formData, leadId: value })
-										}
-									>
-										<SelectTrigger className="h-10">
-											<SelectValue placeholder="Выберите руководителя" />
-										</SelectTrigger>
-										<SelectContent>
-											{users?.map((user) => (
-												<SelectItem key={user._id} value={user._id}>
-													<div className="flex items-center gap-2">
-														<Avatar className="h-6 w-6">
-															<AvatarImage src={user.avatarUrl || undefined} />
-															<AvatarFallback className="text-xs">
-																{user.name?.charAt(0)}
-															</AvatarFallback>
-														</Avatar>
-														{user.name}
-													</div>
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-							</div>
-						</div>
-
-						{/* Timeline Section */}
-						<Separator />
-						<div className="px-8 py-6">
-							<div className="mb-6 flex items-center gap-2">
-								<Calendar className="h-4 w-4 text-muted-foreground" />
-								<h3 className="font-medium text-sm text-muted-foreground">Сроки выполнения</h3>
-							</div>
-							
-							<div className="grid grid-cols-2 gap-6">
-								<div className="space-y-2">
-									<Label className="text-sm font-medium">
-										Дата начала
-									</Label>
-									<DatePicker
-										date={formData.startDate}
-										onDateChange={(date) =>
-											date && setFormData({ ...formData, startDate: date })
-										}
-										placeholder="Выберите дату начала"
-									/>
-								</div>
-
-								<div className="space-y-2">
-									<Label className="text-sm font-medium">
-										Целевая дата завершения
-									</Label>
-									<DatePicker
-										date={formData.targetDate}
-										onDateChange={(date) =>
-											setFormData({ ...formData, targetDate: date || undefined })
-										}
-										placeholder="Выберите дату завершения"
-									/>
-								</div>
-							</div>
-						</div>
-
-						{/* Team Members Section */}
-						<Separator />
-						<div className="px-8 py-6">
-							<div className="mb-6 flex items-center gap-2">
-								<Users className="h-4 w-4 text-muted-foreground" />
-								<h3 className="font-medium text-sm text-muted-foreground">Команда проекта</h3>
-							</div>
-							
-							<div className="space-y-3">
-								<div className="flex items-center justify-between">
-									<Label className="text-sm font-medium">Члены команды</Label>
-									<Badge variant="secondary" className="text-xs">
-										{formData.teamMemberIds.length} выбрано
-									</Badge>
-								</div>
-								<div className="max-h-64 overflow-y-auto rounded-lg border bg-muted/30 p-3">
-									<div className="grid gap-2">
-										{users?.map((user) => (
-											<motion.label
-												key={user._id}
-												whileHover={{ scale: 1.01 }}
-												whileTap={{ scale: 0.99 }}
-												className={cn(
-													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors",
-													formData.teamMemberIds.includes(user._id)
-														? "bg-primary/10"
-														: "hover:bg-muted"
-												)}
-											>
-												<input
-													type="checkbox"
-													checked={formData.teamMemberIds.includes(user._id)}
-													onChange={() => handleTeamMemberToggle(user._id)}
-													className="h-4 w-4 rounded border-muted-foreground/30"
-												/>
-												<Avatar className="h-8 w-8">
-													<AvatarImage src={user.avatarUrl || undefined} />
-													<AvatarFallback className="text-xs">
-														{user.name?.charAt(0)}
-													</AvatarFallback>
-												</Avatar>
-												<div className="flex-1">
-													<div className="font-medium text-sm">{user.name}</div>
-													<div className="text-muted-foreground text-xs">{user.email}</div>
+											<SelectItem value="residential">
+												<div className="flex items-center gap-2">
+													<Home className="h-4 w-4" />
+													Жилое
 												</div>
-												{formData.teamMemberIds.includes(user._id) && (
-													<ChevronRight className="h-4 w-4 text-primary" />
-												)}
-											</motion.label>
-										))}
-									</div>
+											</SelectItem>
+											<SelectItem value="commercial">
+												<div className="flex items-center gap-2">
+													<Building2 className="h-4 w-4" />
+													Коммерческое
+												</div>
+											</SelectItem>
+											<SelectItem value="industrial">
+												<div className="flex items-center gap-2">
+													<Factory className="h-4 w-4" />
+													Промышленное
+												</div>
+											</SelectItem>
+											<SelectItem value="infrastructure">
+												<div className="flex items-center gap-2">
+													<Building className="h-4 w-4" />
+													Инфраструктура
+												</div>
+											</SelectItem>
+										</SelectContent>
+									</Select>
 								</div>
 							</div>
 						</div>
+					</div>
 
-						{/* Notes Section */}
-						<Separator />
-						<div className="px-8 py-6">
+					{/* Location & Budget Section */}
+					<Separator />
+					<div className="px-8 py-6">
+						<div className="mb-6 flex items-center gap-2">
+							<MapPin className="h-4 w-4 text-muted-foreground" />
+							<h3 className="font-medium text-muted-foreground text-sm">
+								Местоположение и бюджет
+							</h3>
+						</div>
+
+						<div className="grid grid-cols-2 gap-6">
 							<div className="space-y-2">
-								<Label htmlFor="notes" className="text-sm font-medium">
-									Примечания
+								<Label htmlFor="location" className="font-medium text-sm">
+									Местоположение
 								</Label>
-								<Textarea
-									id="notes"
-									value={formData.notes}
-									onChange={(e) =>
-										setFormData({ ...formData, notes: e.target.value })
+								<div className="relative">
+									<MapPin className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+									<Input
+										id="location"
+										value={formData.location}
+										onChange={(e) =>
+											setFormData({ ...formData, location: e.target.value })
+										}
+										placeholder="г. Алматы, ул. Абая 150"
+										className="h-10 pl-10"
+										required
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="contractValue" className="font-medium text-sm">
+									Стоимость контракта
+								</Label>
+								<div className="relative">
+									<DollarSign className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+									<Input
+										id="contractValue"
+										type="number"
+										value={formData.contractValue}
+										onChange={(e) =>
+											setFormData({
+												...formData,
+												contractValue: e.target.value,
+											})
+										}
+										placeholder="1 000 000 000"
+										className="h-10 pl-10"
+										required
+									/>
+									<span className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground text-sm">
+										₸
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Project Management Section */}
+					<Separator />
+					<div className="px-8 py-6">
+						<div className="mb-6 flex items-center gap-2">
+							<Flag className="h-4 w-4 text-muted-foreground" />
+							<h3 className="font-medium text-muted-foreground text-sm">
+								Управление проектом
+							</h3>
+						</div>
+
+						<div className="grid grid-cols-2 gap-6">
+							<div className="space-y-2">
+								<Label htmlFor="statusId" className="font-medium text-sm">
+									Статус
+								</Label>
+								<Select
+									value={formData.statusId}
+									onValueChange={(value) =>
+										setFormData({ ...formData, statusId: value })
 									}
-									placeholder="Дополнительная информация о проекте..."
-									rows={4}
-									className="resize-none"
+								>
+									<SelectTrigger className="h-10">
+										<SelectValue placeholder="Выберите статус" />
+									</SelectTrigger>
+									<SelectContent>
+										{statuses?.map((status) => (
+											<SelectItem key={status._id} value={status._id}>
+												<div className="flex items-center gap-2">
+													<div
+														className="h-2 w-2 rounded-full"
+														style={{ backgroundColor: status.color }}
+													/>
+													{status.name}
+												</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="priorityId" className="font-medium text-sm">
+									Приоритет
+								</Label>
+								<Select
+									value={formData.priorityId}
+									onValueChange={(value) =>
+										setFormData({ ...formData, priorityId: value })
+									}
+								>
+									<SelectTrigger className="h-10">
+										<SelectValue placeholder="Выберите приоритет" />
+									</SelectTrigger>
+									<SelectContent>
+										{priorities?.map((priority) => (
+											<SelectItem key={priority._id} value={priority._id}>
+												<div className="flex items-center gap-2">
+													<div className="h-2 w-2 rounded-full bg-muted-foreground" />
+													{priority.name}
+												</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="col-span-2 space-y-2">
+								<Label htmlFor="leadId" className="font-medium text-sm">
+									Руководитель проекта
+								</Label>
+								<Select
+									value={formData.leadId}
+									onValueChange={(value) =>
+										setFormData({ ...formData, leadId: value })
+									}
+								>
+									<SelectTrigger className="h-10">
+										<SelectValue placeholder="Выберите руководителя" />
+									</SelectTrigger>
+									<SelectContent>
+										{users?.map((user) => (
+											<SelectItem key={user._id} value={user._id}>
+												<div className="flex items-center gap-2">
+													<Avatar className="h-6 w-6">
+														<AvatarImage src={user.avatarUrl || undefined} />
+														<AvatarFallback className="text-xs">
+															{user.name?.charAt(0)}
+														</AvatarFallback>
+													</Avatar>
+													{user.name}
+												</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+					</div>
+
+					{/* Timeline Section */}
+					<Separator />
+					<div className="px-8 py-6">
+						<div className="mb-6 flex items-center gap-2">
+							<Calendar className="h-4 w-4 text-muted-foreground" />
+							<h3 className="font-medium text-muted-foreground text-sm">
+								Сроки выполнения
+							</h3>
+						</div>
+
+						<div className="grid grid-cols-2 gap-6">
+							<div className="space-y-2">
+								<Label className="font-medium text-sm">Дата начала</Label>
+								<DatePicker
+									date={formData.startDate}
+									onDateChange={(date) =>
+										date && setFormData({ ...formData, startDate: date })
+									}
+									placeholder="Выберите дату начала"
+								/>
+							</div>
+
+							<div className="space-y-2">
+								<Label className="font-medium text-sm">
+									Целевая дата завершения
+								</Label>
+								<DatePicker
+									date={formData.targetDate}
+									onDateChange={(date) =>
+										setFormData({ ...formData, targetDate: date || undefined })
+									}
+									placeholder="Выберите дату завершения"
 								/>
 							</div>
 						</div>
+					</div>
 
+					{/* Team Members Section */}
+					<Separator />
+					<div className="px-8 py-6">
+						<div className="mb-6 flex items-center gap-2">
+							<Users className="h-4 w-4 text-muted-foreground" />
+							<h3 className="font-medium text-muted-foreground text-sm">
+								Команда проекта
+							</h3>
+						</div>
+
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<Label className="font-medium text-sm">Члены команды</Label>
+								<Badge variant="secondary" className="text-xs">
+									{formData.teamMemberIds.length} выбрано
+								</Badge>
+							</div>
+							<div className="max-h-64 overflow-y-auto rounded-lg border bg-muted/30 p-3">
+								<div className="grid gap-2">
+									{users?.map((user) => (
+										<motion.label
+											key={user._id}
+											whileHover={{ scale: 1.01 }}
+											whileTap={{ scale: 0.99 }}
+											className={cn(
+												"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors",
+												formData.teamMemberIds.includes(user._id)
+													? "bg-primary/10"
+													: "hover:bg-muted",
+											)}
+										>
+											<input
+												type="checkbox"
+												checked={formData.teamMemberIds.includes(user._id)}
+												onChange={() => handleTeamMemberToggle(user._id)}
+												className="h-4 w-4 rounded border-muted-foreground/30"
+											/>
+											<Avatar className="h-8 w-8">
+												<AvatarImage src={user.avatarUrl || undefined} />
+												<AvatarFallback className="text-xs">
+													{user.name?.charAt(0)}
+												</AvatarFallback>
+											</Avatar>
+											<div className="flex-1">
+												<div className="font-medium text-sm">{user.name}</div>
+												<div className="text-muted-foreground text-xs">
+													{user.email}
+												</div>
+											</div>
+											{formData.teamMemberIds.includes(user._id) && (
+												<ChevronRight className="h-4 w-4 text-primary" />
+											)}
+										</motion.label>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					{/* Notes Section */}
+					<Separator />
+					<div className="px-8 py-6">
+						<div className="space-y-2">
+							<Label htmlFor="notes" className="font-medium text-sm">
+								Примечания
+							</Label>
+							<Textarea
+								id="notes"
+								value={formData.notes}
+								onChange={(e) =>
+									setFormData({ ...formData, notes: e.target.value })
+								}
+								placeholder="Дополнительная информация о проекте..."
+								rows={4}
+								className="resize-none"
+							/>
+						</div>
+					</div>
 				</form>
 
 				{/* Footer Actions */}
@@ -548,8 +568,8 @@ export function ConstructionProjectCreateDialog({
 						>
 							Отмена
 						</Button>
-						<Button 
-							type="submit" 
+						<Button
+							type="submit"
 							disabled={isSubmitting}
 							onClick={handleSubmit}
 							className="min-w-[140px]"
@@ -558,7 +578,11 @@ export function ConstructionProjectCreateDialog({
 								<>
 									<motion.div
 										animate={{ rotate: 360 }}
-										transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+										transition={{
+											duration: 1,
+											repeat: Number.POSITIVE_INFINITY,
+											ease: "linear",
+										}}
 										className="mr-2 h-4 w-4"
 									>
 										<Plus className="h-4 w-4" />

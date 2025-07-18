@@ -95,7 +95,7 @@ export const seedInitialData = mutation({
 			{ name: "К выполнению", color: "#6B7280", iconName: "Circle" },
 			{ name: "В работе", color: "#3B82F6", iconName: "Clock" },
 			{ name: "На проверке", color: "#F59E0B", iconName: "AlertCircle" },
-			{ name: "Завершено", color: "#10B981", iconName: "CheckCircle" },
+			{ name: "завершено", color: "#10B981", iconName: "CheckCircle" },
 		];
 
 		const statusIds = await Promise.all(
@@ -248,7 +248,7 @@ export const seedInitialData = mutation({
 				title: "Проверка техники безопасности",
 				description:
 					"Провести еженедельную проверку соблюдения норм техники безопасности на строительной площадке",
-				statusId: statusIds[3], // Завершено
+				statusId: statusIds[3], // завершено
 				assigneeId: userIds[0],
 				priorityId: priorityIds[1], // Высокий
 				labelIds: [labelIds[2]], // Безопасность
@@ -293,7 +293,7 @@ export const seedInitialData = mutation({
 			},
 			{
 				identifier: "СТРП-007",
-				title: "Приемка готового объекта",
+				title: "Приемка завершеного объекта",
 				description:
 					"Подготовка к сдаче объекта заказчику и получение акта приемки",
 				statusId: statusIds[0], // К выполнению

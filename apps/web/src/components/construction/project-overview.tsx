@@ -51,6 +51,7 @@ import {
 	EditableUserSelect,
 	type SelectOption,
 } from "./project-overview/editable";
+import { ProjectTimelineChart } from "./project-timeline-chart";
 
 interface ConstructionProjectOverviewProps {
 	projectId: Id<"constructionProjects">;
@@ -63,7 +64,7 @@ const statusStyles = {
 		bg: "bg-yellow-100",
 		borderColor: "border-yellow-200",
 	},
-	Завершено: {
+	завершено: {
 		icon: CheckCircle2,
 		color: "text-green-600",
 		bg: "bg-green-100",
@@ -328,7 +329,7 @@ export function ConstructionProjectOverview({
 						<div>
 							<h2 className="mb-4 font-medium text-base">Прогресс</h2>
 
-							<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+							<div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
 								{/* Stats Cards */}
 								<div className="space-y-4">
 									<div className="grid grid-cols-3 gap-4">
@@ -382,7 +383,7 @@ export function ConstructionProjectOverview({
 											<div className="mb-2 flex items-center justify-between">
 												<div className="h-2 w-2 rounded-full bg-green-500" />
 												<span className="text-muted-foreground text-xs">
-													Завершено
+													завершено
 												</span>
 											</div>
 											<div className="space-y-1">
@@ -394,275 +395,20 @@ export function ConstructionProjectOverview({
 														• {Math.round(progressPercentage)}%
 													</span>
 												</div>
-												<p className="text-muted-foreground text-xs">Готово</p>
+												<p className="text-muted-foreground text-xs">
+													завершено
+												</p>
 											</div>
 										</Card>
 									</div>
 
 									{/* Timeline Chart */}
-									<Card className="p-4">
-										<h3 className="mb-4 font-medium text-sm">
-											Прогресс по времени
-										</h3>
-										<div className="h-[200px]">
-											<ResponsiveContainer width="100%" height="100%">
-												<AreaChart data={generateTimelineData(projectData)}>
-													<defs>
-														<linearGradient
-															id="colorTotal"
-															x1="0"
-															y1="0"
-															x2="0"
-															y2="1"
-														>
-															<stop
-																offset="5%"
-																stopColor="#E5E7EB"
-																stopOpacity={0.3}
-															/>
-															<stop
-																offset="95%"
-																stopColor="#E5E7EB"
-																stopOpacity={0}
-															/>
-														</linearGradient>
-														<linearGradient
-															id="colorInProgress"
-															x1="0"
-															y1="0"
-															x2="0"
-															y2="1"
-														>
-															<stop
-																offset="5%"
-																stopColor="hsl(45, 93%, 47%)"
-																stopOpacity={0.3}
-															/>
-															<stop
-																offset="95%"
-																stopColor="hsl(45, 93%, 47%)"
-																stopOpacity={0}
-															/>
-														</linearGradient>
-														<linearGradient
-															id="colorCompleted"
-															x1="0"
-															y1="0"
-															x2="0"
-															y2="1"
-														>
-															<stop
-																offset="5%"
-																stopColor="hsl(142, 76%, 36%)"
-																stopOpacity={0.3}
-															/>
-															<stop
-																offset="95%"
-																stopColor="hsl(142, 76%, 36%)"
-																stopOpacity={0}
-															/>
-														</linearGradient>
-														<linearGradient
-															id="deadlineGradient"
-															x1="0"
-															y1="0"
-															x2="1"
-															y2="0"
-														>
-															<stop
-																offset="0%"
-																stopColor="#EF4444"
-																stopOpacity={0}
-															/>
-															<stop
-																offset="70%"
-																stopColor="#EF4444"
-																stopOpacity={0.1}
-															/>
-															<stop
-																offset="90%"
-																stopColor="#EF4444"
-																stopOpacity={0.2}
-															/>
-															<stop
-																offset="100%"
-																stopColor="#EF4444"
-																stopOpacity={0.3}
-															/>
-														</linearGradient>
-													</defs>
-													<XAxis
-														dataKey="date"
-														stroke="hsl(var(--muted-foreground))"
-														fontSize={12}
-														tickLine={false}
-														axisLine={false}
-													/>
-													<YAxis
-														stroke="hsl(var(--muted-foreground))"
-														fontSize={12}
-														tickLine={false}
-														axisLine={false}
-													/>
-													<Tooltip
-														formatter={(value: number) => {
-															const taskCount = Number.isNaN(value) ? 0 : value;
-															return `${taskCount} ${taskCount === 1 ? 'задача' : 'задач'}`;
-														}}
-														contentStyle={{
-															backgroundColor: "var(--background)",
-															border: "1px solid var(--border)",
-															borderRadius: "6px",
-															fontSize: "12px",
-														}}
-													/>
-													<Area
-														type="monotone"
-														dataKey="notStarted"
-														stroke="#E5E7EB"
-														fillOpacity={1}
-														fill="url(#colorTotal)"
-														strokeWidth={2}
-													/>
-													<Area
-														type="monotone"
-														dataKey="inProgress"
-														stroke="hsl(45, 93%, 47%)"
-														fillOpacity={1}
-														fill="url(#colorInProgress)"
-														strokeWidth={2}
-													/>
-													<Area
-														type="monotone"
-														dataKey="completed"
-														stroke="hsl(142, 76%, 36%)"
-														fillOpacity={1}
-														fill="url(#colorCompleted)"
-														strokeWidth={2}
-													/>
-													{/* Deadline marker */}
-													{projectData.targetDate && (
-														<ReferenceLine
-															x={format(new Date(projectData.targetDate), "d MMM", { locale: ru })}
-															stroke="#EF4444"
-															strokeWidth={2}
-															strokeDasharray="5 5"
-															label={{
-																value: "Дедлайн",
-																position: "top",
-																fill: "#EF4444",
-																fontSize: 12,
-																fontWeight: 600,
-															}}
-														>
-															<rect
-																x="-50"
-																y="0"
-																width="50"
-																height="100%"
-																fill="url(#deadlineGradient)"
-															/>
-														</ReferenceLine>
-													)}
-												</AreaChart>
-											</ResponsiveContainer>
-										</div>
-										<div className="mt-4 flex items-center justify-center gap-4">
-											<div className="flex items-center gap-2">
-												<div
-													className="h-3 w-3 rounded-sm"
-													style={{ backgroundColor: "#E5E7EB" }}
-												/>
-												<span className="text-muted-foreground text-xs">
-													Не начато
-												</span>
-											</div>
-											<div className="flex items-center gap-2">
-												<div
-													className="h-3 w-3 rounded-sm"
-													style={{ backgroundColor: "hsl(45, 93%, 47%)" }}
-												/>
-												<span className="text-muted-foreground text-xs">
-													В работе
-												</span>
-											</div>
-											<div className="flex items-center gap-2">
-												<div
-													className="h-3 w-3 rounded-sm"
-													style={{ backgroundColor: "hsl(142, 76%, 36%)" }}
-												/>
-												<span className="text-muted-foreground text-xs">
-													Завершено
-												</span>
-											</div>
-											{projectData.targetDate && (
-												<div className="flex items-center gap-2">
-													<div
-														className="h-3 w-0.5"
-														style={{ 
-															backgroundColor: "#EF4444",
-															backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #EF4444 3px, #EF4444 6px)"
-														}}
-													/>
-													<span className="text-muted-foreground text-xs">
-														Дедлайн
-													</span>
-												</div>
-											)}
-										</div>
-									</Card>
+									<ProjectTimelineChart
+										projectData={{ ...projectData, _id: projectId }}
+									/>
 								</div>
 
 								{/* Revenue Chart */}
-								<Card className="p-4">
-									<div className="mb-4 flex items-center justify-between">
-										<h3 className="font-medium text-sm">Финансовый прогресс</h3>
-										<span className="text-muted-foreground text-xs">
-											{daysUntilTarget > 0
-												? `${daysUntilTarget} дней осталось`
-												: "Просрочено"}
-										</span>
-									</div>
-									<div className="h-[300px]">
-										<ResponsiveContainer width="100%" height="100%">
-											<BarChart data={progressChartData}>
-												<CartesianGrid
-													strokeDasharray="3 3"
-													className="stroke-muted"
-												/>
-												<XAxis
-													dataKey="month"
-													stroke="hsl(var(--muted-foreground))"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-												/>
-												<YAxis
-													stroke="hsl(var(--muted-foreground))"
-													fontSize={12}
-													tickLine={false}
-													axisLine={false}
-													tickFormatter={(value) => `${value / 1000000}M`}
-												/>
-												<Tooltip
-													formatter={(value: number) => formatCurrency(value)}
-													contentStyle={{
-														backgroundColor: "var(--background)",
-														border: "1px solid var(--border)",
-														borderRadius: "6px",
-														fontSize: "12px",
-													}}
-												/>
-												<Bar
-													dataKey="planned"
-													fill="hsl(var(--primary))"
-													opacity={0.5}
-												/>
-												<Bar dataKey="actual" fill="hsl(142, 76%, 36%)" />
-											</BarChart>
-										</ResponsiveContainer>
-									</div>
-								</Card>
 							</div>
 						</div>
 
@@ -1020,14 +766,16 @@ function generateTimelineData(projectData: {
 
 	// If no tasks yet, return empty chart data
 	if (projectData.taskStats.total === 0) {
-		return [{
-			date: format(currentDate, "d MMM", { locale: ru }),
-			total: 0,
-			completed: 0,
-			inProgress: 0,
-			notStarted: 0,
-			expected: 0,
-		}];
+		return [
+			{
+				date: format(currentDate, "d MMM", { locale: ru }),
+				total: 0,
+				completed: 0,
+				inProgress: 0,
+				notStarted: 0,
+				expected: 0,
+			},
+		];
 	}
 
 	// Create data points for every 7 days (weekly)
@@ -1036,9 +784,8 @@ function generateTimelineData(projectData: {
 		date.setDate(date.getDate() + i);
 
 		// Calculate expected completion based on linear progress
-		const expectedProgress = totalDays > 0 
-			? (i / totalDays) * projectData.taskStats.total 
-			: 0;
+		const expectedProgress =
+			totalDays > 0 ? (i / totalDays) * projectData.taskStats.total : 0;
 
 		// For demo purposes, show gradual completion
 		// In real implementation, this would come from historical task data
@@ -1082,9 +829,9 @@ function generateTimelineData(projectData: {
 				projectData.taskStats.completed + projectData.taskStats.inProgress,
 			notStarted: projectData.taskStats.total,
 			expected: Math.round(
-				totalDays > 0 
-					? (daysPassed / totalDays) * projectData.taskStats.total 
-					: 0
+				totalDays > 0
+					? (daysPassed / totalDays) * projectData.taskStats.total
+					: 0,
 			),
 		});
 	}

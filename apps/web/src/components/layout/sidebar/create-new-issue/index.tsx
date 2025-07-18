@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { RiEditLine } from "@remixicon/react";
@@ -21,10 +22,11 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AssigneeSelector } from "./assignee-selector";
 import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
+import { ConstructionStatusSelector } from "./construction-status-selector";
 import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
-import { ConstructionStatusSelector } from "./construction-status-selector";
+import { type SubtaskData, SubtasksInput } from "./subtasks-input";
 
 interface ConstructionTaskForm {
 	identifier: string;
@@ -39,6 +41,7 @@ interface ConstructionTaskForm {
 	rank: string;
 	dueDate?: string;
 	attachments?: UploadedAttachment[];
+	subtasks: SubtaskData[];
 }
 
 export function CreateNewIssue() {
@@ -51,6 +54,7 @@ export function CreateNewIssue() {
 	const projects = useQuery(api.constructionProjects.getAll);
 	const tasks = useQuery(api.constructionTasks.getAll);
 	const createTask = useMutation(api.constructionTasks.create);
+	const createSubtask = useMutation(api.subtasks.createSubtask);
 
 	const attachToIssue = useMutation(api.files.attachToIssue);
 
@@ -67,14 +71,17 @@ export function CreateNewIssue() {
 		return identifier;
 	}, [tasks]);
 
+	const currentUser = useCurrentUser();
 	const createDefaultData = useCallback((): ConstructionTaskForm => {
 		const identifier = generateUniqueIdentifier();
 		// Use the defaultStatus from store if available, otherwise fallback
 		const defaultStatusId = defaultStatus
 			? defaultStatus.id
-			: statuses?.find((s) => s.name === "К выполнению")?._id || statuses?.[0]?._id;
+			: statuses?.find((s) => s.name === "К выполнению")?._id ||
+				statuses?.[0]?._id;
 		const defaultPriorityId =
-			priorities?.find((p) => p.name === "Средний")?._id || priorities?.[0]?._id;
+			priorities?.find((p) => p.name === "Средний")?._id ||
+			priorities?.[0]?._id;
 
 		return {
 			identifier: `СТРФ-${identifier}`,
@@ -88,8 +95,15 @@ export function CreateNewIssue() {
 			projectId: defaultProjectId || null, // Use project from store
 			rank: `rank-${Date.now()}`,
 			attachments: [],
+			subtasks: [],
 		};
-	}, [defaultStatus, defaultProjectId, generateUniqueIdentifier, statuses, priorities]);
+	}, [
+		defaultStatus,
+		defaultProjectId,
+		generateUniqueIdentifier,
+		statuses,
+		priorities,
+	]);
 
 	const [addTaskForm, setAddTaskForm] = useState<ConstructionTaskForm>(
 		createDefaultData(),
@@ -120,6 +134,7 @@ export function CreateNewIssue() {
 				priorityId: addTaskForm.priorityId,
 				labelIds: addTaskForm.labelIds,
 				cycleId: addTaskForm.cycleId,
+				userId: currentUser?._id as Id<"users">,
 				projectId: addTaskForm.projectId || undefined,
 				rank: addTaskForm.rank,
 				dueDate: addTaskForm.dueDate,
@@ -134,6 +149,25 @@ export function CreateNewIssue() {
 						fileName: attachment.fileName,
 						fileSize: attachment.fileSize,
 						mimeType: attachment.mimeType,
+					});
+				}
+			}
+
+			// Create subtasks if any
+			if (addTaskForm.subtasks.length > 0) {
+				for (const subtask of addTaskForm.subtasks) {
+					await createSubtask({
+						parentTaskId: taskId as Id<"issues">,
+						title: subtask.title,
+						description: "",
+						statusId: addTaskForm.statusId,
+						assigneeId:
+							subtask.assigneeId || addTaskForm.assigneeId || undefined,
+						priorityId: addTaskForm.priorityId,
+						labelIds: [],
+						projectId: addTaskForm.projectId || undefined,
+						dueDate: subtask.dueDate || undefined,
+						userId: currentUser?._id as Id<"users">,
 					});
 				}
 			}
@@ -262,6 +296,13 @@ export function CreateNewIssue() {
 							setAddTaskForm({ ...addTaskForm, attachments })
 						}
 						className="px-1"
+					/>
+
+					<SubtasksInput
+						subtasks={addTaskForm.subtasks}
+						onChange={(subtasks) =>
+							setAddTaskForm({ ...addTaskForm, subtasks })
+						}
 					/>
 				</div>
 				<div className="flex w-full items-center justify-between border-t px-4 py-2.5">

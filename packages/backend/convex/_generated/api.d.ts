@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as activities from "../activities.js";
 import type * as attachments_projectAttachments from "../attachments/projectAttachments.js";
 import type * as attachments_queries from "../attachments/queries.js";
 import type * as auth from "../auth.js";
@@ -40,6 +41,7 @@ import type * as permissions_types from "../permissions/types.js";
 import type * as permissions_utils from "../permissions/utils.js";
 import type * as seed from "../seed.js";
 import type * as seedData from "../seedData.js";
+import type * as subtasks from "../subtasks.js";
 import type * as todos from "../todos.js";
 import type * as users from "../users.js";
 
@@ -52,6 +54,7 @@ import type * as users from "../users.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  activities: typeof activities;
   "attachments/projectAttachments": typeof attachments_projectAttachments;
   "attachments/queries": typeof attachments_queries;
   auth: typeof auth;
@@ -79,6 +82,7 @@ declare const fullApi: ApiFromModules<{
   "permissions/utils": typeof permissions_utils;
   seed: typeof seed;
   seedData: typeof seedData;
+  subtasks: typeof subtasks;
   todos: typeof todos;
   users: typeof users;
 }>;

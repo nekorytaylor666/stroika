@@ -1,7 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -24,6 +31,7 @@ import {
 	GanttToday,
 } from "@/components/ui/shadcn-io/gantt";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useConstructionData } from "@/hooks/use-construction-data";
 import { useConstructionGanttData } from "@/hooks/use-construction-gantt-data";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
@@ -31,7 +39,14 @@ import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { parseISO } from "date-fns";
-import { BarChart3, Briefcase, Search, Users } from "lucide-react";
+import {
+	BarChart3,
+	Briefcase,
+	ChevronDown,
+	Filter,
+	Search,
+	Users,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 
@@ -45,6 +60,11 @@ function ProjectAnalyticsPage() {
 	const { projectId } = Route.useParams();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedUserId, setSelectedUserId] = useState<string>("all");
+	const [selectedStatusIds, setSelectedStatusIds] = useState<string[]>([]);
+	const [selectedPriorityIds, setSelectedPriorityIds] = useState<string[]>([]);
+
+	// Get construction data including statuses and priorities
+	const { statuses, priorities } = useConstructionData();
 
 	// Fetch project data with tasks
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
@@ -82,8 +102,28 @@ function ProjectAnalyticsPage() {
 			tasks = tasks.filter((task) => task.assignee?._id === selectedUserId);
 		}
 
+		// Filter by status
+		if (selectedStatusIds.length > 0) {
+			tasks = tasks.filter((task) =>
+				selectedStatusIds.includes(task.status._id),
+			);
+		}
+
+		// Filter by priority
+		if (selectedPriorityIds.length > 0) {
+			tasks = tasks.filter((task) =>
+				selectedPriorityIds.includes(task.priority._id),
+			);
+		}
+
 		return tasks;
-	}, [projectData?.tasks, searchQuery, selectedUserId]);
+	}, [
+		projectData?.tasks,
+		searchQuery,
+		selectedUserId,
+		selectedStatusIds,
+		selectedPriorityIds,
+	]);
 
 	// Filter Gantt features based on filtered tasks
 	const filteredFeatures = useMemo(() => {
@@ -146,7 +186,11 @@ function ProjectAnalyticsPage() {
 	}, [filteredFeatures]);
 
 	const isLoading =
-		projectData === undefined || users === undefined || ganttLoading;
+		projectData === undefined ||
+		users === undefined ||
+		ganttLoading ||
+		statuses === undefined ||
+		priorities === undefined;
 
 	return (
 		<div className="space-y-6 p-6">
@@ -197,6 +241,141 @@ function ProjectAnalyticsPage() {
 								))}
 							</SelectContent>
 						</Select>
+						{/* Status Filter */}
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									size="sm"
+									className="w-[200px] justify-between"
+								>
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4" />
+										<span className="text-sm">
+											{selectedStatusIds.length === 0
+												? "Все статусы"
+												: `${selectedStatusIds.length} статусов`}
+										</span>
+									</div>
+									<ChevronDown className="h-4 w-4 opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-[200px] p-0" align="start">
+								<div className="max-h-[300px] overflow-auto">
+									<div className="p-2">
+										<Button
+											variant="ghost"
+											size="sm"
+											className="w-full justify-start text-sm"
+											onClick={() => setSelectedStatusIds([])}
+										>
+											Очистить все
+										</Button>
+									</div>
+									<div className="border-t p-2">
+										{statuses?.map((status) => (
+											<div
+												key={status._id}
+												className="flex items-center space-x-2 rounded p-2 hover:bg-accent"
+											>
+												<Checkbox
+													checked={selectedStatusIds.includes(status._id)}
+													onCheckedChange={(checked) => {
+														if (checked) {
+															setSelectedStatusIds([
+																...selectedStatusIds,
+																status._id,
+															]);
+														} else {
+															setSelectedStatusIds(
+																selectedStatusIds.filter(
+																	(id) => id !== status._id,
+																),
+															);
+														}
+													}}
+												/>
+												<label className="flex flex-1 cursor-pointer items-center gap-2 text-sm">
+													<div
+														className="h-3 w-3 rounded-full"
+														style={{ backgroundColor: status.color }}
+													/>
+													<span>{status.name}</span>
+												</label>
+											</div>
+										))}
+									</div>
+								</div>
+							</PopoverContent>
+						</Popover>
+
+						{/* Priority Filter */}
+						<Popover>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									size="sm"
+									className="w-[200px] justify-between"
+								>
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4" />
+										<span className="text-sm">
+											{selectedPriorityIds.length === 0
+												? "Все приоритеты"
+												: `${selectedPriorityIds.length} приоритетов`}
+										</span>
+									</div>
+									<ChevronDown className="h-4 w-4 opacity-50" />
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-[200px] p-0" align="start">
+								<div className="max-h-[300px] overflow-auto">
+									<div className="p-2">
+										<Button
+											variant="ghost"
+											size="sm"
+											className="w-full justify-start text-sm"
+											onClick={() => setSelectedPriorityIds([])}
+										>
+											Очистить все
+										</Button>
+									</div>
+									<div className="border-t p-2">
+										{priorities?.map((priority) => (
+											<div
+												key={priority._id}
+												className="flex items-center space-x-2 rounded p-2 hover:bg-accent"
+											>
+												<Checkbox
+													checked={selectedPriorityIds.includes(priority._id)}
+													onCheckedChange={(checked) => {
+														if (checked) {
+															setSelectedPriorityIds([
+																...selectedPriorityIds,
+																priority._id,
+															]);
+														} else {
+															setSelectedPriorityIds(
+																selectedPriorityIds.filter(
+																	(id) => id !== priority._id,
+																),
+															);
+														}
+													}}
+												/>
+												<label className="flex flex-1 cursor-pointer items-center gap-2 text-sm">
+													<div
+														className="h-3 w-3 rounded-full"
+														style={{ backgroundColor: priority.color }}
+													/>
+													<span>{priority.name}</span>
+												</label>
+											</div>
+										))}
+									</div>
+								</div>
+							</PopoverContent>
+						</Popover>
 					</div>
 				</CardContent>
 			</Card>

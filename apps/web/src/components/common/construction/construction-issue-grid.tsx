@@ -2,8 +2,11 @@
 
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
-import { format } from "date-fns";
+import { differenceInDays, format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { ListTree } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import {
@@ -13,9 +16,9 @@ import {
 	useDrop,
 } from "react-dnd";
 import { getEmptyImage } from "react-dnd-html5-backend";
-import { IssueContextMenu } from "../issues/issue-context-menu";
 import { IssueDragType } from "../issues/issue-grid";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
+import { ConstructionContextMenu } from "./construction-context-menu";
 import { ConstructionLabelBadge } from "./construction-label-badge";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionProjectBadge } from "./construction-project-badge";
@@ -71,10 +74,32 @@ function ConstructionIssueDragPreview({ issue }: { issue: ConstructionTask }) {
 			</div>
 
 			<div className="mt-auto flex items-center justify-between pt-2">
-				<span className="text-muted-foreground text-xs">
-					{format(new Date(issue.createdAt), "MMM dd")}
-				</span>
-				<ConstructionAssigneeUser user={assignee} />
+				<div className="flex items-center gap-2 text-xs">
+					<span className="text-muted-foreground">
+						{format(new Date(issue.createdAt), "MMM dd")}
+					</span>
+					{issue.dueDate && (
+						<>
+							<span className="text-muted-foreground">•</span>
+							<span
+								className={cn(
+									(() => {
+										const daysUntilDeadline = differenceInDays(
+											new Date(issue.dueDate),
+											new Date(),
+										);
+										return daysUntilDeadline <= 1
+											? "font-semibold text-red-600"
+											: "text-muted-foreground";
+									})(),
+								)}
+							>
+								{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
+							</span>
+						</>
+					)}
+				</div>
+				<ConstructionAssigneeUser user={assignee || null} />
 			</div>
 		</div>
 	);
@@ -194,14 +219,45 @@ export function ConstructionIssueGrid({ issue }: ConstructionIssueGridProps) {
 						{project && <ConstructionProjectBadge project={project} />}
 					</div>
 					<div className="mt-auto flex items-center justify-between pt-2">
-						<span className="text-muted-foreground text-xs">
-							{format(new Date(issue.createdAt), "MMM dd")}
-						</span>
-						<ConstructionAssigneeUser user={assignee} />
+						<div className="flex items-center gap-2 text-xs">
+							<span className="text-muted-foreground">
+								{format(new Date(issue.createdAt), "MMM dd")}
+							</span>
+							{issue.dueDate && (
+								<>
+									<span className="text-muted-foreground">•</span>
+									<span
+										className={cn(
+											(() => {
+												const daysUntilDeadline = differenceInDays(
+													new Date(issue.dueDate),
+													new Date(),
+												);
+												return daysUntilDeadline <= 1
+													? "font-semibold text-red-600"
+													: "text-muted-foreground";
+											})(),
+										)}
+									>
+										{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
+									</span>
+								</>
+							)}
+							{issue.subtaskCount !== undefined && issue.subtaskCount > 0 && (
+								<>
+									<span className="text-muted-foreground">•</span>
+									<span className="flex items-center gap-1 text-muted-foreground">
+										<ListTree className="h-3 w-3" />
+										<span>{issue.subtaskCount}</span>
+									</span>
+								</>
+							)}
+						</div>
+						<ConstructionAssigneeUser user={assignee || null} />
 					</div>
 				</motion.div>
 			</ContextMenuTrigger>
-			{/* <IssueContextMenu issueId={issue._id} /> */}
+			<ConstructionContextMenu task={issue} />
 		</ContextMenu>
 	);
 }

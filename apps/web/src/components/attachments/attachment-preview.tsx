@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
 	File,
-	FileText,
-	FileSpreadsheet,
-	FileCode,
-	FileVideo,
-	FileAudio,
 	FileArchive,
+	FileAudio,
+	FileCode,
+	FileSpreadsheet,
+	FileText,
+	FileVideo,
 	Image as ImageIcon,
 	Loader2,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface AttachmentPreviewProps {
 	fileUrl: string;
@@ -100,19 +100,19 @@ const mimeTypeCategories = {
 // Get file category from MIME type
 function getFileCategory(mimeType: string): string {
 	const normalizedMimeType = mimeType.toLowerCase();
-	
+
 	for (const [category, types] of Object.entries(mimeTypeCategories)) {
-		if (types.some(type => normalizedMimeType.includes(type))) {
+		if (types.some((type) => normalizedMimeType.includes(type))) {
 			return category;
 		}
 	}
-	
+
 	// Check by common patterns
 	if (normalizedMimeType.startsWith("image/")) return "image";
 	if (normalizedMimeType.startsWith("video/")) return "video";
 	if (normalizedMimeType.startsWith("audio/")) return "audio";
 	if (normalizedMimeType.startsWith("text/")) return "code";
-	
+
 	return "other";
 }
 
@@ -150,28 +150,28 @@ export function AttachmentPreview({
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
 	const [imageLoaded, setImageLoaded] = useState(false);
-	
+
 	const category = getFileCategory(mimeType);
 	const FileIcon = getFileIcon(category);
-	
+
 	useEffect(() => {
 		setLoading(true);
 		setError(false);
 		setImageLoaded(false);
 	}, [fileUrl]);
-	
+
 	const handleLoad = () => {
 		setLoading(false);
 		setImageLoaded(true);
 		onLoad?.();
 	};
-	
+
 	const handleError = () => {
 		setLoading(false);
 		setError(true);
 		onError?.();
 	};
-	
+
 	// For images, show actual preview
 	if (category === "image" && !error) {
 		return (
@@ -186,7 +186,7 @@ export function AttachmentPreview({
 					alt={fileName}
 					className={cn(
 						"h-full w-full object-cover transition-opacity duration-200",
-						imageLoaded ? "opacity-100" : "opacity-0"
+						imageLoaded ? "opacity-100" : "opacity-0",
 					)}
 					onLoad={handleLoad}
 					onError={handleError}
@@ -194,7 +194,7 @@ export function AttachmentPreview({
 			</div>
 		);
 	}
-	
+
 	// For PDFs, show embedded preview (thumbnail)
 	if (category === "document" && mimeType === "application/pdf" && !error) {
 		return (
@@ -214,7 +214,7 @@ export function AttachmentPreview({
 			</div>
 		);
 	}
-	
+
 	// For videos, show video element with poster
 	if (category === "video" && !error) {
 		return (
@@ -231,13 +231,13 @@ export function AttachmentPreview({
 			</div>
 		);
 	}
-	
+
 	// For other files, show icon with file info
 	return (
-		<div 
+		<div
 			className={cn(
 				"flex h-full w-full flex-col items-center justify-center bg-muted/10",
-				className
+				className,
 			)}
 		>
 			<FileIcon className="mb-2 h-16 w-16 text-muted-foreground" />

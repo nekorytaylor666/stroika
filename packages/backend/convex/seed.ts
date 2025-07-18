@@ -494,7 +494,7 @@ async function createBaseData(ctx: MutationCtx) {
 		{ name: "Новая", color: "gray", iconName: "circle" },
 		{ name: "В работе", color: "blue", iconName: "timer" },
 		{ name: "На проверке", color: "yellow", iconName: "alert-circle" },
-		{ name: "Завершено", color: "green", iconName: "check-circle" },
+		{ name: "завершено", color: "green", iconName: "check-circle" },
 		{ name: "Отменена", color: "red", iconName: "x-circle" },
 	];
 

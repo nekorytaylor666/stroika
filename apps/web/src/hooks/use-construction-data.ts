@@ -2,6 +2,7 @@ import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
 import { useMemo } from "react";
+import { useCurrentUser } from "./use-current-user";
 
 export const useConstructionData = () => {
 	// Queries
@@ -12,6 +13,7 @@ export const useConstructionData = () => {
 	const labels = useQuery(api.metadata.getAllLabels);
 	const priorities = useQuery(api.metadata.getAllPriorities);
 	const statuses = useQuery(api.metadata.getAllStatus);
+	const currentUser = useCurrentUser();
 
 	// Mutations
 	const createTask = useMutation(api.constructionTasks.create);
@@ -135,7 +137,13 @@ export const useConstructionData = () => {
 		dueDate?: string;
 	}) => {
 		try {
-			const newTaskId = await createTask(taskData);
+			if (!currentUser) {
+				throw new Error("User not authenticated");
+			}
+			const newTaskId = await createTask({
+				...taskData,
+				userId: currentUser._id as Id<"users">,
+			});
 			return newTaskId;
 		} catch (error) {
 			console.error("Failed to create task:", error);
@@ -145,7 +153,14 @@ export const useConstructionData = () => {
 
 	const handleUpdateTask = async (id: Id<"issues">, updates: any) => {
 		try {
-			await updateTask({ id, ...updates });
+			if (!currentUser) {
+				throw new Error("User not authenticated");
+			}
+			await updateTask({
+				id,
+				...updates,
+				userId: currentUser._id as Id<"users">,
+			});
 		} catch (error) {
 			console.error("Failed to update task:", error);
 			throw error;

@@ -122,23 +122,26 @@ export const getProjectWithTasks = query({
 		for (const task of tasksWithDetails) {
 			if (!task.status) continue;
 
-			const statusName = task.status.name.toLowerCase();
+			const statusName = task.status.name;
 			if (
-				statusName.includes("завершено") ||
-				statusName.includes("done") ||
-				statusName.includes("completed")
+				statusName === "завершено" ||
+				statusName === "Завершено" ||
+				statusName === "Done" ||
+				statusName === "Completed" ||
+				statusName === "Готово"
 			) {
 				taskStats.completed++;
 			} else if (
-				statusName.includes("в работе") ||
-				statusName.includes("на проверке") ||
+				statusName === "В работе" ||
+				statusName === "На проверке" ||
 				statusName.includes("progress")
 			) {
 				taskStats.inProgress++;
 			} else if (
-				statusName.includes("к выполнению") ||
-				statusName.includes("todo") ||
-				statusName.includes("backlog")
+				statusName === "К выполнению" ||
+				statusName === "Todo" ||
+				statusName === "Backlog" ||
+				statusName === "Новая"
 			) {
 				taskStats.notStarted++;
 			}
@@ -395,5 +398,136 @@ export const deleteProject = mutation({
 		// Delete the project
 		await ctx.db.delete(args.id);
 		return { success: true };
+	},
+});
+
+export const getAllProjectsWithTasksForGantt = query({
+	handler: async (ctx) => {
+		const projects = await ctx.db.query("constructionProjects").collect();
+
+		// Populate related data and tasks for all projects
+		const populatedProjects = await Promise.all(
+			projects.map(async (project) => {
+				const [status, lead, priority, tasks] = await Promise.all([
+					ctx.db.get(project.statusId),
+					ctx.db.get(project.leadId),
+					ctx.db.get(project.priorityId),
+					ctx.db
+						.query("issues")
+						.withIndex("by_project", (q) => q.eq("projectId", project._id))
+						.collect(),
+				]);
+
+				// Get task details
+				const tasksWithDetails = await Promise.all(
+					tasks.map(async (task) => {
+						const [taskStatus, assignee] = await Promise.all([
+							ctx.db.get(task.statusId),
+							task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+						]);
+
+						return {
+							_id: task._id,
+							title: task.title,
+							startDate: task.createdAt,
+							dueDate: task.dueDate,
+							status: taskStatus,
+							assignee,
+						};
+					}),
+				);
+
+				return {
+					_id: project._id,
+					name: project.name,
+					startDate: project.startDate,
+					targetDate: project.targetDate,
+					status,
+					lead,
+					priority,
+					tasks: tasksWithDetails,
+				};
+			}),
+		);
+
+		return populatedProjects;
+	},
+});
+
+export const getProjectTimelineData = query({
+	args: { id: v.id("constructionProjects") },
+	handler: async (ctx, args) => {
+		const project = await ctx.db.get(args.id);
+		if (!project) return null;
+
+		// Get all tasks for this project
+		const tasks = await ctx.db
+			.query("issues")
+			.withIndex("by_project", (q) => q.eq("projectId", project._id))
+			.collect();
+
+		// Get task statuses
+		const tasksWithStatus = await Promise.all(
+			tasks.map(async (task) => {
+				const status = await ctx.db.get(task.statusId);
+				return {
+					...task,
+					status,
+				};
+			}),
+		);
+
+		// Filter tasks with due dates
+		const tasksWithDueDates = tasksWithStatus.filter((task) => task.dueDate);
+
+		// Get completed tasks
+		const completedTasks = tasksWithStatus.filter((task) => {
+			if (!task.status) return false;
+			const statusName = task.status.name;
+			return (
+				statusName === "завершено" ||
+				statusName === "Завершено" ||
+				statusName === "Done" ||
+				statusName === "Completed" ||
+				statusName === "Готово"
+			);
+		});
+
+		// Get completion activities for accurate timeline
+		const taskIds = tasks.map((t) => t._id);
+		const activities = await ctx.db
+			.query("issueActivities")
+			.withIndex("by_type", (q) => q.eq("type", "completed"))
+			.collect();
+
+		// Filter for our project's tasks
+		const completionActivities = activities.filter((a) =>
+			taskIds.includes(a.issueId),
+		);
+
+		// Map tasks to their completion dates
+		const taskCompletionDates = new Map();
+		for (const activity of completionActivities) {
+			taskCompletionDates.set(activity.issueId, activity.createdAt);
+		}
+
+		// Add completion dates to completed tasks
+		const completedTasksWithDates = completedTasks.map((task) => ({
+			...task,
+			completedAt: taskCompletionDates.get(task._id) || null,
+		}));
+
+		return {
+			project: {
+				...project,
+				taskStats: {
+					total: tasks.length,
+					withDueDates: tasksWithDueDates.length,
+					completed: completedTasks.length,
+				},
+			},
+			tasksWithDueDates,
+			completedTasks: completedTasksWithDates,
+		};
 	},
 });

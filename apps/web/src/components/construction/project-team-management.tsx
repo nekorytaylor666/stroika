@@ -39,8 +39,6 @@ import {
 	Crown,
 	MoreHorizontal,
 	Plus,
-	TrendingDown,
-	TrendingUp,
 	UserMinus,
 	UserPlus,
 	Users,
@@ -150,24 +148,19 @@ export function ProjectTeamManagement({
 				</Card>
 				<Card className="p-4">
 					<div className="flex items-center justify-between">
-						<p className="text-muted-foreground text-sm">В работе</p>
+						<p className="text-muted-foreground text-sm">План</p>
 						<Clock className="h-4 w-4 text-blue-500" />
 					</div>
 					<p className="mt-2 font-semibold text-2xl">
-						{teamData.teamStats.inProgressTasks}
+						{teamData.teamStats.plannedTasks}
 					</p>
-					<Progress
-						value={
-							(teamData.teamStats.inProgressTasks /
-								teamData.teamStats.totalTasks) *
-							100
-						}
-						className="mt-2 h-1"
-					/>
+					<p className="mt-1 text-muted-foreground text-xs">
+						Запланировано задач
+					</p>
 				</Card>
 				<Card className="p-4">
 					<div className="flex items-center justify-between">
-						<p className="text-muted-foreground text-sm">Завершено</p>
+						<p className="text-muted-foreground text-sm">Факт</p>
 						<CheckCircle2 className="h-4 w-4 text-green-500" />
 					</div>
 					<p className="mt-2 font-semibold text-2xl">
@@ -176,10 +169,10 @@ export function ProjectTeamManagement({
 					<p className="mt-1 text-muted-foreground text-xs">
 						{Math.round(
 							(teamData.teamStats.completedTasks /
-								teamData.teamStats.totalTasks) *
+								teamData.teamStats.plannedTasks) *
 								100,
-						)}
-						% от всех задач
+						) || 0}
+						% выполнено
 					</p>
 				</Card>
 			</div>
@@ -257,16 +250,19 @@ interface TeamMember {
 	} | null;
 	taskStats: {
 		total: number;
-		completed: number;
-		inProgress: number;
-		todo: number;
-		overdue: number;
+		plan: number;
+		fact: number;
 	};
 	recentTasks: Array<{
 		_id: string;
 		title: string;
 		identifier: string;
-		status: any;
+		status: {
+			_id: Id<"status">;
+			name: string;
+			color: string;
+			iconName: string;
+		} | null;
 		dueDate?: string;
 		priority?: string;
 	}>;
@@ -279,22 +275,15 @@ interface MemberRowProps {
 
 function MemberRow({ member, onRemove }: MemberRowProps) {
 	const completionRate =
-		member.taskStats.total > 0
-			? Math.round((member.taskStats.completed / member.taskStats.total) * 100)
+		member.taskStats.plan > 0
+			? Math.round((member.taskStats.fact / member.taskStats.plan) * 100)
 			: 0;
-
-	const productivityTrend =
-		member.taskStats.completed > member.taskStats.inProgress
-			? "up"
-			: member.taskStats.completed < member.taskStats.inProgress
-				? "down"
-				: "neutral";
 
 	return (
 		<div className="flex items-center justify-between p-4 hover:bg-muted/50">
 			<div className="flex items-center gap-4">
 				<Avatar className="h-10 w-10">
-					<AvatarImage src={member.avatarUrl} alt={member.name} />
+					<AvatarImage src={member.avatarUrl || undefined} alt={member.name} />
 					<AvatarFallback>
 						{member.name
 							.split(" ")
@@ -339,28 +328,22 @@ function MemberRow({ member, onRemove }: MemberRowProps) {
 
 			<div className="flex items-center gap-6">
 				{/* Task Statistics */}
-				<div className="grid grid-cols-4 gap-4 text-center">
+				<div className="grid grid-cols-3 gap-4 text-center">
 					<div>
 						<p className="font-semibold text-lg">{member.taskStats.total}</p>
 						<p className="text-muted-foreground text-xs">Всего</p>
 					</div>
 					<div>
-						<p className="font-semibold text-green-600 text-lg">
-							{member.taskStats.completed}
-						</p>
-						<p className="text-muted-foreground text-xs">Завершено</p>
-					</div>
-					<div>
 						<p className="font-semibold text-blue-600 text-lg">
-							{member.taskStats.inProgress}
+							{member.taskStats.plan}
 						</p>
-						<p className="text-muted-foreground text-xs">В работе</p>
+						<p className="text-muted-foreground text-xs">План</p>
 					</div>
 					<div>
-						<p className="font-semibold text-lg text-orange-600">
-							{member.taskStats.todo}
+						<p className="font-semibold text-green-600 text-lg">
+							{member.taskStats.fact}
 						</p>
-						<p className="text-muted-foreground text-xs">К выполнению</p>
+						<p className="text-muted-foreground text-xs">Факт</p>
 					</div>
 				</div>
 
@@ -370,28 +353,28 @@ function MemberRow({ member, onRemove }: MemberRowProps) {
 					<div className="text-center">
 						<div className="flex items-center gap-1">
 							<span className="font-semibold text-sm">{completionRate}%</span>
-							{productivityTrend === "up" && (
-								<TrendingUp className="h-4 w-4 text-green-500" />
-							)}
-							{productivityTrend === "down" && (
-								<TrendingDown className="h-4 w-4 text-red-500" />
+							{completionRate >= 100 && (
+								<CheckCircle2 className="h-4 w-4 text-green-500" />
 							)}
 						</div>
 						<p className="text-muted-foreground text-xs">Выполнено</p>
 					</div>
 
-					{/* Overdue Warning */}
-					{member.taskStats.overdue > 0 && (
+					{/* Plan vs Fact Warning */}
+					{member.taskStats.fact < member.taskStats.plan && (
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger>
-									<Badge variant="destructive" className="gap-1">
+									<Badge variant="outline" className="gap-1">
 										<AlertCircle className="h-3 w-3" />
-										{member.taskStats.overdue}
+										{member.taskStats.plan - member.taskStats.fact}
 									</Badge>
 								</TooltipTrigger>
 								<TooltipContent>
-									<p>{member.taskStats.overdue} просроченных задач</p>
+									<p>
+										{member.taskStats.plan - member.taskStats.fact} задач в
+										работе
+									</p>
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>
@@ -447,7 +430,7 @@ function ProjectTeamSkeleton() {
 								</div>
 							</div>
 							<div className="flex gap-4">
-								{[...Array(4)].map((_, j) => (
+								{[...Array(3)].map((_, j) => (
 									<Skeleton key={j} className="h-12 w-12" />
 								))}
 							</div>

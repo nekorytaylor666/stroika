@@ -11,7 +11,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
+import { api } from "@stroika/backend";
+import type { Id } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -28,8 +31,6 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { api } from "@stroika/backend";
-import type { Id } from "@stroika/backend";
 
 interface ConstructionTaskCommentsProps {
 	issueId: Id<"issues">;
@@ -49,7 +50,9 @@ interface Comment {
 	replies?: Comment[];
 }
 
-export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsProps) {
+export function ConstructionTaskComments({
+	issueId,
+}: ConstructionTaskCommentsProps) {
 	const [newComment, setNewComment] = useState("");
 	const [replyingTo, setReplyingTo] = useState<Id<"issueComments"> | null>(
 		null,
@@ -69,6 +72,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 		includeResolved: showResolved,
 	});
 	const users = useQuery(api.users.getAll);
+	const currentUser = useCurrentUser();
 
 	const createComment = useMutation(api.issueComments.create);
 	const updateComment = useMutation(api.issueComments.update);
@@ -81,7 +85,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 	});
 
 	const handleSubmit = async () => {
-		if (!newComment.trim()) return;
+		if (!newComment.trim() || !currentUser) return;
 
 		// Extract mentioned users from content
 		const mentionedUsernames =
@@ -95,6 +99,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 
 		await createComment({
 			issueId,
+			authorId: currentUser._id as Id<"users">,
 			content: newComment,
 			parentCommentId: replyingTo || undefined,
 			mentionedUserIds:
@@ -106,7 +111,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 	};
 
 	const handleUpdate = async () => {
-		if (!editingComment || !editContent.trim()) return;
+		if (!editingComment || !editContent.trim() || !currentUser) return;
 
 		// Extract mentioned users from content
 		const mentionedUsernames =
@@ -120,6 +125,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 
 		await updateComment({
 			id: editingComment,
+			userId: currentUser._id as Id<"users">,
 			content: editContent,
 			mentionedUserIds,
 		});
@@ -150,13 +156,15 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 
 		// Update mention search
 		if (mentioning) {
-			const textarea = editingComment ? editTextareaRef.current : textareaRef.current;
+			const textarea = editingComment
+				? editTextareaRef.current
+				: textareaRef.current;
 			if (!textarea) return;
 
 			const cursorPos = textarea.selectionStart;
 			const textBefore = value.slice(0, cursorPos);
 			const lastAtIndex = textBefore.lastIndexOf("@");
-			
+
 			if (lastAtIndex !== -1) {
 				const searchText = textBefore.slice(lastAtIndex + 1);
 				setMentionSearch(searchText);
@@ -165,7 +173,9 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 	};
 
 	const handleMentionSelect = (user: any) => {
-		const textarea = editingComment ? editTextareaRef.current : textareaRef.current;
+		const textarea = editingComment
+			? editTextareaRef.current
+			: textareaRef.current;
 		if (!textarea) return;
 
 		const currentValue = editingComment ? editContent : newComment;
@@ -261,7 +271,9 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 												Редактировать
 											</DropdownMenuItem>
 											<DropdownMenuItem
-												onClick={() => resolveComment({ id: comment._id, isResolved: true })}
+												onClick={() =>
+													resolveComment({ id: comment._id, isResolved: true })
+												}
 											>
 												<Check className="mr-2 h-4 w-4" />
 												Пометить как решенное
@@ -270,7 +282,9 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 									)}
 									{comment.isResolved && (
 										<DropdownMenuItem
-											onClick={() => resolveComment({ id: comment._id, isResolved: false })}
+											onClick={() =>
+												resolveComment({ id: comment._id, isResolved: false })
+											}
 										>
 											<X className="mr-2 h-4 w-4" />
 											Открыть снова
@@ -278,7 +292,13 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 									)}
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
-										onClick={() => removeComment({ id: comment._id })}
+										onClick={() =>
+											currentUser &&
+											removeComment({
+												id: comment._id,
+												userId: currentUser._id as Id<"users">,
+											})
+										}
 										className="text-red-600"
 									>
 										<Trash2 className="mr-2 h-4 w-4" />
@@ -300,7 +320,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 										placeholder="Редактировать комментарий..."
 									/>
 									{mentioning && filteredUsers && filteredUsers.length > 0 && (
-										<div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+										<div className="absolute top-full right-0 left-0 z-10 mt-1 rounded-md border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
 											{filteredUsers.slice(0, 5).map((user) => (
 												<button
 													key={user._id}
@@ -342,7 +362,8 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 										if (part.startsWith("@")) {
 											const username = part.slice(1);
 											const user = comment.mentionedUsers.find(
-												(u) => u.name.toLowerCase().replace(/\s+/g, "") === username,
+												(u) =>
+													u.name.toLowerCase().replace(/\s+/g, "") === username,
 											);
 											return (
 												<span
@@ -363,7 +384,8 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 										onClick={() => {}}
 									>
 										<MessageSquare className="h-3 w-3" />
-										{comment.childrenCount} {comment.childrenCount === 1 ? "ответ" : "ответов"}
+										{comment.childrenCount}{" "}
+										{comment.childrenCount === 1 ? "ответ" : "ответов"}
 									</button>
 								)}
 
@@ -436,7 +458,7 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 					/>
 					<Button
 						size="icon"
-						className="absolute bottom-2 right-2 h-8 w-8"
+						className="absolute right-2 bottom-2 h-8 w-8"
 						onClick={handleSubmit}
 						disabled={!newComment.trim()}
 					>
@@ -444,8 +466,10 @@ export function ConstructionTaskComments({ issueId }: ConstructionTaskCommentsPr
 					</Button>
 
 					{mentioning && filteredUsers && filteredUsers.length > 0 && (
-						<div className="absolute left-0 right-0 top-full z-10 mt-1 rounded-md border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-							<div className="p-2 text-xs text-gray-500">Упомянуть пользователя</div>
+						<div className="absolute top-full right-0 left-0 z-10 mt-1 rounded-md border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+							<div className="p-2 text-gray-500 text-xs">
+								Упомянуть пользователя
+							</div>
 							{filteredUsers.slice(0, 5).map((user) => (
 								<button
 									key={user._id}

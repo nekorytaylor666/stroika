@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
@@ -54,6 +55,7 @@ export function ProjectTaskCreateModal({
 	>([]);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const currentUser = useCurrentUser();
 	// Set default values when data is loaded
 	useEffect(() => {
 		if (priorities?.length > 0 && !priority) {
@@ -85,6 +87,7 @@ export function ProjectTaskCreateModal({
 				labelIds: selectedLabels.map((label) => label._id),
 				cycleId: "construction-cycle",
 				projectId: projectId, // Construction project ID
+				userId: currentUser?._id as Id<"users">,
 				rank: `${Date.now()}`,
 				dueDate: undefined,
 			});

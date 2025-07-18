@@ -469,7 +469,7 @@ export const useConstructionConvexStore = create<ConstructionConvexState>()(
 					if (status) {
 						stats.byStatus[status.name] =
 							(stats.byStatus[status.name] || 0) + 1;
-						if (status.name === "Завершено") stats.completed++;
+						if (status.name === "завершено") stats.completed++;
 					}
 
 					// Count by priority

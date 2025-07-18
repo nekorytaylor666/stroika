@@ -5,19 +5,15 @@ import { mutation, query } from "./_generated/server";
 export const create = mutation({
 	args: {
 		issueId: v.id("issues"),
+		authorId: v.id("users"),
 		content: v.string(),
 		parentCommentId: v.optional(v.id("issueComments")),
 		mentionedUserIds: v.optional(v.array(v.id("users"))),
 	},
 	handler: async (ctx, args) => {
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
 		const commentId = await ctx.db.insert("issueComments", {
 			issueId: args.issueId,
-			authorId: user._id,
+			authorId: args.authorId,
 			content: args.content,
 			parentCommentId: args.parentCommentId,
 			isResolved: false,
@@ -32,7 +28,7 @@ export const create = mutation({
 					commentId,
 					issueId: args.issueId,
 					mentionedUserId,
-					mentionedBy: user._id,
+					mentionedBy: args.authorId,
 					createdAt: Date.now(),
 					isRead: false,
 				});
@@ -108,18 +104,14 @@ export const list = query({
 export const update = mutation({
 	args: {
 		id: v.id("issueComments"),
+		userId: v.id("users"),
 		content: v.string(),
 		mentionedUserIds: v.optional(v.array(v.id("users"))),
 	},
 	handler: async (ctx, args) => {
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
 		const comment = await ctx.db.get(args.id);
 		if (!comment) throw new Error("Comment not found");
-		if (comment.authorId !== user._id) throw new Error("Not authorized");
+		if (comment.authorId !== args.userId) throw new Error("Not authorized");
 
 		await ctx.db.patch(args.id, {
 			content: args.content,
@@ -144,7 +136,7 @@ export const update = mutation({
 					commentId: args.id,
 					issueId: comment.issueId,
 					mentionedUserId,
-					mentionedBy: user._id,
+					mentionedBy: args.userId,
 					createdAt: Date.now(),
 					isRead: false,
 				});
@@ -167,16 +159,14 @@ export const resolve = mutation({
 });
 
 export const remove = mutation({
-	args: { id: v.id("issueComments") },
+	args: {
+		id: v.id("issueComments"),
+		userId: v.id("users"),
+	},
 	handler: async (ctx, args) => {
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
 		const comment = await ctx.db.get(args.id);
 		if (!comment) throw new Error("Comment not found");
-		if (comment.authorId !== user._id) throw new Error("Not authorized");
+		if (comment.authorId !== args.userId) throw new Error("Not authorized");
 
 		// Delete mentions
 		const mentions = await ctx.db
@@ -208,16 +198,11 @@ export const remove = mutation({
 
 export const getUserMentions = query({
 	args: {
-		userId: v.optional(v.id("users")),
+		userId: v.id("users"),
 		onlyUnread: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
-		const targetUserId = args.userId || user._id;
+		const targetUserId = args.userId;
 
 		let mentions = await ctx.db
 			.query("issueMentions")

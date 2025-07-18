@@ -68,7 +68,10 @@ interface ConstructionStatusSelectorProps {
 	onChange: (status: any | null) => void;
 }
 
-export function ConstructionStatusSelector({ status, onChange }: ConstructionStatusSelectorProps) {
+export function ConstructionStatusSelector({
+	status,
+	onChange,
+}: ConstructionStatusSelectorProps) {
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
 	const [value, setValue] = useState<string | null>(status?._id || null);
@@ -123,9 +126,9 @@ export function ConstructionStatusSelector({ status, onChange }: ConstructionSta
 										className="flex items-center justify-between"
 									>
 										<div className="flex items-center gap-2">
-											<StatusIcon 
-												iconName={statusItem.iconName} 
-												color={statusItem.color} 
+											<StatusIcon
+												iconName={statusItem.iconName}
+												color={statusItem.color}
 											/>
 											{statusItem.name}
 										</div>

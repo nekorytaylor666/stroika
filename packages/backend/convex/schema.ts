@@ -132,11 +132,13 @@ export default defineSchema({
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 		isConstructionTask: v.boolean(), // Flag to distinguish construction tasks
+		parentTaskId: v.optional(v.id("issues")), // For subtask hierarchy
 	})
 		.index("by_status", ["statusId"])
 		.index("by_assignee", ["assigneeId"])
 		.index("by_construction", ["isConstructionTask"])
-		.index("by_project", ["projectId"]),
+		.index("by_project", ["projectId"])
+		.index("by_parent_task", ["parentTaskId"]),
 
 	// Roles table
 	roles: defineTable({
@@ -428,4 +430,40 @@ export default defineSchema({
 		.index("by_issue", ["issueId"])
 		.index("by_mentioned_user", ["mentionedUserId"])
 		.index("by_unread", ["mentionedUserId", "isRead"]),
+
+	// Activity tracking for issues
+	issueActivities: defineTable({
+		issueId: v.id("issues"),
+		userId: v.id("users"),
+		type: v.union(
+			v.literal("status_changed"),
+			v.literal("assignee_changed"),
+			v.literal("priority_changed"),
+			v.literal("created"),
+			v.literal("completed"),
+			v.literal("due_date_changed"),
+			v.literal("comment_added"),
+			v.literal("subtask_added"),
+			v.literal("subtask_removed"),
+		),
+		oldValue: v.optional(v.string()),
+		newValue: v.optional(v.string()),
+		metadata: v.optional(
+			v.object({
+				oldStatusId: v.optional(v.id("status")),
+				newStatusId: v.optional(v.id("status")),
+				oldAssigneeId: v.optional(v.id("users")),
+				newAssigneeId: v.optional(v.id("users")),
+				oldPriorityId: v.optional(v.id("priorities")),
+				newPriorityId: v.optional(v.id("priorities")),
+				commentId: v.optional(v.id("issueComments")),
+				subtaskId: v.optional(v.id("issues")),
+			}),
+		),
+		createdAt: v.number(),
+	})
+		.index("by_issue", ["issueId"])
+		.index("by_user", ["userId"])
+		.index("by_type", ["type"])
+		.index("by_created", ["createdAt"]),
 });
