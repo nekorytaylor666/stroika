@@ -5,7 +5,6 @@ import * as React from "react";
 import { BackToApp } from "@/components/layout/sidebar/back-to-app";
 import { NavConstructionMain } from "@/components/layout/sidebar/construction/nav-construction-main";
 import { NavConstructionProjects } from "@/components/layout/sidebar/construction/nav-construction-projects";
-import { NavConstructionTeams } from "@/components/layout/sidebar/construction/nav-construction-teams";
 import { NavConstructionTools } from "@/components/layout/sidebar/construction/nav-construction-tools";
 import HelpButton from "@/components/layout/sidebar/help-button";
 import { NavAccount } from "@/components/layout/sidebar/nav-account";
@@ -44,7 +43,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<NavInbox />
 						<NavConstructionMain />
 						<NavConstructionProjects />
-						<NavConstructionTeams />
 						<NavConstructionTools />
 						<NavResources />
 					</>
