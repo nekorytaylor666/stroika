@@ -86,7 +86,6 @@ export default function ConstructionTasks() {
 					<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} />
 				)}
 			</div>
-			<CreateIssueModalProvider />
 			<ConstructionTaskDetails
 				task={selectedTask}
 				open={isOpen}
@@ -206,8 +205,8 @@ const GroupConstructionTasksListView: FC<{
 	// Use different queries based on whether we have a projectId
 	const tasks = projectId
 		? useQuery(api.constructionTasks.getByProject, {
-				projectId: projectId as Id<"constructionProjects">,
-			})
+			projectId: projectId as Id<"constructionProjects">,
+		})
 		: useQuery(api.constructionTasks.getAll);
 
 	const statuses = useQuery(api.metadata.getAllStatus);

@@ -20,9 +20,8 @@ export default function MainLayout({
 	};
 	return (
 		<SidebarProvider>
-			<CreateIssueModalProvider />
 			<AppSidebar />
-			<div className="h-svh w-full overflow-hidden lg:p-2">
+			<div className="h-svh w-full overflow-hidden lg:p-2 bg-background">
 				<div className="flex h-full w-full flex-col items-center justify-start overflow-hidden bg-container lg:rounded-md lg:border">
 					{header}
 					<div
