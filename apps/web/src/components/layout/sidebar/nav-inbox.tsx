@@ -15,7 +15,7 @@ export function NavInbox() {
 	return (
 		<SidebarMenu>
 			<SidebarMenuItem>
-				<Link to="/" className="w-full">
+				<Link to="/construction/$orgId/construction-tasks" className="w-full">
 					<SidebarMenuButton>
 						<Inbox size={16} />
 						<span>Входящие</span>
