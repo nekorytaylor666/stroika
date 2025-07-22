@@ -194,6 +194,77 @@ export const removeIssueAttachment = mutation({
 });
 
 // Upload file without linking to specific issue (for general attachments page)
+export const uploadToProject = mutation({
+	args: {
+		storageId: v.id("_storage"),
+		fileName: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+		projectId: v.id("constructionProjects"),
+	},
+	handler: async (ctx, args) => {
+		// Made public for now - remove auth check
+		// const identity = await ctx.auth.getUserIdentity();
+		// if (!identity) throw new Error("Not authenticated");
+
+		// For now, use a default user ID
+		const users = await ctx.db.query("users").take(1);
+		const user = users[0];
+		if (!user) throw new Error("No users found in database");
+
+		// Get default status and priority
+		const defaultStatus = await ctx.db.query("status").first();
+		const defaultPriority = await ctx.db.query("priorities").first();
+
+		if (!defaultStatus || !defaultPriority) {
+			throw new Error("No default status or priority found");
+		}
+
+		// Create a placeholder issue for project file attachments
+		const projectFileIssue = await ctx.db
+			.query("issues")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("title"), "[Project Files]"),
+					q.eq(q.field("projectId"), args.projectId),
+				),
+			)
+			.first();
+
+		let issueId = projectFileIssue?._id;
+
+		if (!issueId) {
+			// Create a project files issue if it doesn't exist
+			issueId = await ctx.db.insert("issues", {
+				title: "[Project Files]",
+				description: "Container for project file attachments",
+				identifier: `PROJECT-FILES-${Date.now()}`,
+				projectId: args.projectId,
+				statusId: defaultStatus._id,
+				priorityId: defaultPriority._id,
+				assigneeId: undefined,
+				labelIds: [],
+				createdAt: new Date().toISOString(),
+				cycleId: "default",
+				rank: "0",
+				dueDate: undefined,
+				isConstructionTask: true,
+				parentTaskId: undefined,
+			});
+		}
+
+		await ctx.db.insert("issueAttachments", {
+			issueId,
+			fileName: args.fileName,
+			fileUrl: args.storageId,
+			fileSize: args.fileSize,
+			mimeType: args.mimeType,
+			uploadedBy: user._id,
+			uploadedAt: Date.now(),
+		});
+	},
+});
+
 export const uploadToGeneral = mutation({
 	args: {
 		storageId: v.id("_storage"),
@@ -221,29 +292,30 @@ export const uploadToGeneral = mutation({
 		let issueId = generalIssue?._id;
 
 		if (!issueId) {
+			// Get default status and priority
+			const defaultStatus = await ctx.db.query("status").first();
+			const defaultPriority = await ctx.db.query("priorities").first();
+
+			if (!defaultStatus || !defaultPriority) {
+				throw new Error("No default status or priority found");
+			}
+
 			// Create a general attachments issue if it doesn't exist
 			issueId = await ctx.db.insert("issues", {
 				title: "[General Attachments]",
 				description: "Container for general file attachments",
 				identifier: "GENERAL-001",
-				projectId: null as any,
-				statusId: null as any,
-				priorityId: null as any,
-				assignedTo: null,
-				createdBy: user._id,
-				updatedBy: user._id,
-				dueDate: null,
-				stateId: null as any,
-				estimate: null,
-				sortOrder: 0,
-				completedAt: null,
-				canceledAt: null,
-				archivedAt: null,
-				createdAt: Date.now(),
-				updatedAt: Date.now(),
-				startsAt: null,
-				organizationId: null as any,
+				projectId: undefined,
+				statusId: defaultStatus._id,
+				priorityId: defaultPriority._id,
+				assigneeId: undefined,
+				labelIds: [],
+				createdAt: new Date().toISOString(),
+				cycleId: "default",
+				rank: "0",
+				dueDate: undefined,
 				isConstructionTask: true,
+				parentTaskId: undefined,
 			});
 		}
 

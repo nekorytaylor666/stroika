@@ -75,7 +75,12 @@ export default function ConstructionTasks() {
 
 	return (
 		<>
-			<div className={cn("h-full w-full", isViewTypeGrid ? "overflow-x-auto" : "overflow-y-auto")}>
+			<div
+				className={cn(
+					"h-full w-full",
+					isViewTypeGrid ? "overflow-x-auto" : "overflow-y-auto",
+				)}
+			>
 				{isSearching ? (
 					<div className="px-6 py-4">
 						<SearchConstructionTasks />
@@ -179,17 +184,24 @@ const FilteredConstructionTasksView: FC<{
 			<ConstructionCustomDragLayer />
 			<div
 				className={cn(
-					isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
+					isViewTypeGrid ? "flex h-full min-w-max gap-3 px-2 py-2" : "w-full",
 				)}
 			>
-				{statuses.map((statusItem) => (
-					<ConstructionGroupIssues
-						key={statusItem._id}
-						status={statusItem}
-						issues={filteredTasksByStatus[statusItem._id] || []}
-						count={filteredTasksByStatus[statusItem._id]?.length || 0}
-					/>
-				))}
+				{statuses.map((statusItem) => {
+					const statusIssues = filteredTasksByStatus[statusItem._id] || [];
+					// Only render status groups that have issues in list view
+					if (!isViewTypeGrid && statusIssues.length === 0) {
+						return null;
+					}
+					return (
+						<ConstructionGroupIssues
+							key={statusItem._id}
+							status={statusItem}
+							issues={statusIssues}
+							count={statusIssues.length}
+						/>
+					);
+				})}
 			</div>
 		</DndProvider>
 	);
@@ -205,8 +217,8 @@ const GroupConstructionTasksListView: FC<{
 	// Use different queries based on whether we have a projectId
 	const tasks = projectId
 		? useQuery(api.constructionTasks.getByProject, {
-			projectId: projectId as Id<"constructionProjects">,
-		})
+				projectId: projectId as Id<"constructionProjects">,
+			})
 		: useQuery(api.constructionTasks.getAll);
 
 	const statuses = useQuery(api.metadata.getAllStatus);
@@ -231,17 +243,24 @@ const GroupConstructionTasksListView: FC<{
 			<ConstructionCustomDragLayer />
 			<div
 				className={cn(
-					isViewTypeGrid && "flex h-full min-w-max gap-3 px-2 py-2",
+					isViewTypeGrid ? "flex h-full min-w-max gap-3 px-2 py-2" : "w-full",
 				)}
 			>
-				{statuses.map((statusItem) => (
-					<ConstructionGroupIssues
-						key={statusItem._id}
-						status={statusItem}
-						issues={tasksByStatus[statusItem._id] || []}
-						count={tasksByStatus[statusItem._id]?.length || 0}
-					/>
-				))}
+				{statuses.map((statusItem) => {
+					const statusIssues = tasksByStatus[statusItem._id] || [];
+					// Only render status groups that have issues in list view
+					if (!isViewTypeGrid && statusIssues.length === 0) {
+						return null;
+					}
+					return (
+						<ConstructionGroupIssues
+							key={statusItem._id}
+							status={statusItem}
+							issues={statusIssues}
+							count={statusIssues.length}
+						/>
+					);
+				})}
 			</div>
 		</DndProvider>
 	);

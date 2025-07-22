@@ -1,0 +1,11 @@
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute(
+  '/construction/$orgId/projects/$projectId/calendar',
+)({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Hello "/construction/$orgId/projects/$projectId/calendar"!</div>
+}

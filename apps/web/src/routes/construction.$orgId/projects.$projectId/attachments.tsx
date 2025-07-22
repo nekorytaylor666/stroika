@@ -1,4 +1,4 @@
-import { ProjectAttachments } from "@/components/attachments/project-attachments";
+import { LinearAllAttachments } from "@/components/attachments/linear-style/all-attachments";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -9,5 +9,5 @@ export const Route = createFileRoute(
 
 function ProjectAttachmentsPage() {
 	const { projectId } = Route.useParams();
-	return <ProjectAttachments projectId={projectId} />;
+	return <LinearAllAttachments projectId={projectId} />;
 }

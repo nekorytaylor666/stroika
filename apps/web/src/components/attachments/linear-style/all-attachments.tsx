@@ -44,7 +44,13 @@ import { useInView } from "react-intersection-observer";
 type ViewMode = "grid" | "list";
 type FileType = "all" | "image" | "pdf" | "document" | "spreadsheet" | "other";
 
-export function LinearAllAttachments() {
+interface LinearAllAttachmentsProps {
+	projectId?: string;
+}
+
+export function LinearAllAttachments({
+	projectId,
+}: LinearAllAttachmentsProps = {}) {
 	const [search, setSearch] = useState("");
 	const [fileType, setFileType] = useState<FileType>("all");
 	const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -61,15 +67,26 @@ export function LinearAllAttachments() {
 	});
 
 	// Fetch attachments
-	const attachmentsData = useQuery(api.attachments.queries.getAllAttachments, {
-		limit: 50,
-		cursor: cursor || undefined,
-		search: search || undefined,
-		fileType: fileType === "all" ? undefined : fileType,
-	});
+	const attachmentsData = useQuery(
+		projectId
+			? api.attachments.projectAttachments.getAllForProject
+			: api.attachments.queries.getAllAttachments,
+		{
+			limit: 50,
+			cursor: cursor || undefined,
+			search: search || undefined,
+			fileType: fileType === "all" ? undefined : fileType,
+			...(projectId ? { projectId: projectId as any } : {}),
+		},
+	);
 
 	// Fetch stats
-	const stats = useQuery(api.attachments.queries.getAttachmentStats);
+	const stats = useQuery(
+		projectId
+			? api.attachments.projectAttachments.getProjectStats
+			: api.attachments.queries.getAttachmentStats,
+		projectId ? { projectId: projectId as any } : undefined,
+	);
 
 	// Handle initial data load
 	useEffect(() => {
@@ -161,7 +178,9 @@ export function LinearAllAttachments() {
 			<div className="border-b">
 				<div className="flex flex-col gap-4 px-8 py-6">
 					<div className="flex items-center justify-between">
-						<h1 className="font-semibold text-2xl">Вложения</h1>
+						<h1 className="font-semibold text-2xl">
+							{projectId ? "Файлы проекта" : "Вложения"}
+						</h1>
 						<div className="flex items-center gap-3">
 							<Button
 								onClick={() => setShowUploadDialog(true)}
@@ -420,18 +439,23 @@ export function LinearAllAttachments() {
 
 			{/* Upload Dialog */}
 			<Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden">
 					<DialogHeader>
 						<DialogTitle>Загрузить файлы</DialogTitle>
 						<DialogDescription>
-							Загрузите файлы в систему. Они будут доступны всем пользователям.
+							{projectId
+								? "Загрузите файлы в проект. Они будут доступны всем участникам проекта."
+								: "Загрузите файлы в систему. Они будут доступны всем пользователям."}
 						</DialogDescription>
 					</DialogHeader>
-					<FileUpload
-						onUploadComplete={handleUploadComplete}
-						maxFiles={10}
-						maxFileSize={50 * 1024 * 1024} // 50MB
-					/>
+					<div className="max-h-[calc(90vh-120px)] overflow-y-auto">
+						<FileUpload
+							onUploadComplete={handleUploadComplete}
+							maxFiles={10}
+							maxFileSize={50 * 1024 * 1024} // 50MB
+							projectId={projectId}
+						/>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</div>

@@ -100,13 +100,15 @@ export const getPaginated = query({
 		const project = await ctx.db.get(args.projectId);
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
-				const [issue, uploader] = await Promise.all([
+				const [issue, uploader, fileUrl] = await Promise.all([
 					ctx.db.get(attachment.issueId),
 					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 
 				return {
 					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl,
 					issue: issue
 						? {
 								_id: issue._id,
@@ -142,8 +144,127 @@ export const getPaginated = query({
 	},
 });
 
+// Get all attachments for a project (non-paginated with cursor)
+export const getAllForProject = query({
+	args: {
+		projectId: v.id("constructionProjects"),
+		search: v.optional(v.string()),
+		fileType: v.optional(v.string()),
+		limit: v.optional(v.number()),
+		cursor: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const limit = args.limit || 50;
+		const offset = args.cursor || 0;
+
+		// Get all tasks for this project
+		const projectTasks = await ctx.db
+			.query("issues")
+			.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
+			.filter((q) => q.eq(q.field("projectId"), args.projectId))
+			.collect();
+
+		const taskIds = new Set(projectTasks.map((task) => task._id));
+
+		if (taskIds.size === 0) {
+			return {
+				items: [],
+				nextCursor: null,
+				hasMore: false,
+			};
+		}
+
+		// Get all attachments and filter
+		const allAttachments = await ctx.db
+			.query("issueAttachments")
+			.order("desc")
+			.collect();
+
+		let filteredAttachments = allAttachments.filter((att) =>
+			taskIds.has(att.issueId),
+		);
+
+		// Apply search filter
+		if (args.search) {
+			const searchLower = args.search.toLowerCase();
+			filteredAttachments = filteredAttachments.filter((att) =>
+				att.fileName.toLowerCase().includes(searchLower),
+			);
+		}
+
+		// Apply file type filter
+		if (args.fileType && args.fileType !== "all") {
+			filteredAttachments = filteredAttachments.filter((att) => {
+				const mimeType = att.mimeType.toLowerCase();
+				switch (args.fileType) {
+					case "image":
+						return mimeType.startsWith("image/");
+					case "pdf":
+						return mimeType.includes("pdf");
+					case "document":
+						return (
+							mimeType.includes("word") ||
+							mimeType.includes("document") ||
+							mimeType.includes("text")
+						);
+					case "spreadsheet":
+						return (
+							mimeType.includes("sheet") ||
+							mimeType.includes("excel") ||
+							mimeType.includes("csv")
+						);
+					default:
+						return true;
+				}
+			});
+		}
+
+		// Apply pagination
+		const paginatedItems = filteredAttachments.slice(offset, offset + limit);
+		const hasMore = offset + limit < filteredAttachments.length;
+
+		// Enrich with related data
+		const enrichedItems = await Promise.all(
+			paginatedItems.map(async (attachment) => {
+				const [issue, uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.issueId),
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+
+				return {
+					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+					issue: issue
+						? {
+								_id: issue._id,
+								identifier: issue.identifier,
+								title: issue.title,
+								isConstructionTask: true,
+							}
+						: null,
+					uploader: uploader
+						? {
+								_id: uploader._id,
+								name: uploader.name,
+								email: uploader.email,
+								image: uploader.avatarUrl,
+							}
+						: null,
+				};
+			}),
+		);
+
+		return {
+			items: enrichedItems,
+			nextCursor: hasMore ? offset + limit : null,
+			hasMore,
+		};
+	},
+});
+
 // Get stats for project attachments
-export const getStats = query({
+export const getProjectStats = query({
 	args: {
 		projectId: v.id("constructionProjects"),
 	},
@@ -162,7 +283,6 @@ export const getStats = query({
 				totalCount: 0,
 				totalSize: 0,
 				byType: {},
-				recentUploads: 0,
 			};
 		}
 
@@ -179,7 +299,6 @@ export const getStats = query({
 			totalCount: projectAttachments.length,
 			totalSize: projectAttachments.reduce((sum, att) => sum + att.fileSize, 0),
 			byType: {} as Record<string, number>,
-			recentUploads: 0,
 		};
 
 		// Count by type
@@ -189,27 +308,24 @@ export const getStats = query({
 
 			if (mimeType.startsWith("image/")) {
 				type = "image";
-			} else if (mimeType.startsWith("video/")) {
-				type = "video";
+			} else if (mimeType.includes("pdf")) {
+				type = "pdf";
 			} else if (
-				mimeType.includes("pdf") ||
 				mimeType.includes("word") ||
 				mimeType.includes("document") ||
 				mimeType.includes("text")
 			) {
 				type = "document";
+			} else if (
+				mimeType.includes("sheet") ||
+				mimeType.includes("excel") ||
+				mimeType.includes("csv")
+			) {
+				type = "spreadsheet";
 			}
 
 			stats.byType[type] = (stats.byType[type] || 0) + 1;
 		});
-
-		// Count recent uploads (last 7 days)
-		const sevenDaysAgo = new Date();
-		sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-		stats.recentUploads = projectAttachments.filter(
-			(att) => new Date(att.uploadedAt) > sevenDaysAgo,
-		).length;
 
 		return stats;
 	},

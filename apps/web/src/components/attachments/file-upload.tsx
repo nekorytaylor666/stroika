@@ -22,6 +22,7 @@ interface FileUploadProps {
 	maxFileSize?: number; // in bytes
 	acceptedFileTypes?: string[];
 	className?: string;
+	projectId?: string;
 }
 
 interface UploadedFile {
@@ -45,6 +46,7 @@ export function FileUpload({
 	maxFileSize = 50 * 1024 * 1024, // 50MB default
 	acceptedFileTypes = [],
 	className,
+	projectId,
 }: FileUploadProps) {
 	const [isDragging, setIsDragging] = useState(false);
 	const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
@@ -52,6 +54,7 @@ export function FileUpload({
 
 	const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 	const uploadToGeneral = useMutation(api.files.uploadToGeneral);
+	const uploadToProject = useMutation(api.files.uploadToProject);
 
 	const handleFiles = useCallback(
 		async (files: File[]) => {
@@ -111,12 +114,22 @@ export function FileUpload({
 					const { storageId } = await response.json();
 
 					// Save to database
-					await uploadToGeneral({
-						storageId,
-						fileName: uploadingFile.file.name,
-						fileSize: uploadingFile.file.size,
-						mimeType: uploadingFile.file.type,
-					});
+					if (projectId) {
+						await uploadToProject({
+							storageId,
+							fileName: uploadingFile.file.name,
+							fileSize: uploadingFile.file.size,
+							mimeType: uploadingFile.file.type,
+							projectId: projectId as any,
+						});
+					} else {
+						await uploadToGeneral({
+							storageId,
+							fileName: uploadingFile.file.name,
+							fileSize: uploadingFile.file.size,
+							mimeType: uploadingFile.file.type,
+						});
+					}
 
 					// Update status
 					setUploadingFiles((prev) =>
@@ -166,6 +179,8 @@ export function FileUpload({
 			maxFiles,
 			generateUploadUrl,
 			uploadToGeneral,
+			uploadToProject,
+			projectId,
 			onUploadComplete,
 		],
 	);
@@ -187,14 +202,17 @@ export function FileUpload({
 		e.stopPropagation();
 	}, []);
 
-	const handleDrop = useCallback((e: React.DragEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setIsDragging(false);
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragging(false);
 
-		const files = Array.from(e.dataTransfer.files);
-		handleFiles(files);
-	}, [handleFiles]);
+			const files = Array.from(e.dataTransfer.files);
+			handleFiles(files);
+		},
+		[handleFiles],
+	);
 
 	const handleFileSelect = useCallback(
 		(e: React.ChangeEvent<HTMLInputElement>) => {

@@ -34,7 +34,7 @@ export default function ConstructionHeader() {
 		// Navigate to different routes based on view
 		switch (newView) {
 			case "activity":
-				navigate({ to: `/construction/${orgId}/construction-tasks` });
+				navigate({ to: `/construction/${orgId}/activity` });
 				break;
 			case "board":
 				navigate({ to: `/construction/${orgId}/tasks` });

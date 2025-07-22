@@ -71,6 +71,7 @@ export function ConstructionTaskDetails({
 		updateTaskPriority,
 	} = useConstructionData();
 	const updateTask = useMutation(api.constructionTasks.update);
+	const deleteTask = useMutation(api.constructionTasks.deleteTask);
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
 	const [title, setTitle] = useState(task?.title || "");
@@ -178,7 +179,7 @@ export function ConstructionTaskDetails({
 							<Button variant="ghost" size="sm" onClick={handleCopyLink}>
 								<Link2 className="h-4 w-4" />
 							</Button>
-							<Button variant="ghost" size="sm">
+							<Button variant="ghost" size="sm" onClick={handleCopyLink}>
 								<Copy className="h-4 w-4" />
 							</Button>
 							<DropdownMenu>
@@ -188,9 +189,41 @@ export function ConstructionTaskDetails({
 									</Button>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent align="end">
-									<DropdownMenuItem>Дублировать</DropdownMenuItem>
-									<DropdownMenuItem>Переместить</DropdownMenuItem>
-									<DropdownMenuItem className="text-red-600">
+									<DropdownMenuItem
+										onClick={() => {
+											// TODO: Implement duplicate functionality
+											console.log(
+												"Duplicate functionality not implemented yet",
+											);
+										}}
+									>
+										Дублировать
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={() => {
+											// TODO: Implement move functionality
+											console.log("Move functionality not implemented yet");
+										}}
+									>
+										Переместить
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										className="text-red-600"
+										onClick={async () => {
+											if (
+												confirm("Вы уверены, что хотите удалить эту задачу?")
+											) {
+												try {
+													await deleteTask({
+														id: currentTask._id as Id<"issues">,
+													});
+													onOpenChange(false);
+												} catch (error) {
+													console.error("Error deleting task:", error);
+												}
+											}
+										}}
+									>
 										Удалить
 									</DropdownMenuItem>
 								</DropdownMenuContent>

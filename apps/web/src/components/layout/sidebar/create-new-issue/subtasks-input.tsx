@@ -199,7 +199,10 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 							</Popover>
 
 							{/* Date picker */}
-							<Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+							<Popover
+								open={isDatePickerOpen}
+								onOpenChange={setIsDatePickerOpen}
+							>
 								<PopoverTrigger asChild>
 									<Button
 										variant="outline"
@@ -254,7 +257,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 							</Button>
 						</div>
 					</div>
-					
+
 					{/* Show selected attachments */}
 					{selectedAttachments.length > 0 && (
 						<div className="mt-2 flex flex-wrap gap-1">
@@ -264,11 +267,15 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 									className="flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs"
 								>
 									<File className="h-3 w-3" />
-									<span className="truncate max-w-[150px]">{attachment.fileName}</span>
+									<span className="max-w-[150px] truncate">
+										{attachment.fileName}
+									</span>
 									<button
 										type="button"
 										onClick={() => {
-											setSelectedAttachments(prev => prev.filter((_, i) => i !== index));
+											setSelectedAttachments((prev) =>
+												prev.filter((_, i) => i !== index),
+											);
 										}}
 										className="ml-1 hover:text-destructive"
 									>

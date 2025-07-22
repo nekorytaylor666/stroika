@@ -69,7 +69,7 @@ function ProjectAnalyticsPage() {
 	// Fetch project data with tasks
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId as Id<"constructionProjects">,
-	});
+	})
 
 	// Get Gantt data
 	const {
@@ -94,7 +94,7 @@ function ProjectAnalyticsPage() {
 				(task) =>
 					task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
 					task.description?.toLowerCase().includes(searchQuery.toLowerCase()),
-			);
+			)
 		}
 
 		// Filter by user
@@ -106,14 +106,14 @@ function ProjectAnalyticsPage() {
 		if (selectedStatusIds.length > 0) {
 			tasks = tasks.filter((task) =>
 				selectedStatusIds.includes(task.status._id),
-			);
+			)
 		}
 
 		// Filter by priority
 		if (selectedPriorityIds.length > 0) {
 			tasks = tasks.filter((task) =>
 				selectedPriorityIds.includes(task.priority._id),
-			);
+			)
 		}
 
 		return tasks;
@@ -123,7 +123,7 @@ function ProjectAnalyticsPage() {
 		selectedUserId,
 		selectedStatusIds,
 		selectedPriorityIds,
-	]);
+	])
 
 	// Filter Gantt features based on filtered tasks
 	const filteredFeatures = useMemo(() => {
@@ -132,7 +132,7 @@ function ProjectAnalyticsPage() {
 		const filteredTaskIds = new Set(filteredTasks.map((t) => t._id));
 		return features.filter((feature) =>
 			filteredTaskIds.has(feature.id as Id<"issues">),
-		);
+		)
 	}, [features, filteredTasks]);
 
 	// Prepare timeline markers for Gantt
@@ -145,14 +145,14 @@ function ProjectAnalyticsPage() {
 				id: "project-start",
 				date: projectMarkers.startDate,
 				label: "Начало проекта",
-			});
+			})
 		}
 		if (projectMarkers.targetDate) {
 			markers.push({
 				id: "project-deadline",
 				date: projectMarkers.targetDate,
 				label: "Дедлайн проекта",
-			});
+			})
 		}
 
 		// Add task deadline markers
@@ -165,7 +165,7 @@ function ProjectAnalyticsPage() {
 					id: `task-deadline-${task._id}`,
 					date: parseISO(task.dueDate),
 					label: `Дедлайн: ${task.title}`,
-				});
+				})
 			}
 		}
 
@@ -179,10 +179,10 @@ function ProjectAnalyticsPage() {
 				const statusName = feature.status.name;
 				if (!acc[statusName]) acc[statusName] = [];
 				acc[statusName].push(feature);
-				return acc;
+				return acc
 			},
 			{} as Record<string, typeof filteredFeatures>,
-		);
+		)
 	}, [filteredFeatures]);
 
 	const isLoading =
@@ -193,17 +193,16 @@ function ProjectAnalyticsPage() {
 		priorities === undefined;
 
 	return (
-		<div className="space-y-6 p-6">
-			{/* Header */}
-			<div className="flex items-center justify-between">
+        <div className="space-y-6 p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<BarChart3 className="h-8 w-8 text-muted-foreground" />
 					<h1 className="font-semibold text-2xl">Аналитика проекта</h1>
 				</div>
 			</div>
-
-			{/* Filters */}
-			<Card>
+            {/* Filters */}
+            <Card>
 				<CardContent className="pt-6">
 					<div className="flex gap-4">
 						<div className="flex-1">
@@ -285,13 +284,13 @@ function ProjectAnalyticsPage() {
 															setSelectedStatusIds([
 																...selectedStatusIds,
 																status._id,
-															]);
+															])
 														} else {
 															setSelectedStatusIds(
 																selectedStatusIds.filter(
 																	(id) => id !== status._id,
 																),
-															);
+															)
 														}
 													}}
 												/>
@@ -353,13 +352,13 @@ function ProjectAnalyticsPage() {
 															setSelectedPriorityIds([
 																...selectedPriorityIds,
 																priority._id,
-															]);
+															])
 														} else {
 															setSelectedPriorityIds(
 																selectedPriorityIds.filter(
 																	(id) => id !== priority._id,
 																),
-															);
+															)
 														}
 													}}
 												/>
@@ -379,8 +378,7 @@ function ProjectAnalyticsPage() {
 					</div>
 				</CardContent>
 			</Card>
-
-			{isLoading ? (
+            {isLoading ? (
 				<Card>
 					<CardContent className="pt-6">
 						<Skeleton className="h-[600px] w-full" />
@@ -388,14 +386,14 @@ function ProjectAnalyticsPage() {
 				</Card>
 			) : (
 				// Gantt Chart Section
-				<Card>
-					<CardHeader>
+				(<Card>
+                    <CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<Briefcase className="h-5 w-5" />
 							График задач (Диаграмма Ганта)
 						</CardTitle>
 					</CardHeader>
-					<CardContent>
+                    <CardContent>
 						{filteredFeatures.length > 0 ? (
 							<div className="h-[600px] overflow-hidden">
 								<GanttProvider range="daily" zoom={100}>
@@ -451,8 +449,8 @@ function ProjectAnalyticsPage() {
 							</div>
 						)}
 					</CardContent>
-				</Card>
+                </Card>)
 			)}
-		</div>
-	);
+        </div>
+    )
 }

@@ -352,3 +352,377 @@ export const getStatusChangeHistory = query({
 		return activityByDate;
 	},
 });
+
+// Get all activities for the organization
+export const getOrganizationActivities = query({
+	args: {
+		limit: v.optional(v.number()),
+		cursor: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const limit = args.limit || 50;
+		const offset = args.cursor || 0;
+
+		// Get all activities
+		const activities = await ctx.db
+			.query("issueActivities")
+			.order("desc")
+			.collect();
+
+		// Paginate
+		const paginatedActivities = activities.slice(offset, offset + limit);
+
+		// Populate activity data
+		const populatedActivities = await Promise.all(
+			paginatedActivities.map(async (activity) => {
+				const [user, task] = await Promise.all([
+					ctx.db.get(activity.userId),
+					ctx.db.get(activity.issueId),
+				]);
+
+				// Get project info if task exists
+				let project = null;
+				if (task?.projectId) {
+					project = await ctx.db.get(task.projectId);
+				}
+
+				// Populate metadata references
+				const populatedMetadata: any = {};
+				if (activity.metadata) {
+					const promises = [];
+
+					if (activity.metadata.oldStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldStatusId)
+								.then((s) => (populatedMetadata.oldStatus = s)),
+						);
+					}
+					if (activity.metadata.newStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newStatusId)
+								.then((s) => (populatedMetadata.newStatus = s)),
+						);
+					}
+					if (activity.metadata.oldAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldAssigneeId)
+								.then((u) => (populatedMetadata.oldAssignee = u)),
+						);
+					}
+					if (activity.metadata.newAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newAssigneeId)
+								.then((u) => (populatedMetadata.newAssignee = u)),
+						);
+					}
+					if (activity.metadata.oldPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldPriorityId)
+								.then((p) => (populatedMetadata.oldPriority = p)),
+						);
+					}
+					if (activity.metadata.newPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newPriorityId)
+								.then((p) => (populatedMetadata.newPriority = p)),
+						);
+					}
+					if (activity.metadata.commentId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.commentId)
+								.then((c) => (populatedMetadata.comment = c)),
+						);
+					}
+					if (activity.metadata.subtaskId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.subtaskId)
+								.then((s) => (populatedMetadata.subtask = s)),
+						);
+					}
+
+					await Promise.all(promises);
+				}
+
+				return {
+					...activity,
+					user,
+					task,
+					project,
+					populatedMetadata,
+				};
+			}),
+		);
+
+		return {
+			items: populatedActivities,
+			nextCursor: offset + limit < activities.length ? offset + limit : null,
+			hasMore: offset + limit < activities.length,
+		};
+	},
+});
+
+// Get activities for a specific user
+export const getUserActivities = query({
+	args: {
+		userId: v.id("users"),
+		limit: v.optional(v.number()),
+		cursor: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const limit = args.limit || 50;
+		const offset = args.cursor || 0;
+
+		// Get all activities for this user
+		const activities = await ctx.db
+			.query("issueActivities")
+			.withIndex("by_user", (q) => q.eq("userId", args.userId))
+			.order("desc")
+			.collect();
+
+		// Paginate
+		const paginatedActivities = activities.slice(offset, offset + limit);
+
+		// Populate activity data
+		const populatedActivities = await Promise.all(
+			paginatedActivities.map(async (activity) => {
+				const [user, task] = await Promise.all([
+					ctx.db.get(activity.userId),
+					ctx.db.get(activity.issueId),
+				]);
+
+				// Get project info if task exists
+				let project = null;
+				if (task?.projectId) {
+					project = await ctx.db.get(task.projectId);
+				}
+
+				// Populate metadata references
+				const populatedMetadata: any = {};
+				if (activity.metadata) {
+					const promises = [];
+
+					if (activity.metadata.oldStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldStatusId)
+								.then((s) => (populatedMetadata.oldStatus = s)),
+						);
+					}
+					if (activity.metadata.newStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newStatusId)
+								.then((s) => (populatedMetadata.newStatus = s)),
+						);
+					}
+					if (activity.metadata.oldAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldAssigneeId)
+								.then((u) => (populatedMetadata.oldAssignee = u)),
+						);
+					}
+					if (activity.metadata.newAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newAssigneeId)
+								.then((u) => (populatedMetadata.newAssignee = u)),
+						);
+					}
+					if (activity.metadata.oldPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldPriorityId)
+								.then((p) => (populatedMetadata.oldPriority = p)),
+						);
+					}
+					if (activity.metadata.newPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newPriorityId)
+								.then((p) => (populatedMetadata.newPriority = p)),
+						);
+					}
+					if (activity.metadata.commentId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.commentId)
+								.then((c) => (populatedMetadata.comment = c)),
+						);
+					}
+					if (activity.metadata.subtaskId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.subtaskId)
+								.then((s) => (populatedMetadata.subtask = s)),
+						);
+					}
+
+					await Promise.all(promises);
+				}
+
+				return {
+					...activity,
+					user,
+					task,
+					project,
+					populatedMetadata,
+				};
+			}),
+		);
+
+		return {
+			items: populatedActivities,
+			nextCursor: offset + limit < activities.length ? offset + limit : null,
+			hasMore: offset + limit < activities.length,
+		};
+	},
+});
+
+// Get activities for a team (department)
+export const getTeamActivities = query({
+	args: {
+		departmentId: v.id("departments"),
+		limit: v.optional(v.number()),
+		cursor: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const limit = args.limit || 50;
+		const offset = args.cursor || 0;
+
+		// Get all users in this department
+		const userAssignments = await ctx.db
+			.query("userDepartments")
+			.withIndex("by_department", (q) =>
+				q.eq("departmentId", args.departmentId),
+			)
+			.collect();
+
+		const userIds = userAssignments.map((a) => a.userId);
+
+		if (userIds.length === 0) {
+			return {
+				items: [],
+				nextCursor: null,
+				hasMore: false,
+			};
+		}
+
+		// Get all activities and filter by users in team
+		const allActivities = await ctx.db
+			.query("issueActivities")
+			.order("desc")
+			.collect();
+
+		const teamActivities = allActivities.filter((activity) =>
+			userIds.includes(activity.userId),
+		);
+
+		// Paginate
+		const paginatedActivities = teamActivities.slice(offset, offset + limit);
+
+		// Populate activity data
+		const populatedActivities = await Promise.all(
+			paginatedActivities.map(async (activity) => {
+				const [user, task] = await Promise.all([
+					ctx.db.get(activity.userId),
+					ctx.db.get(activity.issueId),
+				]);
+
+				// Get project info if task exists
+				let project = null;
+				if (task?.projectId) {
+					project = await ctx.db.get(task.projectId);
+				}
+
+				// Populate metadata references
+				const populatedMetadata: any = {};
+				if (activity.metadata) {
+					const promises = [];
+
+					if (activity.metadata.oldStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldStatusId)
+								.then((s) => (populatedMetadata.oldStatus = s)),
+						);
+					}
+					if (activity.metadata.newStatusId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newStatusId)
+								.then((s) => (populatedMetadata.newStatus = s)),
+						);
+					}
+					if (activity.metadata.oldAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldAssigneeId)
+								.then((u) => (populatedMetadata.oldAssignee = u)),
+						);
+					}
+					if (activity.metadata.newAssigneeId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newAssigneeId)
+								.then((u) => (populatedMetadata.newAssignee = u)),
+						);
+					}
+					if (activity.metadata.oldPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.oldPriorityId)
+								.then((p) => (populatedMetadata.oldPriority = p)),
+						);
+					}
+					if (activity.metadata.newPriorityId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.newPriorityId)
+								.then((p) => (populatedMetadata.newPriority = p)),
+						);
+					}
+					if (activity.metadata.commentId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.commentId)
+								.then((c) => (populatedMetadata.comment = c)),
+						);
+					}
+					if (activity.metadata.subtaskId) {
+						promises.push(
+							ctx.db
+								.get(activity.metadata.subtaskId)
+								.then((s) => (populatedMetadata.subtask = s)),
+						);
+					}
+
+					await Promise.all(promises);
+				}
+
+				return {
+					...activity,
+					user,
+					task,
+					project,
+					populatedMetadata,
+				};
+			}),
+		);
+
+		return {
+			items: populatedActivities,
+			nextCursor:
+				offset + limit < teamActivities.length ? offset + limit : null,
+			hasMore: offset + limit < teamActivities.length,
+		};
+	},
+});

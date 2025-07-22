@@ -111,7 +111,7 @@ export function ConstructionIssueLine({
 							<span className="mr-0.5 hidden w-[66px] shrink-0 truncate font-medium text-muted-foreground text-sm sm:inline-block">
 								{issue.identifier}
 							</span>
-							<AnimatePresence mode="wait">
+							<AnimatePresence mode="wait" initial={false}>
 								<motion.div
 									key={issue.statusId}
 									initial={{ scale: 0.8, opacity: 0 }}

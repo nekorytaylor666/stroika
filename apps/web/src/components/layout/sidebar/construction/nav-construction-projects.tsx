@@ -23,6 +23,7 @@ import { useQuery } from "convex/react";
 import {
 	BarChart3,
 	Building2,
+	CalendarDays,
 	CheckSquare,
 	ChevronRight,
 	Paperclip,
@@ -72,6 +73,11 @@ export function NavConstructionProjects() {
 			name: "Файлы",
 			icon: Paperclip,
 			url: `/construction/${params.orgId}/projects/${projectId}/attachments`,
+		},
+		{
+			name: "Календарь",
+			icon: CalendarDays,
+			url: `/construction/${params.orgId}/projects/${projectId}/calendar`,
 		},
 		{
 			name: "Команда",
