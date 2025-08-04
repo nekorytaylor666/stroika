@@ -95,7 +95,7 @@ export function ConstructionGroupIssues({
 				"bg-container",
 				isViewTypeGrid
 					? "flex h-full w-[348px] flex-shrink-0 flex-col overflow-hidden rounded-md"
-					: "w-full",
+					: "mb-4 w-full",
 			)}
 		>
 			<div
@@ -148,7 +148,7 @@ export function ConstructionGroupIssues({
 			</div>
 
 			{viewType === "list" ? (
-				<div>
+				<div className="space-y-1 px-6 py-2">
 					{sortedIssues.map((issue) => (
 						<ConstructionIssueLine
 							key={issue._id}

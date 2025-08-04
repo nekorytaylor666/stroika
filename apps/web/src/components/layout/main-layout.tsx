@@ -15,8 +15,8 @@ export default function MainLayout({
 	headersNumber = 2,
 }: MainLayoutProps) {
 	const height = {
-		1: "h-[calc(100svh-40px)] lg:h-[calc(100svh-56px)]",
-		2: "h-[calc(100svh-80px)] lg:h-[calc(100svh-96px)]",
+		1: "h-[calc(100svh)] lg:h-[calc(100svh)]",
+		2: "h-[calc(100svh)] lg:h-[calc(100svh)]",
 	};
 	return (
 		<SidebarProvider>

@@ -40,12 +40,6 @@ import { Link, useParams } from "@tanstack/react-router";
 
 const constructionMainItems = [
 	{
-		name: "Панель управления",
-		url: "/construction/$orgId/construction-dashboard",
-		icon: BarChart3,
-		description: "Общий обзор показателей компании",
-	},
-	{
 		name: "Проекты",
 		url: "/construction/$orgId/construction-projects",
 		icon: Building,
@@ -59,7 +53,7 @@ const constructionMainItems = [
 	},
 	{
 		name: "Задачи",
-		url: "/construction/$orgId/construction-tasks",
+		url: "/construction/$orgId/tasks",
 		icon: CheckSquare,
 		description: "Управление задачами и поручениями",
 	},
@@ -83,27 +77,6 @@ const constructionMainItems = [
 	},
 ];
 
-const constructionAnalyticsItems = [
-	{
-		name: "Финансовая отчетность",
-		url: "/construction/$orgId/analytics/financial",
-		icon: DollarSign,
-		description: "Выручка и контрактная стоимость",
-	},
-	{
-		name: "Загруженность ресурсов",
-		url: "/construction/$orgId/analytics/workload",
-		icon: TrendingUp,
-		description: "Анализ загруженности команд",
-	},
-	{
-		name: "Риски проектов",
-		url: "/construction/$orgId/analytics/risks",
-		icon: AlertTriangle,
-		description: "Мониторинг проектных рисков",
-	},
-];
-
 export function NavConstructionMain() {
 	const { seedData } = useConstructionData();
 	const params = useParams({ from: "/construction/$orgId" });
@@ -114,9 +87,7 @@ export function NavConstructionMain() {
 
 	return (
 		<SidebarGroup className="group-data-[collapsible=icon]:hidden">
-			<SidebarGroupLabel>
-				Система сбалансированных показателей
-			</SidebarGroupLabel>
+			<SidebarGroupLabel>Организация</SidebarGroupLabel>
 			<SidebarMenu>
 				{constructionMainItems.map((item) => (
 					<SidebarMenuItem key={item.name}>
@@ -137,37 +108,6 @@ export function NavConstructionMain() {
 						</TooltipProvider>
 					</SidebarMenuItem>
 				))}
-				<SidebarMenuItem>
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<SidebarMenuButton asChild>
-								<span>
-									<MoreHorizontal />
-									<span>Аналитика</span>
-								</span>
-							</SidebarMenuButton>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent
-							className="w-64 rounded-lg"
-							side="bottom"
-							align="start"
-						>
-							{constructionAnalyticsItems.map((item, index) => (
-								<DropdownMenuItem key={item.name} asChild>
-									<Link to={item.url.replace("$orgId", params.orgId)}>
-										<item.icon className="text-muted-foreground" />
-										<div className="flex flex-col">
-											<span>{item.name}</span>
-											<span className="text-muted-foreground text-xs">
-												{item.description}
-											</span>
-										</div>
-									</Link>
-								</DropdownMenuItem>
-							))}
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</SidebarMenuItem>
 			</SidebarMenu>
 		</SidebarGroup>
 	);

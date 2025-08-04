@@ -43,8 +43,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						<NavInbox />
 						<NavConstructionMain />
 						<NavConstructionProjects />
-						<NavConstructionTools />
-						<NavResources />
 					</>
 				)}
 			</SidebarContent>

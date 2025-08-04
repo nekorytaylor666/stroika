@@ -17,6 +17,7 @@ import { ConstructionCreateIssueModal } from "./construction-create-issue-modal"
 import { ConstructionGroupIssues } from "./construction-group-issues";
 import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
+import { LinearKanbanBoard } from "./linear-kanban-board";
 import { SearchConstructionTasks } from "./search-construction-tasks";
 
 // Types for construction tasks
@@ -177,33 +178,55 @@ const FilteredConstructionTasksView: FC<{
 		return result;
 	}, [filteredTasks, statuses]);
 
-	if (!statuses) return null;
-
-	return (
-		<DndProvider backend={HTML5Backend}>
-			<ConstructionCustomDragLayer />
+	// Show loading state
+	if (!statuses) {
+		return (
 			<div
 				className={cn(
-					isViewTypeGrid ? "flex h-full min-w-max gap-3 px-2 py-2" : "w-full",
+					isViewTypeGrid
+						? "flex h-full min-w-max gap-3 px-2 py-2"
+						: "w-full space-y-4 px-6 py-4",
 				)}
 			>
-				{statuses.map((statusItem) => {
-					const statusIssues = filteredTasksByStatus[statusItem._id] || [];
-					// Only render status groups that have issues in list view
-					if (!isViewTypeGrid && statusIssues.length === 0) {
-						return null;
-					}
-					return (
-						<ConstructionGroupIssues
-							key={statusItem._id}
-							status={statusItem}
-							issues={statusIssues}
-							count={statusIssues.length}
-						/>
-					);
-				})}
+				{[...Array(4)].map((_, i) => (
+					<div
+						key={i}
+						className={cn(
+							"animate-pulse",
+							isViewTypeGrid
+								? "h-full w-[348px] flex-shrink-0 rounded-lg bg-muted/50"
+								: "h-32 w-full rounded-lg bg-muted/50",
+						)}
+					/>
+				))}
 			</div>
-		</DndProvider>
+		);
+	}
+
+	// Grid view (Linear-style Kanban board)
+	if (isViewTypeGrid) {
+		return <LinearKanbanBoard tasks={filteredTasks} statuses={statuses} />;
+	}
+
+	// List view (Linear-style flat list)
+	return (
+		<div className="w-full">
+			{statuses.map((statusItem) => {
+				const statusIssues = filteredTasksByStatus[statusItem._id] || [];
+				// Only render status groups that have issues in list view
+				if (statusIssues.length === 0) {
+					return null;
+				}
+				return (
+					<ConstructionGroupIssues
+						key={statusItem._id}
+						status={statusItem}
+						issues={statusIssues}
+						count={statusIssues.length}
+					/>
+				);
+			})}
+		</div>
 	);
 };
 
@@ -236,32 +259,54 @@ const GroupConstructionTasksListView: FC<{
 		return result;
 	}, [tasks, statuses]);
 
-	if (!statuses) return null;
-
-	return (
-		<DndProvider backend={HTML5Backend}>
-			<ConstructionCustomDragLayer />
+	// Show loading state
+	if (!statuses || !tasks) {
+		return (
 			<div
 				className={cn(
-					isViewTypeGrid ? "flex h-full min-w-max gap-3 px-2 py-2" : "w-full",
+					isViewTypeGrid
+						? "flex h-full min-w-max gap-3 px-2 py-2"
+						: "w-full space-y-4 px-6 py-4",
 				)}
 			>
-				{statuses.map((statusItem) => {
-					const statusIssues = tasksByStatus[statusItem._id] || [];
-					// Only render status groups that have issues in list view
-					if (!isViewTypeGrid && statusIssues.length === 0) {
-						return null;
-					}
-					return (
-						<ConstructionGroupIssues
-							key={statusItem._id}
-							status={statusItem}
-							issues={statusIssues}
-							count={statusIssues.length}
-						/>
-					);
-				})}
+				{[...Array(4)].map((_, i) => (
+					<div
+						key={i}
+						className={cn(
+							"animate-pulse",
+							isViewTypeGrid
+								? "h-full w-[348px] flex-shrink-0 rounded-lg bg-muted/50"
+								: "h-32 w-full rounded-lg bg-muted/50",
+						)}
+					/>
+				))}
 			</div>
-		</DndProvider>
+		);
+	}
+
+	// Grid view (Linear-style Kanban board)
+	if (isViewTypeGrid) {
+		return <LinearKanbanBoard tasks={tasks} statuses={statuses} />;
+	}
+
+	// List view (Linear-style flat list)
+	return (
+		<div className="w-full">
+			{statuses.map((statusItem) => {
+				const statusIssues = tasksByStatus[statusItem._id] || [];
+				// Only render status groups that have issues in list view
+				if (statusIssues.length === 0) {
+					return null;
+				}
+				return (
+					<ConstructionGroupIssues
+						key={statusItem._id}
+						status={statusItem}
+						issues={statusIssues}
+						count={statusIssues.length}
+					/>
+				);
+			})}
+		</div>
 	);
 };

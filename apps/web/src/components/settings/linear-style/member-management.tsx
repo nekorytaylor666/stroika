@@ -58,69 +58,99 @@ export function LinearMemberManagement({
 	const [selectedMember, setSelectedMember] = useState<any>(null);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+	const [inviteEmail, setInviteEmail] = useState("");
+	const [inviteRoleId, setInviteRoleId] = useState<Id<"roles">>();
+
+	// Get current user's organizations
+	const userOrganizations = useQuery(api.organizations.getUserOrganizations);
+	const currentOrg = userOrganizations?.find(
+		(org) => org.slug === organizationId,
+	);
 
 	// Queries
-	const users = useQuery(api.users.getAll);
+	const members = useQuery(
+		api.organizationMembers.list,
+		currentOrg ? { organizationId: currentOrg._id } : "skip",
+	);
 	const roles = useQuery(api.permissions.queries.getAllRoles);
-	const departments = useQuery(api.departments.queries.getAllDepartments);
-	const userDepartments = useQuery(
-		api.departments.queries.getAllUserDepartments,
+	const invites = useQuery(
+		api.invites.listInvites,
+		currentOrg ? { organizationId: currentOrg._id } : "skip",
+	);
+	const teams = useQuery(
+		api.teams.list,
+		currentOrg ? { organizationId: currentOrg._id } : "skip",
 	);
 
 	// Mutations
-	const updateUserRole = useMutation(api.users.updateUserRole);
-	const assignUserToDepartment = useMutation(
-		api.departments.mutations.assignUserToDepartment,
-	);
-	const removeUserFromDepartment = useMutation(
-		api.departments.mutations.removeUserFromDepartment,
-	);
+	const updateMemberRole = useMutation(api.organizationMembers.updateRole);
+	const removeMember = useMutation(api.organizationMembers.removeMember);
+	const createInvite = useMutation(api.invites.createInvite);
+	const cancelInvite = useMutation(api.invites.cancelInvite);
 
-	// Filter users based on search
-	const filteredUsers = users?.filter((user) => {
+	// Filter members based on search
+	const filteredMembers = members?.filter((member) => {
+		if (!member.user) return false;
 		const matchesSearch =
 			searchQuery === "" ||
-			user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			user.email.toLowerCase().includes(searchQuery.toLowerCase());
+			member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			member.user.email.toLowerCase().includes(searchQuery.toLowerCase());
 		return matchesSearch;
 	});
 
-	// Get role name for a user
-	const getUserRole = (roleId?: Id<"roles">) => {
-		if (!roleId || !roles) return null;
-		return roles.find((r) => r._id === roleId);
-	};
+	// Filter pending invites
+	const pendingInvites = invites?.filter(
+		(invite) => invite.status === "pending" && !invite.isExpired,
+	);
 
-	// Get department info for a user
-	const getUserDepartment = (userId: Id<"users">) => {
-		const userDept = userDepartments?.find((ud) => ud.userId === userId);
-		if (!userDept || !departments) return null;
-		return departments.find((d) => d._id === userDept.departmentId);
-	};
+	const handleInvite = async () => {
+		if (!currentOrg || !inviteEmail || !inviteRoleId) return;
 
-	const handleRoleChange = async (userId: Id<"users">, roleId: Id<"roles">) => {
-		await updateUserRole({ userId, roleId });
-	};
+		try {
+			const result = await createInvite({
+				organizationId: currentOrg._id,
+				email: inviteEmail,
+				roleId: inviteRoleId,
+			});
 
-	const handleDepartmentChange = async (
-		userId: Id<"users">,
-		departmentId: Id<"departments">,
-	) => {
-		// Remove from current department first
-		const currentDept = getUserDepartment(userId);
-		if (currentDept) {
-			const userDept = userDepartments?.find((ud) => ud.userId === userId);
-			if (userDept) {
-				await removeUserFromDepartment({ id: userDept._id });
-			}
+			// Show invite link to user
+			alert(
+				`Invite created! Share this link: ${window.location.origin}${result.inviteUrl}`,
+			);
+
+			setIsInviteModalOpen(false);
+			setInviteEmail("");
+			setInviteRoleId(undefined);
+		} catch (error) {
+			console.error("Failed to create invite:", error);
 		}
-		// Assign to new department
-		await assignUserToDepartment({
-			userId,
-			departmentId,
-			isPrimary: true,
-			startDate: new Date().toISOString(),
-		});
+	};
+
+	const handleUpdateRole = async (userId: Id<"users">, roleId: Id<"roles">) => {
+		if (!currentOrg) return;
+
+		try {
+			await updateMemberRole({
+				organizationId: currentOrg._id,
+				userId,
+				roleId,
+			});
+		} catch (error) {
+			console.error("Failed to update role:", error);
+		}
+	};
+
+	const handleRemoveMember = async (userId: Id<"users">) => {
+		if (!currentOrg) return;
+
+		try {
+			await removeMember({
+				organizationId: currentOrg._id,
+				userId,
+			});
+		} catch (error) {
+			console.error("Failed to remove member:", error);
+		}
 	};
 
 	const openEditModal = (member: any) => {
@@ -136,7 +166,7 @@ export function LinearMemberManagement({
 					<div>
 						<h2 className="font-semibold text-lg">Участники</h2>
 						<p className="text-muted-foreground text-sm">
-							{users?.length || 0} участников
+							{filteredMembers?.length || 0} участников
 						</p>
 					</div>
 					<Button onClick={() => setIsInviteModalOpen(true)} size="sm">
@@ -182,22 +212,21 @@ export function LinearMemberManagement({
 							</tr>
 						</thead>
 						<tbody className="divide-y">
-							{filteredUsers?.map((user) => {
-								const role = getUserRole(user.roleId);
-								const department = getUserDepartment(user._id);
-								const isOnline = user.status === "online";
+							{filteredMembers?.map((member) => {
+								const isOnline = member.user?.status === "online";
+								const memberTeams = member.teams || [];
 
 								return (
 									<tr
-										key={user._id}
+										key={member._id}
 										className="group transition-colors hover:bg-muted/50"
 									>
 										<td className="px-6 py-4">
 											<div className="flex items-center">
 												<Avatar className="h-8 w-8">
-													<AvatarImage src={user.avatarUrl} />
+													<AvatarImage src={member.user?.avatarUrl} />
 													<AvatarFallback>
-														{user.name
+														{member.user?.name
 															.split(" ")
 															.map((n) => n[0])
 															.join("")
@@ -205,27 +234,32 @@ export function LinearMemberManagement({
 													</AvatarFallback>
 												</Avatar>
 												<div className="ml-3">
-													<div className="font-medium text-sm">{user.name}</div>
+													<div className="font-medium text-sm">
+														{member.user?.name}
+													</div>
 													<div className="text-muted-foreground text-sm">
-														{user.email}
+														{member.user?.email}
 													</div>
 												</div>
 											</div>
 										</td>
 										<td className="px-6 py-4">
 											<Select
-												value={user.roleId}
+												value={member.role?._id}
 												onValueChange={(value) =>
-													handleRoleChange(user._id, value as Id<"roles">)
+													handleUpdateRole(
+														member.user!._id,
+														value as Id<"roles">,
+													)
 												}
 											>
 												<SelectTrigger className="h-8 w-[140px] border-0 bg-transparent hover:bg-muted">
 													<SelectValue>
-														{role ? (
+														{member.role ? (
 															<div className="flex items-center gap-2">
 																<Shield className="h-3 w-3 text-muted-foreground" />
 																<span className="text-sm">
-																	{role.displayName}
+																	{member.role.displayName}
 																</span>
 															</div>
 														) : (
@@ -245,42 +279,23 @@ export function LinearMemberManagement({
 											</Select>
 										</td>
 										<td className="px-6 py-4">
-											<Select
-												value={department?._id || "none"}
-												onValueChange={(value) => {
-													if (value !== "none") {
-														handleDepartmentChange(
-															user._id,
-															value as Id<"departments">,
-														);
-													}
-												}}
-											>
-												<SelectTrigger className="h-8 w-[160px] border-0 bg-transparent hover:bg-muted">
-													<SelectValue>
-														{department ? (
-															<div className="flex items-center gap-2">
-																<Building className="h-3 w-3 text-muted-foreground" />
-																<span className="text-sm">
-																	{department.name}
-																</span>
-															</div>
-														) : (
-															<span className="text-muted-foreground text-sm">
-																Выберите отдел
-															</span>
-														)}
-													</SelectValue>
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="none">Без отдела</SelectItem>
-													{departments?.map((d) => (
-														<SelectItem key={d._id} value={d._id}>
-															{d.name}
-														</SelectItem>
+											{memberTeams.length > 0 ? (
+												<div className="flex flex-wrap gap-1">
+													{memberTeams.map((team) => (
+														<Badge
+															key={team._id}
+															variant="secondary"
+															className="text-xs"
+														>
+															{team.name}
+														</Badge>
 													))}
-												</SelectContent>
-											</Select>
+												</div>
+											) : (
+												<span className="text-muted-foreground text-sm">
+													Нет команд
+												</span>
+											)}
 										</td>
 										<td className="px-6 py-4">
 											<Badge
@@ -296,7 +311,7 @@ export function LinearMemberManagement({
 											</Badge>
 										</td>
 										<td className="px-6 py-4 text-muted-foreground text-sm">
-											{format(new Date(user.joinedDate), "d MMM yyyy", {
+											{format(new Date(member.joinedAt), "d MMM yyyy", {
 												locale: ru,
 											})}
 										</td>
@@ -312,7 +327,9 @@ export function LinearMemberManagement({
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="end">
-													<DropdownMenuItem onClick={() => openEditModal(user)}>
+													<DropdownMenuItem
+														onClick={() => openEditModal(member)}
+													>
 														<User className="mr-2 h-4 w-4" />
 														Редактировать
 													</DropdownMenuItem>
@@ -321,7 +338,10 @@ export function LinearMemberManagement({
 														Отправить сообщение
 													</DropdownMenuItem>
 													<DropdownMenuSeparator />
-													<DropdownMenuItem className="text-red-600">
+													<DropdownMenuItem
+														className="text-red-600"
+														onClick={() => handleRemoveMember(member.user!._id)}
+													>
 														<UserMinus className="mr-2 h-4 w-4" />
 														Удалить из организации
 													</DropdownMenuItem>
@@ -349,9 +369,9 @@ export function LinearMemberManagement({
 						<div className="space-y-4">
 							<div className="flex items-center gap-4">
 								<Avatar className="h-16 w-16">
-									<AvatarImage src={selectedMember.avatarUrl} />
+									<AvatarImage src={selectedMember.user?.avatarUrl} />
 									<AvatarFallback>
-										{selectedMember.name
+										{selectedMember.user?.name
 											.split(" ")
 											.map((n: string) => n[0])
 											.join("")
@@ -359,9 +379,9 @@ export function LinearMemberManagement({
 									</AvatarFallback>
 								</Avatar>
 								<div>
-									<h3 className="font-semibold">{selectedMember.name}</h3>
+									<h3 className="font-semibold">{selectedMember.user?.name}</h3>
 									<p className="text-muted-foreground text-sm">
-										{selectedMember.email}
+										{selectedMember.user?.email}
 									</p>
 								</div>
 							</div>
@@ -369,13 +389,18 @@ export function LinearMemberManagement({
 								<div>
 									<Label>Роль</Label>
 									<Select
-										value={selectedMember.roleId}
+										value={selectedMember.role?._id}
 										onValueChange={(value) => {
-											handleRoleChange(
-												selectedMember._id,
-												value as Id<"roles">,
-											);
-											setSelectedMember({ ...selectedMember, roleId: value });
+											if (currentOrg && selectedMember.user) {
+												handleUpdateRole(
+													selectedMember.user._id,
+													value as Id<"roles">,
+												);
+												setSelectedMember({
+													...selectedMember,
+													role: roles?.find((r) => r._id === value),
+												});
+											}
 										}}
 									>
 										<SelectTrigger>
@@ -391,30 +416,20 @@ export function LinearMemberManagement({
 									</Select>
 								</div>
 								<div>
-									<Label>Отдел</Label>
-									<Select
-										value={getUserDepartment(selectedMember._id)?._id || "none"}
-										onValueChange={(value) => {
-											if (value !== "none") {
-												handleDepartmentChange(
-													selectedMember._id,
-													value as Id<"departments">,
-												);
-											}
-										}}
-									>
-										<SelectTrigger>
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="none">Без отдела</SelectItem>
-											{departments?.map((dept) => (
-												<SelectItem key={dept._id} value={dept._id}>
-													{dept.name}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
+									<Label>Команды</Label>
+									<div className="text-muted-foreground text-sm">
+										{selectedMember.teams?.length > 0 ? (
+											<div className="mt-2 flex flex-wrap gap-1">
+												{selectedMember.teams.map((team: any) => (
+													<Badge key={team._id} variant="secondary">
+														{team.name}
+													</Badge>
+												))}
+											</div>
+										) : (
+											"Участник не состоит в командах"
+										)}
+									</div>
 								</div>
 							</div>
 						</div>
@@ -444,11 +459,16 @@ export function LinearMemberManagement({
 								type="email"
 								placeholder="example@company.com"
 								className="mt-1"
+								value={inviteEmail}
+								onChange={(e) => setInviteEmail(e.target.value)}
 							/>
 						</div>
 						<div>
 							<Label>Роль</Label>
-							<Select>
+							<Select
+								value={inviteRoleId}
+								onValueChange={(value) => setInviteRoleId(value as Id<"roles">)}
+							>
 								<SelectTrigger className="mt-1">
 									<SelectValue placeholder="Выберите роль" />
 								</SelectTrigger>
@@ -469,12 +489,70 @@ export function LinearMemberManagement({
 						>
 							Отмена
 						</Button>
-						<Button onClick={() => setIsInviteModalOpen(false)}>
-							Отправить приглашение
-						</Button>
+						<Button onClick={handleInvite}>Отправить приглашение</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			{/* Pending Invites Section */}
+			{pendingInvites && pendingInvites.length > 0 && (
+				<div className="mt-8 space-y-4">
+					<h3 className="font-semibold text-lg">Ожидающие приглашения</h3>
+					<div className="rounded-lg border">
+						<table className="w-full">
+							<thead>
+								<tr className="border-b">
+									<th className="px-6 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+										Email
+									</th>
+									<th className="px-6 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+										Роль
+									</th>
+									<th className="px-6 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+										Приглашен
+									</th>
+									<th className="px-6 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wider">
+										Код приглашения
+									</th>
+									<th className="relative px-6 py-3">
+										<span className="sr-only">Действия</span>
+									</th>
+								</tr>
+							</thead>
+							<tbody className="divide-y">
+								{pendingInvites.map((invite) => (
+									<tr key={invite._id}>
+										<td className="px-6 py-4 text-sm">{invite.email}</td>
+										<td className="px-6 py-4 text-sm">
+											{invite.role?.displayName}
+										</td>
+										<td className="px-6 py-4 text-muted-foreground text-sm">
+											{format(new Date(invite.createdAt), "d MMM yyyy", {
+												locale: ru,
+											})}
+										</td>
+										<td className="px-6 py-4">
+											<code className="rounded bg-muted px-2 py-1 text-xs">
+												{invite.inviteCode}
+											</code>
+										</td>
+										<td className="px-6 py-4">
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={() => cancelInvite({ inviteId: invite._id })}
+												className="text-red-600 hover:text-red-700"
+											>
+												Отменить
+											</Button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			)}
 		</>
 	);
 }

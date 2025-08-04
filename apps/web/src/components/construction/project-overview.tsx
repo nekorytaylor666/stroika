@@ -228,15 +228,7 @@ export function ConstructionProjectOverview({
 											value: status._id,
 											label: status.name,
 											icon: <Icon className="h-3.5 w-3.5" />,
-											className: cn(
-												statusStyles[status.name as keyof typeof statusStyles]
-													?.bg,
-												statusStyles[status.name as keyof typeof statusStyles]
-													?.borderColor,
-												statusStyles[status.name as keyof typeof statusStyles]
-													?.color,
-												"border",
-											),
+											className: cn("border"),
 										};
 									})}
 									onSave={async (value) => {
@@ -259,7 +251,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-												priority.name as keyof typeof priorityStyles
+											priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -366,9 +358,9 @@ export function ConstructionProjectOverview({
 														•{" "}
 														{taskStats.total > 0
 															? Math.round(
-																	(taskStats.inProgress / taskStats.total) *
-																		100,
-																)
+																(taskStats.inProgress / taskStats.total) *
+																100,
+															)
 															: 0}
 														%
 													</span>
@@ -547,7 +539,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-												priority.name as keyof typeof priorityStyles
+											priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -613,8 +605,8 @@ export function ConstructionProjectOverview({
 								<span>
 									{projectData.targetDate
 										? format(new Date(projectData.targetDate), "d MMM yyyy", {
-												locale: ru,
-											})
+											locale: ru,
+										})
 										: "Не определено"}
 								</span>
 							</div>

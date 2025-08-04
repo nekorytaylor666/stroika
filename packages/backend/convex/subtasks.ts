@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 // Query to get all subtasks of a task
 export const getSubtasks = query({
@@ -96,8 +97,14 @@ export const createSubtask = mutation({
 			}
 		}
 
+		// Get the organization from parent task
+		if (!parentTask.organizationId) {
+			throw new Error("Parent task has no organizationId");
+		}
+
 		// Create the subtask
 		const subtaskId = await ctx.db.insert("issues", {
+			organizationId: parentTask.organizationId,
 			identifier,
 			title: args.title,
 			description: args.description,

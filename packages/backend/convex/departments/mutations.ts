@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
+import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
 import { logPermissionChange, requirePermission } from "../permissions/utils";
 
 export const createDepartment = mutation({
@@ -27,7 +28,10 @@ export const createDepartment = mutation({
 			level = parent.level + 1;
 		}
 
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
 		const departmentId = await ctx.db.insert("departments", {
+			organizationId: organization._id,
 			name: args.name,
 			displayName: args.displayName,
 			description: args.description,

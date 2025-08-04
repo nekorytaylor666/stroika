@@ -1,4 +1,5 @@
 import { LinearActivityFeed } from "@/components/common/activity/linear-activity-feed";
+import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { User } from "lucide-react";
 
@@ -31,7 +32,7 @@ function UserActivityPage() {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="px-8 py-6">
-					<LinearActivityFeed type="user" userId={userId as any} />
+					<LinearActivityFeed type="user" userId={userId as Id<"users">} />
 				</div>
 			</div>
 		</div>

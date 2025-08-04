@@ -1,9 +1,12 @@
+import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import { ORGANIZATIONAL_POSITIONS } from "../permissions/constants";
 
 export const seedDepartments = mutation({
-	args: {},
-	handler: async (ctx) => {
+	args: {
+		organizationId: v.id("organizations"),
+	},
+	handler: async (ctx, args) => {
 		const now = new Date().toISOString();
 
 		// Check if departments already exist
@@ -28,6 +31,7 @@ export const seedDepartments = mutation({
 
 		// Create root company (level 0)
 		const companyId = await ctx.db.insert("departments", {
+			organizationId: args.organizationId,
 			name: "company",
 			displayName: "Строительная компания",
 			description: "Главная организация",
@@ -76,6 +80,7 @@ export const seedDepartments = mutation({
 
 		for (const dept of departments) {
 			const deptId = await ctx.db.insert("departments", {
+				organizationId: args.organizationId,
 				name: dept.name,
 				displayName: dept.displayName,
 				description: dept.description,
@@ -109,6 +114,7 @@ export const seedDepartments = mutation({
 
 		for (const subDept of engineeringSubDepts) {
 			await ctx.db.insert("departments", {
+				organizationId: args.organizationId,
 				name: subDept.name,
 				displayName: subDept.displayName,
 				description: subDept.description,
@@ -141,6 +147,7 @@ export const seedDepartments = mutation({
 
 		for (const subDept of constructionSubDepts) {
 			await ctx.db.insert("departments", {
+				organizationId: args.organizationId,
 				name: subDept.name,
 				displayName: subDept.displayName,
 				description: subDept.description,

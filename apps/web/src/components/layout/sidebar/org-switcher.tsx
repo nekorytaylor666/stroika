@@ -1,8 +1,19 @@
 "use client";
 
-import { ChevronsUpDown } from "lucide-react";
+import { Building, ChevronsUpDown, LogOut, Plus, Settings } from "lucide-react";
 import * as React from "react";
+import { useState } from "react";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -17,85 +28,214 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { Link } from "@tanstack/react-router";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "@stroika/backend";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import { ThemeToggle } from "../theme-toggle";
 import { CreateNewIssue } from "./create-new-issue";
 
 export function OrgSwitcher() {
+	const params = useParams({ from: "/construction/$orgId" });
+	const navigate = useNavigate();
+	const { signOut } = useAuthActions();
+	const [createOrgOpen, setCreateOrgOpen] = useState(false);
+	const [newOrgName, setNewOrgName] = useState("");
+	const [newOrgDescription, setNewOrgDescription] = useState("");
+
+	// Get user's organizations
+	const organizations = useQuery(api.organizations.getUserOrganizations);
+	const createOrganization = useMutation(api.organizations.create);
+	const switchOrganization = useMutation(api.organizations.switchOrganization);
+
+	// Get current organization based on URL
+	const currentOrg =
+		organizations?.find((org) => org.slug === params.orgId) ||
+		organizations?.[0];
+
+	const handleCreateOrg = async () => {
+		if (!newOrgName.trim()) return;
+
+		try {
+			const result = await createOrganization({
+				name: newOrgName,
+				description: newOrgDescription || undefined,
+			});
+
+			// Navigate to the new organization
+			navigate({ to: `/construction/${result.slug}` });
+			setCreateOrgOpen(false);
+			setNewOrgName("");
+			setNewOrgDescription("");
+		} catch (error) {
+			console.error("Failed to create organization:", error);
+		}
+	};
+
+	const handleSwitchOrg = async (orgId: string, slug: string) => {
+		try {
+			await switchOrganization({ organizationId: orgId as any });
+			navigate({ to: `/construction/${slug}` });
+		} catch (error) {
+			console.error("Failed to switch organization:", error);
+		}
+	};
+
 	return (
-		<SidebarMenu>
-			<SidebarMenuItem>
-				<DropdownMenu>
-					<div className="flex w-full items-center gap-1 pt-2">
-						<DropdownMenuTrigger asChild>
-							<SidebarMenuButton
-								size="lg"
-								className="h-8 p-1 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-							>
-								<div className="flex aspect-square size-6 items-center justify-center rounded bg-orange-500 text-sidebar-primary-foreground">
-									LN
-								</div>
-								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-semibold">lndev-ui</span>
-								</div>
-								<ChevronsUpDown className="ml-auto" />
-							</SidebarMenuButton>
-						</DropdownMenuTrigger>
-
-						<ThemeToggle />
-
-						<CreateNewIssue />
-					</div>
-					<DropdownMenuContent
-						className="w-[--radix-dropdown-menu-trigger-width] min-w-60 rounded-lg"
-						side="bottom"
-						align="end"
-						sideOffset={4}
-					>
-						<DropdownMenuGroup>
-							<DropdownMenuItem asChild>
-								<Link to="/todos">
-									Settings
-									<DropdownMenuShortcut>G then S</DropdownMenuShortcut>
-								</Link>
-							</DropdownMenuItem>
-							<DropdownMenuItem>Invite and manage members</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuGroup>
-							<DropdownMenuItem>Download desktop app</DropdownMenuItem>
-						</DropdownMenuGroup>
-						<DropdownMenuSeparator />
-						<DropdownMenuSub>
-							<DropdownMenuSubTrigger>Switch Workspace</DropdownMenuSubTrigger>
-							<DropdownMenuPortal>
-								<DropdownMenuSubContent>
-									<DropdownMenuLabel>leonelngoya@gmail.com</DropdownMenuLabel>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem>
-										<div className="flex aspect-square size-6 items-center justify-center rounded bg-orange-500 text-sidebar-primary-foreground">
-											LN
+		<>
+			<SidebarMenu>
+				<SidebarMenuItem>
+					<DropdownMenu>
+						<div className="flex w-full items-center gap-1 pt-2">
+							<DropdownMenuTrigger asChild>
+								<SidebarMenuButton
+									size="lg"
+									className="h-8 p-1 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+								>
+									{currentOrg?.logoUrl ? (
+										<Avatar className="size-6">
+											<AvatarImage src={currentOrg.logoUrl} />
+											<AvatarFallback className="text-xs">
+												{currentOrg.name.charAt(0).toUpperCase()}
+											</AvatarFallback>
+										</Avatar>
+									) : (
+										<div className="flex aspect-square size-6 items-center justify-center rounded bg-primary text-sidebar-primary-foreground">
+											{currentOrg?.name.charAt(0).toUpperCase() || "O"}
 										</div>
-										lndev-ui
-									</DropdownMenuItem>
-									<DropdownMenuSeparator />
-									<DropdownMenuItem>Create or join workspace</DropdownMenuItem>
-									<DropdownMenuItem>Add an account</DropdownMenuItem>
-								</DropdownMenuSubContent>
-							</DropdownMenuPortal>
-						</DropdownMenuSub>
-						<DropdownMenuItem>
-							Log out
-							<DropdownMenuShortcut>⌥⇧Q</DropdownMenuShortcut>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			</SidebarMenuItem>
-		</SidebarMenu>
+									)}
+									<div className="grid flex-1 text-left text-sm leading-tight">
+										<span className="truncate font-semibold">
+											{currentOrg?.name || "Select Organization"}
+										</span>
+									</div>
+									<ChevronsUpDown className="ml-auto" />
+								</SidebarMenuButton>
+							</DropdownMenuTrigger>
+
+							<ThemeToggle />
+
+							<CreateNewIssue />
+						</div>
+						<DropdownMenuContent
+							className="w-[--radix-dropdown-menu-trigger-width] min-w-60 rounded-lg"
+							side="bottom"
+							align="end"
+							sideOffset={4}
+						>
+							<DropdownMenuGroup>
+								<DropdownMenuItem asChild>
+									<Link to={`/construction/${params.orgId}/settings`}>
+										<Settings className="mr-2 h-4 w-4" />
+										Settings
+										<DropdownMenuShortcut>G then S</DropdownMenuShortcut>
+									</Link>
+								</DropdownMenuItem>
+								<DropdownMenuItem asChild>
+									<Link to={`/construction/${params.orgId}/members`}>
+										Invite and manage members
+									</Link>
+								</DropdownMenuItem>
+							</DropdownMenuGroup>
+							<DropdownMenuSeparator />
+							<DropdownMenuSub>
+								<DropdownMenuSubTrigger>
+									Switch Organization
+								</DropdownMenuSubTrigger>
+								<DropdownMenuPortal>
+									<DropdownMenuSubContent>
+										{organizations?.map((org) => (
+											<DropdownMenuItem
+												key={org._id}
+												onClick={() => handleSwitchOrg(org._id, org.slug)}
+											>
+												{org.logoUrl ? (
+													<Avatar className="mr-2 size-5">
+														<AvatarImage src={org.logoUrl} />
+														<AvatarFallback className="text-xs">
+															{org.name.charAt(0).toUpperCase()}
+														</AvatarFallback>
+													</Avatar>
+												) : (
+													<div className="mr-2 flex aspect-square size-5 items-center justify-center rounded bg-primary text-[10px] text-white">
+														{org.name.charAt(0).toUpperCase()}
+													</div>
+												)}
+												{org.name}
+												{currentOrg?._id === org._id && (
+													<span className="ml-auto text-muted-foreground text-xs">
+														Current
+													</span>
+												)}
+											</DropdownMenuItem>
+										))}
+										<DropdownMenuSeparator />
+										<DropdownMenuItem onClick={() => setCreateOrgOpen(true)}>
+											<Plus className="mr-2 h-4 w-4" />
+											Create organization
+										</DropdownMenuItem>
+									</DropdownMenuSubContent>
+								</DropdownMenuPortal>
+							</DropdownMenuSub>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem onClick={() => signOut()}>
+								<LogOut className="mr-2 h-4 w-4" />
+								Log out
+								<DropdownMenuShortcut>⌥⇧Q</DropdownMenuShortcut>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</SidebarMenuItem>
+			</SidebarMenu>
+
+			{/* Create Organization Dialog */}
+			<Dialog open={createOrgOpen} onOpenChange={setCreateOrgOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Organization</DialogTitle>
+						<DialogDescription>
+							Create a new organization to collaborate with your team
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div>
+							<Label htmlFor="org-name">Organization Name</Label>
+							<Input
+								id="org-name"
+								placeholder="Acme Inc"
+								value={newOrgName}
+								onChange={(e) => setNewOrgName(e.target.value)}
+								className="mt-1"
+							/>
+						</div>
+						<div>
+							<Label htmlFor="org-description">Description (optional)</Label>
+							<Input
+								id="org-description"
+								placeholder="What does your organization do?"
+								value={newOrgDescription}
+								onChange={(e) => setNewOrgDescription(e.target.value)}
+								className="mt-1"
+							/>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setCreateOrgOpen(false)}>
+							Cancel
+						</Button>
+						<Button onClick={handleCreateOrg} disabled={!newOrgName.trim()}>
+							Create
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }

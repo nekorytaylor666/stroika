@@ -34,9 +34,9 @@ export const useConstructionData = () => {
 		api.constructionProjects.updateProgress,
 	);
 
-	const createTeam = useMutation(api.constructionTeams.create);
-	const updateTeam = useMutation(api.constructionTeams.update);
-	const deleteTeam = useMutation(api.constructionTeams.deleteTeam);
+	const createTeam = useMutation(api.constructionTeams.addTeamMember);
+	const updateTeam = useMutation(api.constructionTeams.removeTeamMember);
+	const deleteTeam = useMutation(api.constructionTeams.removeTeamMember);
 
 	const seedData = useMutation(api.seedData.seedInitialData);
 

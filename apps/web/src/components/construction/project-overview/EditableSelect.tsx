@@ -23,7 +23,6 @@ export interface SelectOption {
 	value: string;
 	label: string;
 	icon?: React.ReactNode;
-	color?: string;
 }
 
 interface EditableSelectProps {
@@ -91,7 +90,7 @@ export function EditableSelect({
 					>
 						<span className="flex items-center gap-2">
 							{selectedOption?.icon}
-							<span style={{ color: selectedOption?.color }}>
+							<span>
 								{selectedOption?.label || placeholder}
 							</span>
 						</span>
@@ -117,10 +116,13 @@ export function EditableSelect({
 										key={option.value}
 										value={option.value}
 										onSelect={() => handleSelect(option.value)}
-										className="flex items-center gap-2"
+										className={cn(
+											"flex items-center gap-2",
+											value === option.value && "bg-accent"
+										)}
 									>
 										{option.icon}
-										<span style={{ color: option.color }}>{option.label}</span>
+										<span>{option.label}</span>
 										<Check
 											className={cn(
 												"ml-auto h-3.5 w-3.5",

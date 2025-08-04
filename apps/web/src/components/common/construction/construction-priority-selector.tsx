@@ -29,6 +29,7 @@ interface PriorityType {
 	name: string;
 	level: number;
 	iconName: string;
+	color?: string;
 }
 
 interface ConstructionPrioritySelectorProps {
@@ -37,17 +38,27 @@ interface ConstructionPrioritySelectorProps {
 }
 
 // Priority icon mapping
-const PriorityIconMap = {
+const PriorityIconMap: Record<string, any> = {
 	"alert-triangle": AlertTriangle,
 	"chevron-up": ChevronUp,
 	minus: Minus,
 	"chevron-down": ChevronDown,
+	// PascalCase versions
+	AlertTriangle: AlertTriangle,
+	ArrowUp: ChevronUp,
+	Minus: Minus,
+	ArrowDown: ChevronDown,
 };
 
-const PriorityIcon = ({ iconName }: { iconName: string }) => {
+const PriorityIcon = ({
+	iconName,
+	color,
+}: { iconName: string; color?: string }) => {
 	const IconComponent =
-		PriorityIconMap[iconName as keyof typeof PriorityIconMap] || Minus;
-	return <IconComponent className="h-3.5 w-3.5" />;
+		PriorityIconMap[iconName] ||
+		PriorityIconMap[iconName.toLowerCase()] ||
+		Minus;
+	return <IconComponent className="h-3.5 w-3.5" style={{ color }} />;
 };
 
 export function ConstructionPrioritySelector({
@@ -70,7 +81,10 @@ export function ConstructionPrioritySelector({
 						aria-expanded={open}
 					>
 						<motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
-							<PriorityIcon iconName={priority.iconName} />
+							<PriorityIcon
+								iconName={priority.iconName}
+								color={priority.color}
+							/>
 						</motion.div>
 					</Button>
 				</PopoverTrigger>

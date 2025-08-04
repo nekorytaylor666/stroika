@@ -37,22 +37,8 @@ export const { auth, signIn, signOut, store } = convexAuth({
 						name: (args.profile.name as string) || existingUser.name,
 					});
 				}
-			} else {
-				// Create new user in our users table
-				const email = args.profile.email as string;
-				const name = (args.profile.name as string) || email;
-
-				await ctx.db.insert("users", {
-					name: name,
-					email: email,
-					avatarUrl: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`,
-					status: "offline" as const,
-					joinedDate: new Date().toISOString(),
-					teamIds: [],
-					isActive: true,
-					lastLogin: new Date().toISOString(),
-				});
 			}
+			// Don't create user automatically - let organization setup handle it
 		},
 	},
 });

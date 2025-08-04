@@ -1,5 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import {
+	getCurrentUser,
+	getCurrentUserWithOrganization,
+} from "./helpers/getCurrentUser";
 
 export const generateUploadUrl = mutation({
 	handler: async (ctx) => {
@@ -38,14 +42,7 @@ export const attachToDocument = mutation({
 		mimeType: v.string(),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		await ctx.db.insert("documentAttachments", {
 			documentId: args.documentId,
@@ -97,14 +94,7 @@ export const getDocumentAttachments = query({
 export const removeAttachment = mutation({
 	args: { attachmentId: v.id("documentAttachments") },
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		const attachment = await ctx.db.get(args.attachmentId);
 		if (!attachment) throw new Error("Attachment not found");
@@ -132,14 +122,7 @@ export const attachToIssue = mutation({
 		mimeType: v.string(),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		await ctx.db.insert("issueAttachments", {
 			issueId: args.issueId,
@@ -203,14 +186,7 @@ export const uploadToProject = mutation({
 		projectId: v.id("constructionProjects"),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		// Get default status and priority
 		const defaultStatus = await ctx.db.query("status").first();
@@ -236,6 +212,7 @@ export const uploadToProject = mutation({
 		if (!issueId) {
 			// Create a project files issue if it doesn't exist
 			issueId = await ctx.db.insert("issues", {
+				organizationId: organization._id,
 				title: "[Project Files]",
 				description: "Container for project file attachments",
 				identifier: `PROJECT-FILES-${Date.now()}`,
@@ -273,14 +250,7 @@ export const uploadToGeneral = mutation({
 		mimeType: v.string(),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		// Create a placeholder issue for general attachments
 		// This could be improved in the future by having a separate attachments table
@@ -302,6 +272,7 @@ export const uploadToGeneral = mutation({
 
 			// Create a general attachments issue if it doesn't exist
 			issueId = await ctx.db.insert("issues", {
+				organizationId: organization._id,
 				title: "[General Attachments]",
 				description: "Container for general file attachments",
 				identifier: "GENERAL-001",

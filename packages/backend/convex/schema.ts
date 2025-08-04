@@ -5,6 +5,89 @@ import { v } from "convex/values";
 export default defineSchema({
 	...authTables,
 
+	// Organizations table
+	organizations: defineTable({
+		name: v.string(),
+		slug: v.string(), // URL-friendly unique identifier
+		description: v.optional(v.string()),
+		logoUrl: v.optional(v.string()),
+		website: v.optional(v.string()),
+		ownerId: v.id("users"), // Organization owner
+		settings: v.optional(
+			v.object({
+				allowInvites: v.boolean(),
+				requireEmailVerification: v.boolean(),
+				defaultRoleId: v.optional(v.id("roles")),
+			}),
+		),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_slug", ["slug"])
+		.index("by_owner", ["ownerId"]),
+
+	// Organization members
+	organizationMembers: defineTable({
+		organizationId: v.id("organizations"),
+		userId: v.id("users"),
+		roleId: v.id("roles"),
+		joinedAt: v.number(),
+		invitedBy: v.optional(v.id("users")),
+		isActive: v.boolean(),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_user", ["userId"])
+		.index("by_org_user", ["organizationId", "userId"]),
+
+	// Organization invites
+	organizationInvites: defineTable({
+		organizationId: v.id("organizations"),
+		email: v.string(),
+		inviteCode: v.string(), // Unique invite code
+		roleId: v.id("roles"), // Role to assign when accepted
+		invitedBy: v.id("users"),
+		expiresAt: v.number(),
+		acceptedAt: v.optional(v.number()),
+		acceptedBy: v.optional(v.id("users")),
+		status: v.union(
+			v.literal("pending"),
+			v.literal("accepted"),
+			v.literal("expired"),
+			v.literal("cancelled"),
+		),
+		createdAt: v.number(),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_code", ["inviteCode"])
+		.index("by_email", ["email"])
+		.index("by_status", ["status"]),
+
+	// Organization teams
+	teams: defineTable({
+		organizationId: v.id("organizations"),
+		name: v.string(),
+		description: v.optional(v.string()),
+		parentTeamId: v.optional(v.id("teams")), // For nested teams
+		leaderId: v.optional(v.id("users")),
+		isActive: v.boolean(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_parent", ["parentTeamId"])
+		.index("by_leader", ["leaderId"]),
+
+	// Team members
+	teamMembers: defineTable({
+		teamId: v.id("teams"),
+		userId: v.id("users"),
+		joinedAt: v.number(),
+		role: v.optional(v.string()), // Role within the team
+	})
+		.index("by_team", ["teamId"])
+		.index("by_user", ["userId"])
+		.index("by_team_user", ["teamId", "userId"]),
+
 	// Users table
 	users: defineTable({
 		name: v.string(),
@@ -20,6 +103,8 @@ export default defineSchema({
 		teamIds: v.array(v.string()),
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
+		// Organization fields
+		currentOrganizationId: v.optional(v.id("organizations")), // Current active organization
 		// Auth fields
 		authId: v.optional(v.string()), // External auth provider ID
 		tokenIdentifier: v.optional(v.string()), // Clerk token identifier
@@ -42,6 +127,7 @@ export default defineSchema({
 		name: v.string(),
 		level: v.number(), // 0 = urgent, 1 = high, 2 = medium, 3 = low
 		iconName: v.string(),
+		color: v.optional(v.string()),
 	}),
 
 	// Status table
@@ -53,6 +139,7 @@ export default defineSchema({
 
 	// Construction Projects table
 	constructionProjects: defineTable({
+		organizationId: v.id("organizations"), // Link to organization
 		name: v.string(),
 		client: v.string(),
 		statusId: v.id("status"),
@@ -76,7 +163,7 @@ export default defineSchema({
 		),
 		notes: v.optional(v.string()),
 		teamMemberIds: v.array(v.id("users")),
-	}),
+	}).index("by_organization", ["organizationId"]),
 
 	// Monthly Revenue table
 	monthlyRevenue: defineTable({
@@ -97,6 +184,7 @@ export default defineSchema({
 
 	// Construction Teams table
 	constructionTeams: defineTable({
+		organizationId: v.id("organizations"), // Link to organization
 		name: v.string(),
 		shortName: v.string(),
 		icon: v.string(),
@@ -111,10 +199,11 @@ export default defineSchema({
 			v.literal("management"),
 		),
 		workload: v.number(),
-	}),
+	}).index("by_organization", ["organizationId"]),
 
 	// Issues/Tasks table
 	issues: defineTable({
+		organizationId: v.id("organizations"), // Link to organization
 		identifier: v.string(),
 		title: v.string(),
 		description: v.string(),
@@ -130,6 +219,7 @@ export default defineSchema({
 		isConstructionTask: v.boolean(), // Flag to distinguish construction tasks
 		parentTaskId: v.optional(v.id("issues")), // For subtask hierarchy
 	})
+		.index("by_organization", ["organizationId"])
 		.index("by_status", ["statusId"])
 		.index("by_assignee", ["assigneeId"])
 		.index("by_construction", ["isConstructionTask"])
@@ -138,13 +228,16 @@ export default defineSchema({
 
 	// Roles table
 	roles: defineTable({
+		organizationId: v.optional(v.id("organizations")), // null for system roles
 		name: v.string(), // e.g., "admin", "manager", "engineer", "viewer"
 		displayName: v.string(), // e.g., "Administrator", "Project Manager", etc.
 		description: v.optional(v.string()),
 		isSystem: v.boolean(), // System roles cannot be deleted
 		createdAt: v.string(),
 		updatedAt: v.string(),
-	}).index("by_name", ["name"]),
+	})
+		.index("by_name", ["name"])
+		.index("by_organization", ["organizationId"]),
 
 	// Permissions table
 	permissions: defineTable({
@@ -191,6 +284,7 @@ export default defineSchema({
 
 	// Departments table - hierarchical structure
 	departments: defineTable({
+		organizationId: v.id("organizations"), // Link to organization
 		name: v.string(), // e.g., "Engineering", "Design", "Construction"
 		displayName: v.string(), // Display name in Russian
 		description: v.optional(v.string()),
@@ -201,6 +295,7 @@ export default defineSchema({
 		createdAt: v.string(),
 		updatedAt: v.string(),
 	})
+		.index("by_organization", ["organizationId"])
 		.index("by_parent", ["parentId"])
 		.index("by_level", ["level"])
 		.index("by_head", ["headUserId"]),
@@ -234,6 +329,7 @@ export default defineSchema({
 
 	// Documents table
 	documents: defineTable({
+		organizationId: v.id("organizations"), // Link to organization
 		title: v.string(),
 		content: v.string(),
 		projectId: v.optional(v.id("constructionProjects")),
@@ -252,6 +348,7 @@ export default defineSchema({
 		lastEditedBy: v.id("users"),
 		lastEditedAt: v.number(),
 	})
+		.index("by_organization", ["organizationId"])
 		.index("by_parent", ["parentId"])
 		.index("by_project", ["projectId"])
 		.index("by_author", ["authorId"])

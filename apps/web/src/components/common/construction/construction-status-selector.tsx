@@ -37,13 +37,19 @@ import { type FC, useEffect, useId, useState } from "react";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 
 // Status icon mapping
-const StatusIconMap = {
+const StatusIconMap: Record<string, any> = {
 	BacklogIcon: BacklogIcon,
 	PausedIcon: PausedIcon,
 	ToDoIcon: ToDoIcon,
 	InProgressIcon: InProgressIcon,
 	TechnicalReviewIcon: TechnicalReviewIcon,
 	CompletedIcon: CompletedIcon,
+	// Database icon names
+	Circle: Circle,
+	Clock: Clock,
+	AlertCircle: AlertCircle,
+	CheckCircle: CheckCircle,
+	XCircle: XCircle,
 };
 
 const StatusIcon: FC<{ iconName: string; color?: string }> = ({

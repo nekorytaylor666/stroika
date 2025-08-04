@@ -65,6 +65,7 @@ export const createPriority = mutation({
 		name: v.string(),
 		level: v.number(),
 		iconName: v.string(),
+		color: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		return await ctx.db.insert("priorities", args);

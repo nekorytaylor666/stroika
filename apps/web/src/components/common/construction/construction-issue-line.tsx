@@ -7,8 +7,6 @@ import { useConstructionTaskDetailsStore } from "@/store/construction/constructi
 import { differenceInDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ListTree } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ConstructionContextMenu } from "./construction-context-menu";
 import { ConstructionLabelBadge } from "./construction-label-badge";
@@ -26,25 +24,20 @@ export function ConstructionIssueLine({
 	issue,
 	layoutId = false,
 }: ConstructionIssueLineProps) {
-	const { users, labels, priorities, projects } = useConstructionData();
+	const { users, labels, priorities, projects, isLoading } =
+		useConstructionData();
 	const { openTaskDetails } = useConstructionTaskDetailsStore();
-	const [isStatusChanging, setIsStatusChanging] = useState(false);
-	const [prevStatusId, setPrevStatusId] = useState(issue.statusId);
 
-	// Detect status changes for animation
-	useEffect(() => {
-		if (issue.statusId !== prevStatusId) {
-			setIsStatusChanging(true);
-			setPrevStatusId(issue.statusId);
-
-			// Reset animation state after animation completes
-			const timer = setTimeout(() => {
-				setIsStatusChanging(false);
-			}, 600);
-
-			return () => clearTimeout(timer);
-		}
-	}, [issue.statusId, prevStatusId]);
+	// Don't render if data is still loading
+	if (isLoading || !users || !labels || !priorities) {
+		return (
+			<div className="flex h-12 w-full items-center justify-start border-border/40 border-b px-0 py-1">
+				<div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+				<div className="ml-4 h-4 flex-1 animate-pulse rounded bg-muted"></div>
+				<div className="ml-auto h-6 w-6 animate-pulse rounded-full bg-muted"></div>
+			</div>
+		);
+	}
 
 	const handleClick = (e: React.MouseEvent) => {
 		// Don't open details if clicking on interactive elements
@@ -55,17 +48,25 @@ export function ConstructionIssueLine({
 		openTaskDetails(issue);
 	};
 
-	// Find related entities
-	const assignee = issue.assigneeId
-		? users?.find((u) => u._id === issue.assigneeId)
-		: null;
-	const taskLabels = issue.labelIds
-		.map((id) => labels?.find((l) => l._id === id))
-		.filter(Boolean);
-	const priority = priorities?.find((p) => p._id === issue.priorityId);
-	const project = issue.projectId
-		? projects?.find((p) => p._id === issue.projectId)
-		: null;
+	// Find related entities with null checks
+	const assignee =
+		issue.assigneeId && users
+			? users.find((u) => u._id === issue.assigneeId) || null
+			: null;
+	const taskLabels =
+		issue.labelIds && labels
+			? issue.labelIds
+					.map((id) => labels.find((l) => l._id === id))
+					.filter(Boolean)
+			: [];
+	const priority =
+		issue.priorityId && priorities
+			? priorities.find((p) => p._id === issue.priorityId) || null
+			: null;
+	const project =
+		issue.projectId && projects
+			? projects.find((p) => p._id === issue.projectId) || null
+			: null;
 
 	// Calculate days until deadline
 	const daysUntilDeadline = issue.dueDate
@@ -76,58 +77,28 @@ export function ConstructionIssueLine({
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
-				<motion.div
-					{...(layoutId && { layoutId: `issue-line-${issue.identifier}` })}
-					className="w-full"
-					initial={false}
-					animate={
-						isStatusChanging
-							? {
-									scale: [1, 1.02, 1],
-									backgroundColor: [
-										"transparent",
-										"rgba(59, 130, 246, 0.1)",
-										"transparent",
-									],
-								}
-							: {}
-					}
-					transition={{
-						duration: 0.6,
-						ease: "easeInOut",
-					}}
-				>
+				<div className="w-full">
 					<div
-						className="flex h-11 w-full cursor-pointer items-center justify-start px-6 hover:bg-sidebar/50"
+						className="flex h-12 w-full cursor-pointer items-center justify-start border-border/40 border-b px-0 py-1 transition-all duration-150 hover:rounded-md hover:bg-sidebar/50 hover:px-2"
 						onClick={handleClick}
 					>
-						<div className="flex items-center gap-0.5">
+						<div className="flex items-center gap-2">
 							{priority && (
 								<ConstructionPrioritySelector
 									priority={priority}
 									issueId={issue._id}
 								/>
 							)}
-							<span className="mr-0.5 hidden w-[66px] shrink-0 truncate font-medium text-muted-foreground text-sm sm:inline-block">
+							<span className="w-[80px] shrink-0 truncate font-medium text-muted-foreground text-sm">
 								{issue.identifier}
 							</span>
-							<AnimatePresence mode="wait" initial={false}>
-								<motion.div
-									key={issue.statusId}
-									initial={{ scale: 0.8, opacity: 0 }}
-									animate={{ scale: 1, opacity: 1 }}
-									exit={{ scale: 0.8, opacity: 0 }}
-									transition={{ duration: 0.2 }}
-								>
-									<ConstructionStatusSelector
-										statusId={issue.statusId}
-										issueId={issue._id}
-									/>
-								</motion.div>
-							</AnimatePresence>
+							<ConstructionStatusSelector
+								statusId={issue.statusId}
+								issueId={issue._id}
+							/>
 						</div>
-						<span className="mr-1 ml-0.5 flex min-w-0 items-center justify-start gap-2">
-							<span className="truncate font-medium text-xs sm:font-semibold sm:text-sm">
+						<div className="ml-2 flex min-w-0 flex-1 items-center gap-3">
+							<span className="truncate font-medium text-sm">
 								{issue.title}
 							</span>
 							{issue.subtaskCount !== undefined && issue.subtaskCount > 0 && (
@@ -136,34 +107,35 @@ export function ConstructionIssueLine({
 									<span>{issue.subtaskCount}</span>
 								</span>
 							)}
-						</span>
-						<div className="ml-auto flex items-center justify-end gap-2 sm:w-fit">
-							<div className="w-3 shrink-0"></div>
-							<div className="-space-x-5 hidden items-center justify-end transition-all duration-200 hover:space-x-1 sm:flex lg:space-x-1">
+						</div>
+						<div className="ml-auto flex items-center justify-end gap-3">
+							<div className="flex items-center gap-2">
 								{taskLabels.length > 0 && (
 									<ConstructionLabelBadge labels={taskLabels as any} />
 								)}
 								{project && <ConstructionProjectBadge project={project} />}
 							</div>
-							{issue.dueDate && (
-								<span
-									className={cn(
-										"hidden shrink-0 text-xs sm:inline-block",
-										isNearDeadline
-											? "font-semibold text-red-600"
-											: "text-muted-foreground",
-									)}
-								>
-									{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
+							<div className="flex items-center gap-2">
+								{issue.dueDate && (
+									<span
+										className={cn(
+											"shrink-0 text-xs",
+											isNearDeadline
+												? "font-semibold text-red-600"
+												: "text-muted-foreground",
+										)}
+									>
+										{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
+									</span>
+								)}
+								<span className="shrink-0 text-muted-foreground text-xs">
+									{format(new Date(issue.createdAt), "MMM dd", { locale: ru })}
 								</span>
-							)}
-							<span className="hidden shrink-0 text-muted-foreground text-xs sm:inline-block">
-								{format(new Date(issue.createdAt), "MMM dd", { locale: ru })}
-							</span>
+							</div>
 							<ConstructionAssigneeUser user={assignee || null} />
 						</div>
 					</div>
-				</motion.div>
+				</div>
 			</ContextMenuTrigger>
 			<ConstructionContextMenu task={issue} />
 		</ContextMenu>

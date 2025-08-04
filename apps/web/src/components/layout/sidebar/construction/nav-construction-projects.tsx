@@ -21,6 +21,7 @@ import { api } from "@stroika/backend";
 import { Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import {
+	Activity,
 	BarChart3,
 	Building2,
 	CalendarDays,
@@ -73,6 +74,11 @@ export function NavConstructionProjects() {
 			name: "Файлы",
 			icon: Paperclip,
 			url: `/construction/${params.orgId}/projects/${projectId}/attachments`,
+		},
+		{
+			name: "Активность",
+			icon: Activity,
+			url: `/construction/${params.orgId}/projects/${projectId}/activity`,
 		},
 		{
 			name: "Календарь",

@@ -3,21 +3,17 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-	Command,
+	CommandDialog,
 	CommandEmpty,
 	CommandGroup,
 	CommandInput,
 	CommandItem,
+	CommandList,
 } from "@/components/ui/command";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import type { Id } from "@stroika/backend";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { useState } from "react";
+import { Check, ChevronsUpDown, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface User {
 	_id: Id<"users">;
@@ -45,49 +41,63 @@ export function UserSelector({
 
 	const selectedUser = users.find((user) => user._id === value);
 
+	// Keyboard shortcut to open dialog
+	useEffect(() => {
+		const down = (e: KeyboardEvent) => {
+			if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				setOpen((open) => !open);
+			}
+		};
+
+		document.addEventListener("keydown", down);
+		return () => document.removeEventListener("keydown", down);
+	}, []);
+
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					variant="outline"
-					role="combobox"
-					aria-expanded={open}
-					className="w-full justify-between"
-					disabled={disabled}
-				>
-					{selectedUser ? (
-						<div className="flex items-center gap-2">
-							<Avatar className="h-6 w-6">
-								<AvatarImage src={selectedUser.avatarUrl || undefined} />
-								<AvatarFallback className="text-xs">
-									{selectedUser.name
-										.split(" ")
-										.map((n) => n[0])
-										.join("")
-										.toUpperCase()}
-								</AvatarFallback>
-							</Avatar>
-							<span>{selectedUser.name}</span>
-						</div>
-					) : (
-						<span className="text-muted-foreground">{placeholder}</span>
-					)}
-					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent className="w-full p-0">
-				<Command>
-					<CommandInput placeholder="Поиск пользователя..." />
+		<>
+			<Button
+				variant="outline"
+				role="combobox"
+				aria-expanded={open}
+				className="w-full justify-between"
+				disabled={disabled}
+				onClick={() => setOpen(true)}
+			>
+				{selectedUser ? (
+					<div className="flex items-center gap-2">
+						<Avatar className="h-6 w-6">
+							<AvatarImage src={selectedUser.avatarUrl || undefined} />
+							<AvatarFallback className="text-xs">
+								{selectedUser.name
+									.split(" ")
+									.map((n) => n[0])
+									.join("")
+									.toUpperCase()}
+							</AvatarFallback>
+						</Avatar>
+						<span>{selectedUser.name}</span>
+					</div>
+				) : (
+					<span className="text-muted-foreground">{placeholder}</span>
+				)}
+				<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+			</Button>
+
+			<CommandDialog open={open} onOpenChange={setOpen}>
+				<CommandInput placeholder="Поиск пользователя..." />
+				<CommandList>
 					<CommandEmpty>Пользователь не найден.</CommandEmpty>
-					<CommandGroup>
+					<CommandGroup heading="Пользователи">
 						{users.map((user) => (
 							<CommandItem
 								key={user._id}
-								value={user.name + user.email}
+								value={user.name + " " + user.email}
 								onSelect={() => {
 									onChange(user._id === value ? undefined : user._id);
 									setOpen(false);
 								}}
+								className="cursor-pointer"
 							>
 								<Check
 									className={cn(
@@ -114,8 +124,8 @@ export function UserSelector({
 							</CommandItem>
 						))}
 					</CommandGroup>
-				</Command>
-			</PopoverContent>
-		</Popover>
+				</CommandList>
+			</CommandDialog>
+		</>
 	);
 }

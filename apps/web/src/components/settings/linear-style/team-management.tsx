@@ -81,34 +81,56 @@ export function LinearTeamManagement({
 		department: "engineering",
 	});
 
+	// Get current user's organizations
+	const userOrganizations = useQuery(api.organizations.getUserOrganizations);
+	const currentOrg = userOrganizations?.find(
+		(org) => org.slug === organizationId,
+	);
+
 	// Queries
-	const teams = useQuery(api.constructionTeams.getAll);
-	const users = useQuery(api.users.getAll);
+	const teams = useQuery(
+		api.teams.list,
+		currentOrg ? { organizationId: currentOrg._id } : "skip",
+	);
+	const members = useQuery(
+		api.organizationMembers.list,
+		currentOrg ? { organizationId: currentOrg._id } : "skip",
+	);
 
 	// Mutations
-	const createTeam = useMutation(api.constructionTeams.create);
-	const updateTeam = useMutation(api.constructionTeams.update);
-	const deleteTeam = useMutation(api.constructionTeams.delete);
-	const addMemberToTeam = useMutation(api.constructionTeams.addMember);
-	const removeMemberFromTeam = useMutation(api.constructionTeams.removeMember);
+	const createTeam = useMutation(api.teams.create);
+	const updateTeam = useMutation(api.teams.update);
+	const deleteTeam = useMutation(api.teams.deleteTeam);
+	const addMemberToTeam = useMutation(api.teams.addMember);
+	const removeMemberFromTeam = useMutation(api.teams.removeMember);
 
-	// Filter teams based on search
-	const filteredTeams = teams?.filter((team) => {
+	// Filter teams based on search - handle nested structure
+	const flattenTeams = (teams: any[]): any[] => {
+		let result: any[] = [];
+		teams?.forEach((team) => {
+			result.push(team);
+			if (team.children && team.children.length > 0) {
+				result = result.concat(flattenTeams(team.children));
+			}
+		});
+		return result;
+	};
+
+	const allTeams = teams ? flattenTeams(teams) : [];
+	const filteredTeams = allTeams.filter((team) => {
 		const matchesSearch =
 			searchQuery === "" ||
-			team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			team.shortName.toLowerCase().includes(searchQuery.toLowerCase());
+			team.name.toLowerCase().includes(searchQuery.toLowerCase());
 		return matchesSearch;
 	});
 
 	const handleCreateTeam = async () => {
+		if (!currentOrg) return;
+
 		await createTeam({
-			...formData,
-			icon: "users",
-			joined: true,
-			memberIds: [],
-			projectIds: [],
-			workload: 0,
+			organizationId: currentOrg._id,
+			name: formData.name,
+			description: `${formData.department} team`,
 		});
 		setIsCreateModalOpen(false);
 		setFormData({
@@ -122,31 +144,27 @@ export function LinearTeamManagement({
 	const handleUpdateTeam = async () => {
 		if (selectedTeam) {
 			await updateTeam({
-				id: selectedTeam._id,
-				...formData,
+				teamId: selectedTeam._id,
+				name: formData.name,
+				description: selectedTeam.description,
 			});
 			setIsEditModalOpen(false);
 		}
 	};
 
-	const handleDeleteTeam = async (teamId: Id<"constructionTeams">) => {
-		await deleteTeam({ id: teamId });
+	const handleDeleteTeam = async (teamId: Id<"teams">) => {
+		await deleteTeam({ teamId });
 	};
 
 	const openEditModal = (team: any) => {
 		setSelectedTeam(team);
 		setFormData({
 			name: team.name,
-			shortName: team.shortName,
-			color: team.color,
-			department: team.department,
+			shortName: team.name.slice(0, 3).toUpperCase(),
+			color: defaultColors[0],
+			department: "engineering",
 		});
 		setIsEditModalOpen(true);
-	};
-
-	const getTeamMembers = (memberIds: Id<"users">[]) => {
-		if (!users) return [];
-		return users.filter((user) => memberIds.includes(user._id));
 	};
 
 	return (
@@ -180,7 +198,7 @@ export function LinearTeamManagement({
 				{/* Teams grid */}
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{filteredTeams?.map((team) => {
-						const members = getTeamMembers(team.memberIds);
+						const teamMembers = team.members || [];
 						return (
 							<div
 								key={team._id}
@@ -198,7 +216,7 @@ export function LinearTeamManagement({
 										<div>
 											<h3 className="font-semibold">{team.name}</h3>
 											<p className="text-muted-foreground text-sm">
-												{team.shortName}
+												{team.memberCount || 0} members
 											</p>
 										</div>
 									</div>
@@ -235,25 +253,29 @@ export function LinearTeamManagement({
 
 								{/* Team info */}
 								<div className="space-y-3">
-									<div>
-										<p className="text-muted-foreground text-xs">Отдел</p>
-										<Badge variant="secondary" className="mt-1">
-											{team.department === "design"
-												? "Дизайн"
-												: team.department === "construction"
-													? "Строительство"
-													: team.department === "engineering"
-														? "Инженерия"
-														: "Менеджмент"}
-										</Badge>
-									</div>
+									{team.leader && (
+										<div>
+											<p className="text-muted-foreground text-xs">
+												Руководитель
+											</p>
+											<div className="mt-1 flex items-center gap-2">
+												<Avatar className="h-6 w-6">
+													<AvatarImage src={team.leader.avatarUrl} />
+													<AvatarFallback className="text-xs">
+														{team.leader.name.charAt(0).toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<span className="text-sm">{team.leader.name}</span>
+											</div>
+										</div>
+									)}
 
 									<div>
 										<p className="mb-2 text-muted-foreground text-xs">
-											Участники ({members.length})
+											Участники ({teamMembers.length})
 										</p>
 										<div className="-space-x-2 flex">
-											{members.slice(0, 5).map((member) => (
+											{teamMembers.slice(0, 5).map((member) => (
 												<Avatar
 													key={member._id}
 													className="h-8 w-8 border-2 border-background"
@@ -268,18 +290,22 @@ export function LinearTeamManagement({
 													</AvatarFallback>
 												</Avatar>
 											))}
-											{members.length > 5 && (
+											{teamMembers.length > 5 && (
 												<div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted font-medium text-xs">
-													+{members.length - 5}
+													+{teamMembers.length - 5}
 												</div>
 											)}
 										</div>
 									</div>
 
-									<div className="flex items-center justify-between text-sm">
-										<span className="text-muted-foreground">Загруженность</span>
-										<span className="font-medium">{team.workload}%</span>
-									</div>
+									{team.parentTeam && (
+										<div>
+											<p className="text-muted-foreground text-xs">
+												Подчиняется
+											</p>
+											<p className="text-sm">{team.parentTeam.name}</p>
+										</div>
+									)}
 								</div>
 							</div>
 						);

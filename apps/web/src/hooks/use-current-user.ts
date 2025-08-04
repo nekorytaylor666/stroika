@@ -2,5 +2,7 @@ import { api } from "@stroika/backend";
 import { useQuery } from "convex/react";
 
 export function useCurrentUser() {
-	return useQuery(api.users.viewer);
+	const user = useQuery(api.users.viewer);
+	console.log("user", user);
+	return user;
 }

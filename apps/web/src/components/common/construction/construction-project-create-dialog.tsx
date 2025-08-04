@@ -41,6 +41,7 @@ import {
 	X,
 } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { useState } from "react";
 
 interface ConstructionProjectCreateDialogProps {
@@ -53,6 +54,12 @@ export function ConstructionProjectCreateDialog({
 	onOpenChange,
 }: ConstructionProjectCreateDialogProps) {
 	const { users, priorities, statuses, createProject } = useConstructionData();
+
+	// Debug: Check users data
+	useEffect(() => {
+		console.log("Construction Dialog - users:", users);
+		console.log("Construction Dialog - users length:", users?.length);
+	}, [users]);
 
 	// Form state
 	const [formData, setFormData] = useState({

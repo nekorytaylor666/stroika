@@ -2,11 +2,15 @@ import { LinearActivityFeed } from "@/components/common/activity/linear-activity
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity } from "lucide-react";
 
-export const Route = createFileRoute("/construction/$orgId/activity")({
-	component: ActivityPage,
+export const Route = createFileRoute(
+	"/construction/$orgId/projects/$projectId/activity",
+)({
+	component: ProjectActivityPage,
 });
 
-function ActivityPage() {
+function ProjectActivityPage() {
+	const { projectId } = Route.useParams();
+
 	return (
 		<div className="flex h-full flex-col bg-background">
 			{/* Header */}
@@ -16,9 +20,9 @@ function ActivityPage() {
 						<Activity className="h-5 w-5 text-primary" />
 					</div>
 					<div>
-						<h1 className="font-semibold text-2xl">Активность организации</h1>
+						<h1 className="font-semibold text-2xl">Активность проекта</h1>
 						<p className="text-muted-foreground text-sm">
-							Все события и изменения в задачах
+							История изменений и событий в проекте
 						</p>
 					</div>
 				</div>
@@ -27,7 +31,7 @@ function ActivityPage() {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="px-8 py-6">
-					<LinearActivityFeed type="organization" />
+					<LinearActivityFeed type="project" projectId={projectId as any} />
 				</div>
 			</div>
 		</div>

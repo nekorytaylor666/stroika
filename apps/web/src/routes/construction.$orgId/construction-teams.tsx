@@ -1,5 +1,4 @@
-import ConstructionTeams from "@/components/common/construction/construction-teams";
-import Header from "@/components/layout/headers/teams/header";
+import { ConstructionTeamsLinear } from "@/components/construction/teams/construction-teams-linear";
 import MainLayout from "@/components/layout/main-layout";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -10,5 +9,5 @@ export const Route = createFileRoute("/construction/$orgId/construction-teams")(
 );
 
 function ConstructionTeamsPage() {
-	return <ConstructionTeams />;
+	return <ConstructionTeamsLinear />;
 }

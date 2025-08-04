@@ -1,7 +1,6 @@
-import { ProjectTeamManagement } from "@/components/construction/project-team-management";
+import { ProjectTeamManagementLinear } from "@/components/construction/project-team-management-linear";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
-import { Users } from "lucide-react";
 
 export const Route = createFileRoute(
 	"/construction/$orgId/projects/$projectId/team",
@@ -13,14 +12,12 @@ function ProjectTeamPage() {
 	const { projectId } = Route.useParams();
 
 	return (
-		<div className="p-6">
-			<div className="mb-6 flex items-center gap-3">
-				<Users className="h-8 w-8 text-muted-foreground" />
-				<h1 className="font-semibold text-2xl">Команда проекта</h1>
+		<div className="flex h-full flex-col bg-background">
+			<div className="mx-auto flex h-full w-full max-w-7xl flex-col p-4">
+				<ProjectTeamManagementLinear
+					projectId={projectId as Id<"constructionProjects">}
+				/>
 			</div>
-			<ProjectTeamManagement
-				projectId={projectId as Id<"constructionProjects">}
-			/>
 		</div>
 	);
 }

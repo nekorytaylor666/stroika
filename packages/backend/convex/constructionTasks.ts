@@ -1,13 +1,31 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Now safe to get organization data
+
+		// Check membership
+		const membership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_user", (q) =>
+				q.eq("organizationId", organization._id).eq("userId", user._id),
+			)
+			.first();
+
+		if (!membership || !membership.isActive) {
+			return [];
+		}
+
 		const tasks = await ctx.db
 			.query("issues")
 			.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
+			.filter((q) => q.eq(q.field("organizationId"), organization._id))
 			.collect();
 
 		// Populate related data
@@ -321,8 +339,11 @@ export const create = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { userId, ...taskData } = args;
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
 		const fullTaskData = {
 			...taskData,
+			organizationId: organization._id,
 			createdAt: new Date().toISOString(),
 			isConstructionTask: true,
 		};
@@ -571,5 +592,55 @@ export const deleteTask = mutation({
 
 		await ctx.db.delete(args.id);
 		return { success: true };
+	},
+});
+
+// Get tasks for a specific team
+export const getTeamTasks = query({
+	args: { teamId: v.id("constructionTeams") },
+	handler: async (ctx, args) => {
+		const team = await ctx.db.get(args.teamId);
+		if (!team) {
+			throw new Error("Team not found");
+		}
+
+		const memberIds = team.memberIds || [];
+		if (memberIds.length === 0) {
+			return [];
+		}
+
+		// Get all tasks assigned to team members
+		const tasks = await ctx.db
+			.query("issues")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("isConstructionTask"), true),
+					q.eq(q.field("organizationId"), team.organizationId),
+					q.or(...memberIds.map((id) => q.eq(q.field("assigneeId"), id))),
+				),
+			)
+			.collect();
+
+		// Populate related data
+		const populatedTasks = await Promise.all(
+			tasks.map(async (task) => {
+				const [status, assignee, priority, project] = await Promise.all([
+					ctx.db.get(task.statusId),
+					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+					ctx.db.get(task.priorityId),
+					task.projectId ? ctx.db.get(task.projectId) : null,
+				]);
+
+				return {
+					...task,
+					status,
+					assignee,
+					priority,
+					project,
+				};
+			}),
+		);
+
+		return populatedTasks;
 	},
 });

@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 export const list = query({
 	args: {
@@ -9,15 +10,14 @@ export const list = query({
 		search: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
+		const { organization } = await getCurrentUserWithOrganization(ctx);
 
 		let documents = await ctx.db
 			.query("documents")
 			.withIndex("by_parent", (q) =>
 				q.eq("parentId", args.parentId === undefined ? null : args.parentId),
 			)
+			.filter((q) => q.eq(q.field("organizationId"), organization._id))
 			.collect();
 
 		if (args.projectId) {
@@ -114,19 +114,10 @@ export const create = mutation({
 		tags: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) throw new Error("User not found");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		const documentId = await ctx.db.insert("documents", {
+			organizationId: organization._id,
 			title: args.title,
 			content: args.content || "",
 			projectId: args.projectId,
@@ -163,17 +154,7 @@ export const update = mutation({
 		tags: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) throw new Error("User not found");
+		const { user } = await getCurrentUserWithOrganization(ctx);
 
 		const existing = await ctx.db.get(args.id);
 		if (!existing) throw new Error("Document not found");
@@ -201,8 +182,7 @@ export const update = mutation({
 export const remove = mutation({
 	args: { id: v.id("documents") },
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
+		await getCurrentUserWithOrganization(ctx);
 
 		const document = await ctx.db.get(args.id);
 		if (!document) throw new Error("Document not found");
@@ -235,22 +215,13 @@ export const remove = mutation({
 export const duplicate = mutation({
 	args: { id: v.id("documents") },
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) throw new Error("Not authenticated");
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) throw new Error("User not found");
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		const original = await ctx.db.get(args.id);
 		if (!original) throw new Error("Document not found");
 
 		const newId = await ctx.db.insert("documents", {
+			organizationId: organization._id,
 			title: `${original.title} (Copy)`,
 			content: original.content,
 			projectId: original.projectId,

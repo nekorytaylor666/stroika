@@ -1,10 +1,50 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
-		const projects = await ctx.db.query("constructionProjects").collect();
+		// Check if user is authenticated
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Not authenticated");
+		}
+
+		// Check if user exists in database
+		const user = await getCurrentUserWithOrganization(ctx);
+		if (!user || !user.organization) {
+			// Return empty array if user doesn't exist or has no organization
+			// They need to be invited to an organization first
+			return [];
+		}
+
+		// Now safe to get organization data
+		const organization = await ctx.db.get(user.organization._id);
+		if (!organization) {
+			return [];
+		}
+
+		// Check membership
+		const membership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_user", (q) =>
+				q
+					.eq("organizationId", user.organization._id)
+					.eq("userId", user.user._id),
+			)
+			.first();
+
+		if (!membership || !membership.isActive) {
+			return [];
+		}
+
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
+			.collect();
 
 		// Populate related data
 		const populatedProjects = await Promise.all(
@@ -280,7 +320,15 @@ export const create = mutation({
 		teamMemberIds: v.array(v.id("users")),
 	},
 	handler: async (ctx, args) => {
-		return await ctx.db.insert("constructionProjects", args);
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		const project = await ctx.db.insert("constructionProjects", {
+			...args,
+			organizationId: organization._id,
+		});
+		console.log("project", project);
+
+		return project;
 	},
 });
 
