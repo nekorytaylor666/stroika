@@ -90,9 +90,7 @@ export function EditableSelect({
 					>
 						<span className="flex items-center gap-2">
 							{selectedOption?.icon}
-							<span>
-								{selectedOption?.label || placeholder}
-							</span>
+							<span>{selectedOption?.label || placeholder}</span>
 						</span>
 						{isLoading ? (
 							<Loader2 className="ml-2 h-3 w-3 animate-spin" />
@@ -118,7 +116,7 @@ export function EditableSelect({
 										onSelect={() => handleSelect(option.value)}
 										className={cn(
 											"flex items-center gap-2",
-											value === option.value && "bg-accent"
+											value === option.value && "bg-accent",
 										)}
 									>
 										{option.icon}

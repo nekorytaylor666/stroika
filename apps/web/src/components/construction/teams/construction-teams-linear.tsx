@@ -53,17 +53,19 @@ import { TeamTasksTab } from "./team-tasks-tab";
 
 type ViewMode = "grid" | "list";
 
-export function ConstructionTeamsLinear() {
+interface ConstructionTeamsLinearProps {
+	orgId: string;
+}
+
+export function ConstructionTeamsLinear({
+	orgId,
+}: ConstructionTeamsLinearProps) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
 	const [viewMode, setViewMode] = useState<ViewMode>("grid");
 	const [selectedTeam, setSelectedTeam] =
 		useState<Id<"constructionTeams"> | null>(null);
 	const [isCreateTeamOpen, setIsCreateTeamOpen] = useState(false);
-
-	const { orgId } = useParams({
-		from: "/construction/$orgId/construction-teams",
-	});
 
 	// Fetch teams
 	const teams = useQuery(api.constructionTeams.list, {

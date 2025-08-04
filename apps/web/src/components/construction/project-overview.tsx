@@ -28,6 +28,7 @@ import {
 	Target,
 	User,
 	Users,
+	XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import {
@@ -58,29 +59,35 @@ interface ConstructionProjectOverviewProps {
 }
 
 const statusStyles = {
-	"В работе": {
-		icon: CircleDot,
-		color: "text-yellow-600",
-		bg: "bg-yellow-100",
-		borderColor: "border-yellow-200",
-	},
-	завершено: {
-		icon: CheckCircle2,
-		color: "text-green-600",
-		bg: "bg-green-100",
-		borderColor: "border-green-200",
-	},
-	"Не начато": {
+	"К выполнению": {
 		icon: Circle,
 		color: "text-gray-600",
 		bg: "bg-gray-100",
 		borderColor: "border-gray-200",
 	},
-	Приостановлено: {
+	"В работе": {
+		icon: CircleDot,
+		color: "text-yellow-700",
+		bg: "bg-yellow-100",
+		borderColor: "border-yellow-200",
+	},
+	"На проверке": {
 		icon: Clock,
-		color: "text-blue-600",
+		color: "text-blue-700",
 		bg: "bg-blue-100",
 		borderColor: "border-blue-200",
+	},
+	Завершено: {
+		icon: CheckCircle2,
+		color: "text-green-700",
+		bg: "bg-green-100",
+		borderColor: "border-green-200",
+	},
+	Отменено: {
+		icon: XIcon,
+		color: "text-red-700",
+		bg: "bg-red-100",
+		borderColor: "border-red-200",
 	},
 };
 
@@ -88,7 +95,7 @@ const priorityStyles = {
 	Низкий: "bg-gray-100 text-gray-700",
 	Средний: "bg-blue-100 text-blue-700",
 	Высокий: "bg-orange-100 text-orange-700",
-	Срочный: "bg-red-100 text-red-700",
+	Критический: "bg-red-100 text-red-700",
 };
 
 const projectTypeTranslations = {
@@ -221,14 +228,18 @@ export function ConstructionProjectOverview({
 								<EditableSelect
 									value={projectData.status?._id || ""}
 									options={statuses.map((status) => {
-										const Icon =
-											statusStyles[status.name as keyof typeof statusStyles]
-												?.icon || Circle;
 										return {
 											value: status._id,
 											label: status.name,
-											icon: <Icon className="h-3.5 w-3.5" />,
-											className: cn("border"),
+											className: cn(
+												"border-0",
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.bg,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.borderColor,
+												statusStyles[status.name as keyof typeof statusStyles]
+													?.color,
+											),
 										};
 									})}
 									onSave={async (value) => {

@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "@stroika/backend";
 import { useNavigate } from "@tanstack/react-router";
+import { useConvex, useQuery } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,6 +20,7 @@ export function AuthForm() {
 	const { signIn } = useAuthActions();
 	const navigate = useNavigate();
 	const [isLoading, setIsLoading] = useState(false);
+	const convex = useConvex();
 
 	const handleSubmit = async (
 		event: React.FormEvent<HTMLFormElement>,
@@ -34,10 +37,13 @@ export function AuthForm() {
 			toast.success(
 				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
 			);
+			const organizations = await convex.query(
+				api.organizations.getUserOrganizations,
+			);
 			// Redirect to construction tasks after successful authentication
 			navigate({
-				to: "/construction/$orgId/construction-tasks",
-				params: { orgId: "lndev-ui" },
+				to: "/construction/$orgId/inbox",
+				params: { orgId: organizations[0]._id },
 			});
 		} catch (error) {
 			toast.error(

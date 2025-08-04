@@ -30,8 +30,8 @@ export function OrganizationSetup() {
 	// If user has organizations, redirect to the first one
 	if (organizations && organizations.length > 0) {
 		router.navigate({
-			to: "/construction/$orgId/construction-tasks",
-			params: { orgId: organizations[0].slug },
+			to: "/construction/$orgId/inbox",
+			params: { orgId: organizations[0]._id },
 		});
 		return null;
 	}
@@ -43,10 +43,10 @@ export function OrganizationSetup() {
 		setIsJoining(true);
 		try {
 			const result = await acceptInvite({ inviteCode: inviteCode.trim() });
-			if (result.organizationSlug) {
+			if (result.organizationId) {
 				router.navigate({
-					to: "/construction/$orgId/construction-tasks",
-					params: { orgId: result.organizationSlug },
+					to: "/construction/$orgId/inbox",
+					params: { orgId: result.organizationId },
 				});
 			}
 		} catch (error) {

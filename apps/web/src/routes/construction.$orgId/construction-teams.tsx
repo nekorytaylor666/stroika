@@ -9,5 +9,6 @@ export const Route = createFileRoute("/construction/$orgId/construction-teams")(
 );
 
 function ConstructionTeamsPage() {
-	return <ConstructionTeamsLinear />;
+	const { orgId } = Route.useParams();
+	return <ConstructionTeamsLinear orgId={orgId} />;
 }
