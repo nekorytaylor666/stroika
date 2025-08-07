@@ -2,6 +2,8 @@ import { CreateIssueModalProvider } from "@/components/common/issues/create-issu
 import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useMobile } from "@/hooks/use-mobile";
+import { MobileNavigation } from "./mobile/mobile-navigation";
 
 interface MainLayoutProps {
 	children: React.ReactNode;
@@ -14,10 +16,28 @@ export default function MainLayout({
 	header,
 	headersNumber = 2,
 }: MainLayoutProps) {
+	const isMobile = useMobile();
+
 	const height = {
 		1: "h-[calc(100svh)] lg:h-[calc(100svh)]",
 		2: "h-[calc(100svh)] lg:h-[calc(100svh)]",
 	};
+
+	// Mobile layout
+	if (isMobile) {
+		return (
+			<MobileNavigation>
+				<div className="flex h-full w-full flex-col items-center justify-start overflow-hidden bg-container">
+					{header}
+					<div className="w-full overflow-auto">
+						{children}
+					</div>
+				</div>
+			</MobileNavigation>
+		);
+	}
+
+	// Desktop layout
 	return (
 		<SidebarProvider>
 			<AppSidebar />

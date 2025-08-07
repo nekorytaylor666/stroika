@@ -8,7 +8,7 @@ import { useViewStore } from "@/store/view-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { Grid3X3, List, Plus, Search } from "lucide-react";
 
-export const Route = createFileRoute("/construction/$orgId/tasks")({
+export const Route = createFileRoute("/construction/$orgId/tasks/")({
 	component: ConstructionTasksPage,
 });
 
@@ -59,12 +59,12 @@ function ConstructionTasksPage() {
 							}}
 							onFocus={() => {
 								const { setIsSearchOpen } = useSearchStore.getState();
-								setIsSearchOpen(true);
+								setIsSearchOpen(true)
 							}}
 							onBlur={(e) => {
 								if (e.target.value === "") {
 									const { setIsSearchOpen } = useSearchStore.getState();
-									setIsSearchOpen(false);
+									setIsSearchOpen(false)
 								}
 							}}
 						/>
@@ -81,5 +81,5 @@ function ConstructionTasksPage() {
 				<ConstructionTasks />
 			</div>
 		</div>
-	);
+	)
 }

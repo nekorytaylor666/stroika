@@ -29,7 +29,9 @@ import { CalendarDays } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
 	Area,
+	CartesianGrid,
 	ComposedChart,
+	Line,
 	ReferenceLine,
 	ResponsiveContainer,
 	Tooltip,
@@ -105,50 +107,36 @@ export function ProjectTimelineChart({
 				{
 					date: format(currentDate, "d MMM", { locale: ru }),
 					planned: 0,
-					actual: 0,
-					difference: 0,
+					completed: 0,
+					todo: 0,
 				},
 			];
 		}
 
-		// If no tasks with due dates, just show completed tasks
-		if (
-			!timelineDataQuery.tasksWithDueDates ||
-			timelineDataQuery.tasksWithDueDates.length === 0
-		) {
-			return days.map((date) => ({
-				date: format(date, "d MMM", { locale: ru }),
-				planned: 0,
-				actual:
-					date <= currentDate
-						? timelineDataQuery.completedTasks?.length || 0
-						: 0,
-				difference:
-					date <= currentDate
-						? timelineDataQuery.completedTasks?.length || 0
-						: 0,
-			}));
-		}
-
+		// Get all tasks to track when they were created
+		const allTasks = timelineDataQuery.tasks || [];
+		const completedTasks = timelineDataQuery.completedTasks || [];
+		
 		for (const date of days) {
 			const dayEnd = endOfDay(date);
 
-			// Calculate planned: cumulative tasks that should be done by this date
-			const plannedCount = timelineDataQuery.tasksWithDueDates.filter(
-				(task) => {
-					if (!task.dueDate) return false;
-					return (
-						isBefore(parseISO(task.dueDate), dayEnd) ||
-						format(parseISO(task.dueDate), "yyyy-MM-dd") ===
-							format(date, "yyyy-MM-dd")
-					);
-				},
-			).length;
+			// Calculate planned: count all tasks created by this date
+			let plannedCount = 0;
+			if (allTasks.length > 0) {
+				plannedCount = allTasks.filter((task) => {
+					// Use task creation date from activities if available
+					if (task.createdAt) {
+						return new Date(task.createdAt) <= dayEnd;
+					}
+					// Otherwise assume task was created at project start
+					return true;
+				}).length;
+			}
 
-			// Calculate actual: count tasks completed by this date using actual completion dates
-			let actualCount;
-			if (timelineDataQuery.completedTasks) {
-				actualCount = timelineDataQuery.completedTasks.filter((task) => {
+			// Calculate completed: count tasks completed by this date
+			let completedCount = 0;
+			if (completedTasks.length > 0) {
+				completedCount = completedTasks.filter((task) => {
 					// If we have a completion date from activities, use it
 					if (task.completedAt) {
 						return new Date(task.completedAt) <= dayEnd;
@@ -157,15 +145,13 @@ export function ProjectTimelineChart({
 					// (this is a fallback for tasks completed before activity tracking was added)
 					return date <= currentDate;
 				}).length;
-			} else {
-				actualCount = 0;
 			}
 
 			dataPoints.push({
 				date: format(date, "d MMM", { locale: ru }),
 				planned: plannedCount,
-				actual: actualCount,
-				difference: actualCount - plannedCount,
+				completed: completedCount,
+				todo: plannedCount - completedCount,
 			});
 		}
 
@@ -177,20 +163,18 @@ export function ProjectTimelineChart({
 				(d) =>
 					format(d, "d MMM", { locale: ru }) ===
 					format(today, "d MMM", { locale: ru }),
-			)
+			) &&
+			today >= startDate &&
+			today <= endDate
 		) {
-			const plannedToday = timelineDataQuery.tasksWithDueDates.filter(
-				(task) => {
-					if (!task.dueDate) return false;
-					return isBefore(parseISO(task.dueDate), endOfDay(today));
-				},
-			).length;
+			const completedToday = timelineDataQuery.completedTasks?.length || 0;
+			const plannedToday = allTasks.length;
 
 			dataPoints.push({
 				date: format(today, "d MMM", { locale: ru }),
 				planned: plannedToday,
-				actual: timelineDataQuery.completedTasks.length,
-				difference: timelineDataQuery.completedTasks.length - plannedToday,
+				completed: completedToday,
+				todo: plannedToday - completedToday,
 			});
 		}
 
@@ -305,16 +289,7 @@ export function ProjectTimelineChart({
 				<div className="h-[200px]">
 					<ResponsiveContainer width="100%" height="100%">
 						<ComposedChart data={timelineData}>
-							<defs>
-								<linearGradient id="colorPlanned" x1="0" y1="0" x2="0" y2="1">
-									<stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-									<stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-								</linearGradient>
-								<linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
-									<stop offset="5%" stopColor="#22C55E" stopOpacity={0.3} />
-									<stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
-								</linearGradient>
-							</defs>
+							<CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
 							<XAxis
 								dataKey="date"
 								stroke="hsl(var(--muted-foreground))"
@@ -333,10 +308,12 @@ export function ProjectTimelineChart({
 									const taskCount = Number.isNaN(value) ? 0 : value;
 									const label =
 										name === "planned"
-											? "План"
-											: name === "actual"
-												? "Факт"
-												: name;
+											? "Запланировано"
+											: name === "completed"
+												? "Выполнено"
+												: name === "todo"
+													? "К выполнению"
+													: name;
 									return [
 										`${taskCount} ${taskCount === 1 ? "задача" : "задач"}`,
 										label,
@@ -349,24 +326,27 @@ export function ProjectTimelineChart({
 									fontSize: "12px",
 								}}
 							/>
-							{/* Planned line with area */}
+							{/* Planned tasks area */}
 							<Area
 								type="monotone"
 								dataKey="planned"
 								stroke="#3B82F6"
-								fillOpacity={1}
-								fill="url(#colorPlanned)"
-								strokeWidth={2}
-								strokeDasharray="5 3"
+								fill="#3B82F6"
+								fillOpacity={0.1}
+								strokeWidth={3}
+								dot={{ fill: "#3B82F6", r: 4 }}
+								activeDot={{ r: 6 }}
 							/>
-							{/* Actual line with area */}
+							{/* Completed tasks area */}
 							<Area
 								type="monotone"
-								dataKey="actual"
+								dataKey="completed"
 								stroke="#22C55E"
-								fillOpacity={1}
-								fill="url(#colorActual)"
+								fill="#22C55E"
+								fillOpacity={0.3}
 								strokeWidth={3}
+								dot={{ fill: "#22C55E", r: 4 }}
+								activeDot={{ r: 6 }}
 							/>
 							{/* Today marker */}
 							<ReferenceLine
@@ -410,18 +390,14 @@ export function ProjectTimelineChart({
 							<div className="flex items-center gap-1">
 								<div
 									className="h-0.5 w-4"
-									style={{
-										backgroundColor: "#3B82F6",
-										backgroundImage:
-											"repeating-linear-gradient(90deg, transparent, transparent 5px, #3B82F6 5px, #3B82F6 8px)",
-									}}
+									style={{ backgroundColor: "#3B82F6" }}
 								/>
 								<div
 									className="h-3 w-3 rounded-sm"
 									style={{ backgroundColor: "#3B82F6", opacity: 0.3 }}
 								/>
 							</div>
-							<span className="text-muted-foreground text-xs">План</span>
+							<span className="text-muted-foreground text-xs">Запланировано</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<div className="flex items-center gap-1">
@@ -434,7 +410,7 @@ export function ProjectTimelineChart({
 									style={{ backgroundColor: "#22C55E", opacity: 0.3 }}
 								/>
 							</div>
-							<span className="text-muted-foreground text-xs">Факт</span>
+							<span className="text-muted-foreground text-xs">Выполнено</span>
 						</div>
 						{projectData.targetDate && (
 							<div className="flex items-center gap-2">
@@ -473,24 +449,12 @@ export function ProjectTimelineChart({
 								<div className="text-muted-foreground">выполнено</div>
 							</div>
 							<div className="text-center">
-								<div
-									className={cn(
-										"font-medium text-sm",
-										timelineData.length > 0 &&
-											timelineData[timelineData.length - 1]?.difference > 0
-											? "text-green-600"
-											: timelineData[timelineData.length - 1]?.difference < 0
-												? "text-red-600"
-												: "",
-									)}
-								>
+								<div className="font-medium text-sm">
 									{timelineData.length > 0
-										? timelineData[timelineData.length - 1]?.difference > 0
-											? `+${timelineData[timelineData.length - 1].difference}`
-											: timelineData[timelineData.length - 1]?.difference || 0
+										? timelineData[timelineData.length - 1]?.todo || 0
 										: 0}
 								</div>
-								<div className="text-muted-foreground">отклонение</div>
+								<div className="text-muted-foreground">к выполнению</div>
 							</div>
 						</div>
 					)}

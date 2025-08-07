@@ -541,22 +541,69 @@ export const getProjectTimelineData = query({
 			);
 		});
 
-		// Get completion activities for accurate timeline
+		// Get all activities for timeline history
 		const taskIds = tasks.map((t) => t._id);
-		const activities = await ctx.db
+		
+		// Get creation activities
+		const creationActivities = await ctx.db
+			.query("issueActivities")
+			.withIndex("by_type", (q) => q.eq("type", "created"))
+			.collect();
+		
+		// Get completion activities
+		const completionActivities = await ctx.db
 			.query("issueActivities")
 			.withIndex("by_type", (q) => q.eq("type", "completed"))
 			.collect();
 
+		// Get status change activities for tracking when tasks moved to completed
+		const statusChangeActivities = await ctx.db
+			.query("issueActivities")
+			.withIndex("by_type", (q) => q.eq("type", "status_changed"))
+			.collect();
+
 		// Filter for our project's tasks
-		const completionActivities = activities.filter((a) =>
+		const projectCreationActivities = creationActivities.filter((a) =>
+			taskIds.includes(a.issueId),
+		);
+		
+		const projectCompletionActivities = completionActivities.filter((a) =>
+			taskIds.includes(a.issueId),
+		);
+		
+		const projectStatusChanges = statusChangeActivities.filter((a) =>
 			taskIds.includes(a.issueId),
 		);
 
+		// Get all statuses to check which are completion statuses
+		const statuses = await ctx.db.query("status").collect();
+		const completionStatusIds = statuses
+			.filter((s) => 
+				s.name === "завершено" ||
+				s.name === "Завершено" ||
+				s.name === "Done" ||
+				s.name === "Completed" ||
+				s.name === "Готово"
+			)
+			.map((s) => s._id);
+
 		// Map tasks to their completion dates
 		const taskCompletionDates = new Map();
-		for (const activity of completionActivities) {
+		
+		// First check completion activities
+		for (const activity of projectCompletionActivities) {
 			taskCompletionDates.set(activity.issueId, activity.createdAt);
+		}
+		
+		// Then check status changes to completed status
+		for (const activity of projectStatusChanges) {
+			if (activity.metadata?.newStatusId && 
+				completionStatusIds.includes(activity.metadata.newStatusId)) {
+				// Only set if not already set by completion activity
+				if (!taskCompletionDates.has(activity.issueId)) {
+					taskCompletionDates.set(activity.issueId, activity.createdAt);
+				}
+			}
 		}
 
 		// Add completion dates to completed tasks
@@ -564,6 +611,26 @@ export const getProjectTimelineData = query({
 			...task,
 			completedAt: taskCompletionDates.get(task._id) || null,
 		}));
+
+		// Map tasks to their creation dates
+		const taskCreationDates = new Map();
+		for (const activity of projectCreationActivities) {
+			taskCreationDates.set(activity.issueId, activity.createdAt);
+		}
+		
+		// Add creation dates to all tasks
+		const tasksWithCreationDates = tasks.map((task) => ({
+			...task,
+			createdAt: taskCreationDates.get(task._id) || 
+				// Fallback to task's createdAt field if available
+				(task.createdAt ? new Date(task.createdAt).getTime() : null) ||
+				// Otherwise use project start date
+				new Date(project.startDate).getTime(),
+		}));
+
+		// Get all activities for historical data
+		const allProjectActivities = [...projectCreationActivities, ...projectCompletionActivities, ...projectStatusChanges]
+			.sort((a, b) => a.createdAt - b.createdAt);
 
 		return {
 			project: {
@@ -574,8 +641,10 @@ export const getProjectTimelineData = query({
 					completed: completedTasks.length,
 				},
 			},
+			tasks: tasksWithCreationDates,
 			tasksWithDueDates,
 			completedTasks: completedTasksWithDates,
+			activities: allProjectActivities,
 		};
 	},
 });

@@ -8,10 +8,13 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { ConstructionProjectCreateDialog } from "./construction-project-create-dialog";
 import { ConstructionProjectLine } from "./construction-project-line";
+import { MobileProjectList } from "./mobile/mobile-project-list";
+import { useMobile } from "@/hooks/use-mobile";
 
 export default function ConstructionProjects() {
 	const projects = useQuery(api.constructionProjects.getAll);
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
+	const isMobile = useMobile();
 
 	if (!projects) {
 		return (
@@ -23,6 +26,12 @@ export default function ConstructionProjects() {
 		);
 	}
 
+	// Mobile view
+	if (isMobile) {
+		return <MobileProjectList />;
+	}
+
+	// Desktop view
 	return (
 		<div className="w-full">
 			<div className="flex items-center justify-between border-b px-6 py-4">

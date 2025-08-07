@@ -19,6 +19,8 @@ import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
 import { LinearKanbanBoard } from "./linear-kanban-board";
 import { SearchConstructionTasks } from "./search-construction-tasks";
+import { MobileTaskListWrapper } from "./mobile/mobile-task-list-wrapper";
+import { useMobile } from "@/hooks/use-mobile";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -63,19 +65,42 @@ export interface StatusType {
 	iconName: string;
 }
 
-export default function ConstructionTasks() {
+interface ConstructionTasksProps {
+	projectId?: string;
+}
+
+export default function ConstructionTasks({ projectId }: ConstructionTasksProps = {}) {
 	const { isSearchOpen, searchQuery } = useSearchStore();
 	const { viewType } = useViewStore();
 	const { hasActiveFilters } = useFilterStore();
 	const { isOpen, selectedTask, closeTaskDetails } =
 		useConstructionTaskDetailsStore();
+	const isMobile = useMobile();
 
 	const isSearching = isSearchOpen && searchQuery.trim() !== "";
 	const isViewTypeGrid = viewType === "grid";
 	const isFiltering = hasActiveFilters();
 
+	// Mobile view
+	if (isMobile) {
+		return (
+			<>
+				<ConstructionCreateIssueModal />
+				<MobileTaskListWrapper projectId={projectId} />
+				<ConstructionTaskDetails
+					task={selectedTask}
+					open={isOpen}
+					onOpenChange={closeTaskDetails}
+				/>
+			</>
+		);
+	}
+
+	// Desktop view
 	return (
-		<>
+		<DndProvider backend={HTML5Backend}>
+			<ConstructionCreateIssueModal />
+			<ConstructionCustomDragLayer />
 			<div
 				className={cn(
 					"h-full w-full",
@@ -87,9 +112,9 @@ export default function ConstructionTasks() {
 						<SearchConstructionTasks />
 					</div>
 				) : isFiltering ? (
-					<FilteredConstructionTasksView isViewTypeGrid={isViewTypeGrid} />
+					<FilteredConstructionTasksView isViewTypeGrid={isViewTypeGrid} projectId={projectId} />
 				) : (
-					<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} />
+					<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} projectId={projectId} />
 				)}
 			</div>
 			<ConstructionTaskDetails
@@ -97,13 +122,14 @@ export default function ConstructionTasks() {
 				open={isOpen}
 				onOpenChange={closeTaskDetails}
 			/>
-		</>
+		</DndProvider>
 	);
 }
 
 const FilteredConstructionTasksView: FC<{
 	isViewTypeGrid: boolean;
-}> = ({ isViewTypeGrid = false }) => {
+	projectId?: string;
+}> = ({ isViewTypeGrid = false, projectId }) => {
 	const { filters } = useFilterStore();
 	const { tasks, statuses } = useConstructionData();
 
@@ -146,10 +172,17 @@ const FilteredConstructionTasksView: FC<{
 			);
 		}
 
-		// Filter by project
+		// Filter by project from filters
 		if (filters.project && filters.project.length > 0) {
 			result = result.filter(
 				(task) => task.projectId && filters.project.includes(task.projectId),
+			);
+		}
+		
+		// Filter by projectId prop (for project-specific views)
+		if (projectId) {
+			result = result.filter(
+				(task) => task.constructionProjectId === projectId,
 			);
 		}
 
@@ -161,6 +194,7 @@ const FilteredConstructionTasksView: FC<{
 		filters.priority,
 		filters.labels,
 		filters.project,
+		projectId,
 	]);
 
 	// Group filtered tasks by status
@@ -232,11 +266,8 @@ const FilteredConstructionTasksView: FC<{
 
 const GroupConstructionTasksListView: FC<{
 	isViewTypeGrid: boolean;
-}> = ({ isViewTypeGrid = false }) => {
-	// Try to get projectId from the route params - it will be undefined for org-wide view
-	const params = useParams({ strict: false });
-	const projectId = (params as any).projectId;
-
+	projectId?: string;
+}> = ({ isViewTypeGrid = false, projectId }) => {
 	// Use different queries based on whether we have a projectId
 	const tasks = projectId
 		? useQuery(api.constructionTasks.getByProject, {

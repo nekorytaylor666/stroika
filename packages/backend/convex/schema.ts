@@ -224,7 +224,8 @@ export default defineSchema({
 		.index("by_assignee", ["assigneeId"])
 		.index("by_construction", ["isConstructionTask"])
 		.index("by_project", ["projectId"])
-		.index("by_parent_task", ["parentTaskId"]),
+		.index("by_parent_task", ["parentTaskId"])
+		.index("by_identifier", ["identifier"]),
 
 	// Roles table
 	roles: defineTable({
@@ -559,4 +560,61 @@ export default defineSchema({
 		.index("by_user", ["userId"])
 		.index("by_type", ["type"])
 		.index("by_created", ["createdAt"]),
+
+	// Push notification subscriptions
+	pushSubscriptions: defineTable({
+		userId: v.id("users"),
+		endpoint: v.string(),
+		keys: v.object({
+			p256dh: v.string(),
+			auth: v.string(),
+		}),
+		userAgent: v.optional(v.string()),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_user", ["userId"])
+		.index("by_endpoint", ["endpoint"]),
+
+	// Notification preferences
+	notificationPreferences: defineTable({
+		userId: v.id("users"),
+		// Notification types
+		taskAssigned: v.boolean(),
+		taskStatusChanged: v.boolean(),
+		taskCommented: v.boolean(),
+		taskDueSoon: v.boolean(),
+		projectUpdates: v.boolean(),
+		// Delivery methods
+		pushEnabled: v.boolean(),
+		emailEnabled: v.boolean(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	}).index("by_user", ["userId"]),
+
+	// Notifications log
+	notifications: defineTable({
+		userId: v.id("users"),
+		title: v.string(),
+		body: v.string(),
+		type: v.union(
+			v.literal("task_assigned"),
+			v.literal("task_status_changed"),
+			v.literal("task_commented"),
+			v.literal("task_due_soon"),
+			v.literal("project_update"),
+		),
+		data: v.optional(
+			v.object({
+				issueId: v.optional(v.id("issues")),
+				projectId: v.optional(v.id("constructionProjects")),
+				commentId: v.optional(v.id("issueComments")),
+				url: v.optional(v.string()),
+			}),
+		),
+		read: v.boolean(),
+		createdAt: v.number(),
+	})
+		.index("by_user", ["userId"])
+		.index("by_user_and_read", ["userId", "read"]),
 });

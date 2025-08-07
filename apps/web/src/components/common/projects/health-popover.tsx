@@ -7,7 +7,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/mock-data/projects";
 import {
@@ -37,7 +37,7 @@ export function HealthPopover({ project }: HealthPopoverProps) {
 		}
 	};
 
-	const isMobile = useIsMobile();
+	const isMobile = useMobile();
 
 	return (
 		<Popover>

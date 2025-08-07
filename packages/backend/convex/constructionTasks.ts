@@ -80,6 +80,62 @@ export const getAll = query({
 	},
 });
 
+export const getByIdentifier = query({
+	args: { identifier: v.string() },
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		
+		const task = await ctx.db
+			.query("issues")
+			.withIndex("by_identifier", (q) => q.eq("identifier", args.identifier))
+			.filter((q) => 
+				q.and(
+					q.eq(q.field("organizationId"), organization._id),
+					q.eq(q.field("isConstructionTask"), true)
+				)
+			)
+			.first();
+		
+		if (!task) return null;
+
+		// Populate related data using same logic as getById
+		const [status, assignee, priority, labels, attachments] = await Promise.all([
+			ctx.db.get(task.statusId),
+			task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+			ctx.db.get(task.priorityId),
+			Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+			ctx.db
+				.query("issueAttachments")
+				.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+				.collect(),
+		]);
+
+		// Get uploader info for attachments and resolve URLs
+		const attachmentsWithUsers = await Promise.all(
+			attachments.map(async (attachment) => {
+				const [uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+				return {
+					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl,
+					uploader,
+				};
+			}),
+		);
+
+		return {
+			...task,
+			status,
+			assignee,
+			priority,
+			labels: labels.filter((label) => label !== null),
+			attachments: attachmentsWithUsers,
+		};
+	},
+});
+
 export const getById = query({
 	args: { id: v.id("issues") },
 	handler: async (ctx, args) => {

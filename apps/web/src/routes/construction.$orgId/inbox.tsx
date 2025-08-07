@@ -1,4 +1,6 @@
 import { LinearActivityFeed } from "@/components/common/activity/linear-activity-feed";
+import { MobileActivityFeed } from "@/components/common/construction/mobile/mobile-activity-feed";
+import { useMobile } from "@/hooks/use-mobile";
 import { createFileRoute } from "@tanstack/react-router";
 import { Activity } from "lucide-react";
 
@@ -7,6 +9,14 @@ export const Route = createFileRoute("/construction/$orgId/inbox")({
 });
 
 function ActivityPage() {
+	const isMobile = useMobile();
+
+	// Mobile view - simpler layout
+	if (isMobile) {
+		return <MobileActivityFeed type="organization" />;
+	}
+
+	// Desktop view - full layout with header
 	return (
 		<div className="flex h-full flex-col bg-background">
 			{/* Header */}

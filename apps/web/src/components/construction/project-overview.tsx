@@ -262,7 +262,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-											priority.name as keyof typeof priorityStyles
+												priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -369,9 +369,9 @@ export function ConstructionProjectOverview({
 														•{" "}
 														{taskStats.total > 0
 															? Math.round(
-																(taskStats.inProgress / taskStats.total) *
-																100,
-															)
+																	(taskStats.inProgress / taskStats.total) *
+																		100,
+																)
 															: 0}
 														%
 													</span>
@@ -550,7 +550,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-											priority.name as keyof typeof priorityStyles
+												priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -616,8 +616,8 @@ export function ConstructionProjectOverview({
 								<span>
 									{projectData.targetDate
 										? format(new Date(projectData.targetDate), "d MMM yyyy", {
-											locale: ru,
-										})
+												locale: ru,
+											})
 										: "Не определено"}
 								</span>
 							</div>
