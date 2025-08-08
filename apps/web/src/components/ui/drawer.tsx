@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { cn } from "@/lib/utils";
+import * as React from "react";
 
 const DrawerContext = React.createContext<{
 	direction?: "top" | "right" | "bottom" | "left";
@@ -80,10 +80,7 @@ const DrawerFooter = ({
 	className,
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
-	<div
-		className={cn("flex flex-col gap-2 p-4", className)}
-		{...props}
-	/>
+	<div className={cn("flex flex-col gap-2 p-4", className)} {...props} />
 );
 DrawerFooter.displayName = "DrawerFooter";
 
@@ -121,7 +118,7 @@ const DrawerClose = React.forwardRef<
 	<button
 		ref={ref}
 		className={cn(
-			"inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+			"inline-flex items-center justify-center rounded-md font-medium text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
 			className,
 		)}
 		{...props}

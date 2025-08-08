@@ -1,5 +1,7 @@
 "use client";
 
+import { PrioritySelector } from "@/components/layout/sidebar/create-new-issue/priority-selector";
+import { StatusSelector } from "@/components/layout/sidebar/create-new-issue/status-selector";
 import { Button } from "@/components/ui/button";
 import {
 	Drawer,
@@ -20,8 +22,6 @@ import { api } from "@stroika/backend";
 import { useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import { StatusSelector } from "@/components/layout/sidebar/create-new-issue/status-selector";
-import { PrioritySelector } from "@/components/layout/sidebar/create-new-issue/priority-selector";
 import { ConstructionCreateIssueModal } from "./construction-create-issue-modal";
 
 export function ConstructionCreateTaskDrawer() {
@@ -49,8 +49,8 @@ export function ConstructionCreateTaskDrawer() {
 		if (statuses && statuses.length > 0 && !issueStatus) {
 			setIssueStatus(
 				defaultStatus ||
-				statuses.find((s) => s.name === "К выполнению") ||
-				statuses[0],
+					statuses.find((s) => s.name === "К выполнению") ||
+					statuses[0],
 			);
 		}
 	}, [priorities, statuses, priority, issueStatus, defaultStatus]);
@@ -83,8 +83,8 @@ export function ConstructionCreateTaskDrawer() {
 			);
 			setIssueStatus(
 				defaultStatus ||
-				statuses?.find((s) => s.name === "К выполнению") ||
-				statuses?.[0],
+					statuses?.find((s) => s.name === "К выполнению") ||
+					statuses?.[0],
 			);
 
 			closeModal();
@@ -108,7 +108,7 @@ export function ConstructionCreateTaskDrawer() {
 					</DrawerDescription>
 				</DrawerHeader>
 
-				<div className="px-4 overflow-y-auto">
+				<div className="overflow-y-auto px-4">
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
 							<Label htmlFor="title">Название задачи</Label>
@@ -129,14 +129,17 @@ export function ConstructionCreateTaskDrawer() {
 								rows={3}
 								value={description}
 								onChange={(e) => setDescription(e.target.value)}
-								className="text-base resize-none"
+								className="resize-none text-base"
 							/>
 						</div>
 
 						<div className="grid gap-4">
 							<div className="grid gap-2">
 								<Label>Статус</Label>
-								<StatusSelector status={issueStatus} onChange={setIssueStatus} />
+								<StatusSelector
+									status={issueStatus}
+									onChange={setIssueStatus}
+								/>
 							</div>
 
 							<div className="grid gap-2">

@@ -31,6 +31,7 @@ import type * as departments from "../departments.js";
 import type * as documentTasks from "../documentTasks.js";
 import type * as documents from "../documents.js";
 import type * as files from "../files.js";
+import type * as globalSearch from "../globalSearch.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as helpers_getCurrentUser from "../helpers/getCurrentUser.js";
 import type * as http from "../http.js";
@@ -85,6 +86,7 @@ declare const fullApi: ApiFromModules<{
   documentTasks: typeof documentTasks;
   documents: typeof documents;
   files: typeof files;
+  globalSearch: typeof globalSearch;
   healthCheck: typeof healthCheck;
   "helpers/getCurrentUser": typeof helpers_getCurrentUser;
   http: typeof http;

@@ -2,11 +2,11 @@ import ConstructionTasks from "@/components/common/construction/construction-tas
 import { ConstructionFilter } from "@/components/layout/headers/construction/filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useSearchStore } from "@/store/search-store";
 import { useViewStore } from "@/store/view-store";
-import { useMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { Grid3X3, List, Plus, Search } from "lucide-react";
@@ -30,10 +30,12 @@ function ProjectTasksPage() {
 	return (
 		<div className="flex h-full flex-col">
 			{/* Header */}
-			<div className={cn(
-				"relative flex items-center justify-between border-b",
-				isMobile ? "h-14 px-4" : "h-12 px-6"
-			)}>
+			<div
+				className={cn(
+					"relative flex items-center justify-between border-b",
+					isMobile ? "h-14 px-4" : "h-12 px-6",
+				)}
+			>
 				{/* Linear-style gradient border */}
 				<div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
 

@@ -2,44 +2,44 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
 import { useMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
+	AlertCircle,
+	Calendar,
 	CheckCircle2,
 	Circle,
 	CircleDot,
 	Clock,
-	Calendar,
 	User,
-	AlertCircle,
 } from "lucide-react";
 import { useMemo } from "react";
-import { cn } from "@/lib/utils";
 
 const statusIcons = {
 	"К выполнению": Circle,
 	"В работе": CircleDot,
 	"На проверке": Clock,
-	"Завершено": CheckCircle2,
-	"Отменено": AlertCircle,
+	Завершено: CheckCircle2,
+	Отменено: AlertCircle,
 };
 
 const statusColors = {
 	"К выполнению": "text-gray-500",
 	"В работе": "text-yellow-500",
 	"На проверке": "text-blue-500",
-	"Завершено": "text-green-500",
-	"Отменено": "text-red-500",
+	Завершено: "text-green-500",
+	Отменено: "text-red-500",
 };
 
 const priorityColors = {
-	"Низкий": "bg-gray-100 text-gray-700",
-	"Средний": "bg-blue-100 text-blue-700",
-	"Высокий": "bg-orange-100 text-orange-700",
-	"Критический": "bg-red-100 text-red-700",
+	Низкий: "bg-gray-100 text-gray-700",
+	Средний: "bg-blue-100 text-blue-700",
+	Высокий: "bg-orange-100 text-orange-700",
+	Критический: "bg-red-100 text-red-700",
 };
 
 interface MobileTaskListProps {
@@ -149,8 +149,8 @@ export function MobileTaskList({
 			<div className="flex h-full items-center justify-center">
 				<div className="text-center">
 					<div className="animate-pulse">
-						<div className="h-8 w-32 bg-muted rounded mb-2" />
-						<div className="h-4 w-48 bg-muted rounded" />
+						<div className="mb-2 h-8 w-32 rounded bg-muted" />
+						<div className="h-4 w-48 rounded bg-muted" />
 					</div>
 				</div>
 			</div>
@@ -158,24 +158,26 @@ export function MobileTaskList({
 	}
 
 	return (
-		<div className="flex flex-col h-full">
+		<div className="flex h-full flex-col">
 			{/* Status sections */}
 			<div className="flex-1 overflow-y-auto px-4 py-4">
 				{statuses.map((status) => {
 					const statusTasks = groupedTasks[status._id] || [];
-					const StatusIcon = statusIcons[status.name as keyof typeof statusIcons] || Circle;
+					const StatusIcon =
+						statusIcons[status.name as keyof typeof statusIcons] || Circle;
 
 					if (statusTasks.length === 0) return null;
 
 					return (
 						<div key={status._id} className="mb-6">
-							<div className="flex items-center gap-2 mb-3">
+							<div className="mb-3 flex items-center gap-2">
 								<StatusIcon
-									className={cn("h-4 w-4", statusColors[status.name as keyof typeof statusColors])}
+									className={cn(
+										"h-4 w-4",
+										statusColors[status.name as keyof typeof statusColors],
+									)}
 								/>
-								<h3 className="font-medium text-sm">
-									{status.name}
-								</h3>
+								<h3 className="font-medium text-sm">{status.name}</h3>
 								<span className="text-muted-foreground text-xs">
 									{statusTasks.length}
 								</span>
@@ -183,7 +185,9 @@ export function MobileTaskList({
 
 							<div className="space-y-2">
 								{statusTasks.map((task) => {
-									const priority = priorities.find((p) => p._id === task.priorityId);
+									const priority = priorities.find(
+										(p) => p._id === task.priorityId,
+									);
 									const assignee = task.assigneeId
 										? users.find((u) => u._id === task.assigneeId)
 										: null;
@@ -191,12 +195,12 @@ export function MobileTaskList({
 									return (
 										<Card
 											key={task._id}
-											className="p-3 cursor-pointer transition-all hover:shadow-md active:scale-[0.98]"
+											className="cursor-pointer p-3 transition-all hover:shadow-md active:scale-[0.98]"
 											onClick={() => {
 												if (isMobile && orgId) {
-													navigate({ 
+													navigate({
 														to: "/construction/$orgId/tasks/$taskId",
-														params: { orgId, taskId: task.identifier }
+														params: { orgId, taskId: task.identifier },
 													});
 												} else {
 													openTaskDetails(task);
@@ -208,29 +212,31 @@ export function MobileTaskList({
 												<div className="flex items-start justify-between gap-2">
 													<div className="flex-1 space-y-1">
 														<div className="flex items-center gap-2">
-															<span className="text-muted-foreground text-xs font-medium">
+															<span className="font-medium text-muted-foreground text-xs">
 																{task.identifier}
 															</span>
 															{priority && (
 																<Badge
 																	variant="secondary"
 																	className={cn(
-																		"text-xs px-1.5 py-0",
-																		priorityColors[priority.name as keyof typeof priorityColors],
+																		"px-1.5 py-0 text-xs",
+																		priorityColors[
+																			priority.name as keyof typeof priorityColors
+																		],
 																	)}
 																>
 																	{priority.name}
 																</Badge>
 															)}
 														</div>
-														<h4 className="font-medium text-sm line-clamp-2">
+														<h4 className="line-clamp-2 font-medium text-sm">
 															{task.title}
 														</h4>
 													</div>
 												</div>
 
 												{/* Footer */}
-												<div className="flex items-center justify-between text-xs text-muted-foreground">
+												<div className="flex items-center justify-between text-muted-foreground text-xs">
 													<div className="flex items-center gap-3">
 														{assignee && (
 															<div className="flex items-center gap-1">
@@ -269,7 +275,7 @@ export function MobileTaskList({
 						<div className="text-center text-muted-foreground">
 							<p className="text-sm">Задачи не найдены</p>
 							{searchQuery && (
-								<p className="text-xs mt-1">
+								<p className="mt-1 text-xs">
 									Попробуйте изменить поисковый запрос
 								</p>
 							)}

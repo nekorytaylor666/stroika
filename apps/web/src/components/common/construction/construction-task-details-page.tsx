@@ -53,10 +53,9 @@ export function ConstructionTaskDetailsPage({
 	const { openTaskDetails } = useConstructionTaskDetailsStore();
 
 	// Fetch task by identifier
-	const task = useQuery(
-		api.constructionTasks.getByIdentifier,
-		{ identifier: taskId }
-	);
+	const task = useQuery(api.constructionTasks.getByIdentifier, {
+		identifier: taskId,
+	});
 
 	const updateTask = useMutation(api.constructionTasks.update);
 	const deleteTask = useMutation(api.constructionTasks.deleteTask);
@@ -88,8 +87,8 @@ export function ConstructionTaskDetailsPage({
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="animate-pulse">
-					<div className="h-8 w-32 bg-muted rounded mb-2" />
-					<div className="h-4 w-48 bg-muted rounded" />
+					<div className="mb-2 h-8 w-32 rounded bg-muted" />
+					<div className="h-4 w-48 rounded bg-muted" />
 				</div>
 			</div>
 		);
@@ -97,7 +96,13 @@ export function ConstructionTaskDetailsPage({
 
 	// If on desktop, render the modal component instead
 	if (!isMobile) {
-		return <ConstructionTaskDetails task={task} open={true} onOpenChange={() => navigate({ to: `/construction/${orgId}/tasks` })} />;
+		return (
+			<ConstructionTaskDetails
+				task={task}
+				open={true}
+				onOpenChange={() => navigate({ to: `/construction/${orgId}/tasks` })}
+			/>
+		);
 	}
 
 	const assignee = task.assigneeId
@@ -148,7 +153,7 @@ export function ConstructionTaskDetailsPage({
 			initial={{ opacity: 0, x: 20 }}
 			animate={{ opacity: 1, x: 0 }}
 			exit={{ opacity: 0, x: -20 }}
-			className="flex flex-col h-full bg-background"
+			className="flex h-full flex-col bg-background"
 		>
 			{/* Header */}
 			<div className="flex items-center justify-between border-b px-4 py-3">
@@ -180,7 +185,7 @@ export function ConstructionTaskDetailsPage({
 
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
-				<div className="p-4 space-y-6">
+				<div className="space-y-6 p-4">
 					{/* Title */}
 					<div>
 						{isEditingTitle ? (
@@ -210,7 +215,7 @@ export function ConstructionTaskDetailsPage({
 					</div>
 
 					{/* Status Row */}
-					<div className="flex items-center justify-between p-3 -mx-4 hover:bg-muted/50 cursor-pointer">
+					<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 						<div className="flex items-center gap-3">
 							<span className="text-muted-foreground text-sm">Статус</span>
 						</div>
@@ -227,7 +232,7 @@ export function ConstructionTaskDetailsPage({
 					</div>
 
 					{/* Assignee Row */}
-					<div className="flex items-center justify-between p-3 -mx-4 hover:bg-muted/50 cursor-pointer">
+					<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 						<div className="flex items-center gap-3">
 							<span className="text-muted-foreground text-sm">Исполнитель</span>
 						</div>
@@ -238,14 +243,16 @@ export function ConstructionTaskDetailsPage({
 									<span className="text-sm">{assignee.name}</span>
 								</>
 							) : (
-								<span className="text-muted-foreground text-sm">Не назначен</span>
+								<span className="text-muted-foreground text-sm">
+									Не назначен
+								</span>
 							)}
 							<ChevronRight className="h-4 w-4 text-muted-foreground" />
 						</div>
 					</div>
 
 					{/* Priority Row */}
-					<div className="flex items-center justify-between p-3 -mx-4 hover:bg-muted/50 cursor-pointer">
+					<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 						<div className="flex items-center gap-3">
 							<span className="text-muted-foreground text-sm">Приоритет</span>
 						</div>
@@ -264,10 +271,12 @@ export function ConstructionTaskDetailsPage({
 					</div>
 
 					{/* Due Date Row */}
-					<div className="flex items-center justify-between p-3 -mx-4 hover:bg-muted/50 cursor-pointer">
+					<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 						<div className="flex items-center gap-3">
 							<Calendar className="h-4 w-4 text-muted-foreground" />
-							<span className="text-muted-foreground text-sm">Срок выполнения</span>
+							<span className="text-muted-foreground text-sm">
+								Срок выполнения
+							</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<span className="text-sm">
@@ -283,7 +292,7 @@ export function ConstructionTaskDetailsPage({
 
 					{/* Project Row */}
 					{project && (
-						<div className="flex items-center justify-between p-3 -mx-4 hover:bg-muted/50 cursor-pointer">
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 							<div className="flex items-center gap-3">
 								<span className="text-muted-foreground text-sm">Проект</span>
 							</div>
@@ -375,10 +384,11 @@ export function ConstructionTaskDetailsPage({
 			{/* Bottom Action Bar */}
 			<div className="border-t bg-background p-4">
 				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2 text-xs text-muted-foreground">
+					<div className="flex items-center gap-2 text-muted-foreground text-xs">
 						<Clock className="h-3 w-3" />
 						<span>
-							Создано {format(new Date(task.createdAt), "d MMM", { locale: ru })}
+							Создано{" "}
+							{format(new Date(task.createdAt), "d MMM", { locale: ru })}
 						</span>
 					</div>
 					<Button
