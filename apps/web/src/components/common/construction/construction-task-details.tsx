@@ -32,6 +32,7 @@ import {
 	Copy,
 	FileText,
 	Link2,
+	Maximize2,
 	MoreHorizontal,
 	Paperclip,
 	Plus,
@@ -40,6 +41,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ParentTaskDisplay } from "./construction-parent-task";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
@@ -54,13 +56,16 @@ interface ConstructionTaskDetailsProps {
 	task: ConstructionTask | null;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	orgId?: string;
 }
 
 export function ConstructionTaskDetails({
 	task,
 	open,
 	onOpenChange,
+	orgId,
 }: ConstructionTaskDetailsProps) {
+	const navigate = useNavigate();
 	const {
 		users,
 		priorities,
@@ -149,6 +154,16 @@ export function ConstructionTaskDetails({
 		);
 	};
 
+	const handleFullscreen = () => {
+		if (orgId && currentTask) {
+			onOpenChange(false);
+			navigate({
+				to: "/construction/$orgId/tasks/$taskId",
+				params: { orgId, taskId: currentTask.identifier }
+			});
+		}
+	};
+
 	return (
 		<>
 			<Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,6 +191,16 @@ export function ConstructionTaskDetails({
 							</span>
 						</div>
 						<div className="flex items-center gap-1">
+							{orgId && (
+								<Button 
+									variant="ghost" 
+									size="sm" 
+									onClick={handleFullscreen}
+									title="Открыть в полноэкранном режиме"
+								>
+									<Maximize2 className="h-4 w-4" />
+								</Button>
+							)}
 							<Button variant="ghost" size="sm" onClick={handleCopyLink}>
 								<Link2 className="h-4 w-4" />
 							</Button>

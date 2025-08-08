@@ -76,6 +76,7 @@ export default function ConstructionTasks({ projectId }: ConstructionTasksProps 
 	const { isOpen, selectedTask, closeTaskDetails } =
 		useConstructionTaskDetailsStore();
 	const isMobile = useMobile();
+	const params = useParams({ from: "/construction/$orgId" });
 
 	const isSearching = isSearchOpen && searchQuery.trim() !== "";
 	const isViewTypeGrid = viewType === "grid";
@@ -91,6 +92,7 @@ export default function ConstructionTasks({ projectId }: ConstructionTasksProps 
 					task={selectedTask}
 					open={isOpen}
 					onOpenChange={closeTaskDetails}
+					orgId={params.orgId}
 				/>
 			</>
 		);
@@ -121,6 +123,7 @@ export default function ConstructionTasks({ projectId }: ConstructionTasksProps 
 				task={selectedTask}
 				open={isOpen}
 				onOpenChange={closeTaskDetails}
+				orgId={params.orgId}
 			/>
 		</DndProvider>
 	);
