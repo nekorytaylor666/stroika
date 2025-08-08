@@ -8,9 +8,5 @@ export const Route = createFileRoute("/construction/$orgId/tasks/$taskId")({
 function TaskDetailsPage() {
 	const { taskId, orgId } = Route.useParams();
 	
-	return (
-		<div className="flex h-full bg-background">
-			<ConstructionTaskDetailsPage taskId={taskId} orgId={orgId} />
-		</div>
-	);
+	return <ConstructionTaskDetailsPage taskId={taskId} orgId={orgId} />;
 }

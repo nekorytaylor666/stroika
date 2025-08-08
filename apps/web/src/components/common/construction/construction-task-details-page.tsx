@@ -443,12 +443,12 @@ export function ConstructionTaskDetailsPage({
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
-			className="flex h-full bg-background"
+			className="flex h-full w-full bg-background"
 		>
 			{/* Main Content Area */}
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Top Header Bar */}
-				<div className="relative flex h-12 items-center justify-between border-b px-6">
+				<div className="relative flex h-14 items-center justify-between border-b px-8">
 					{/* Linear-style gradient border */}
 					<div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
 					
@@ -457,7 +457,7 @@ export function ConstructionTaskDetailsPage({
 							variant="ghost"
 							size="sm"
 							onClick={handleBack}
-							className="h-7 px-2 gap-1"
+							className="h-8 px-3 gap-1.5"
 						>
 							<ArrowLeft className="h-3.5 w-3.5" />
 							<span className="text-sm">Задачи</span>
@@ -483,7 +483,7 @@ export function ConstructionTaskDetailsPage({
 							variant="ghost"
 							size="sm"
 							onClick={handleCopyLink}
-							className="h-7 px-2 gap-1.5"
+							className="h-8 px-3 gap-1.5"
 						>
 							<Link2 className="h-3.5 w-3.5" />
 							<span className="text-sm">Копировать ссылку</span>
@@ -491,7 +491,7 @@ export function ConstructionTaskDetailsPage({
 
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button variant="ghost" size="icon" className="h-7 w-7">
+								<Button variant="ghost" size="icon" className="h-8 w-8">
 									<MoreHorizontal className="h-4 w-4" />
 								</Button>
 							</DropdownMenuTrigger>
@@ -519,9 +519,9 @@ export function ConstructionTaskDetailsPage({
 
 				{/* Main Content */}
 				<div className="flex-1 overflow-y-auto">
-					<div className="max-w-4xl mx-auto p-8">
+					<div className="w-full max-w-[1200px] mx-auto px-16 py-10">
 						{/* Title Section */}
-						<div className="mb-8">
+						<div className="mb-10">
 							{isEditingTitle ? (
 								<Input
 									value={title}
@@ -534,12 +534,12 @@ export function ConstructionTaskDetailsPage({
 											setIsEditingTitle(false);
 										}
 									}}
-									className="h-auto border-none px-0 font-semibold text-2xl focus:ring-0 focus-visible:ring-0"
+									className="h-auto border-none px-0 font-semibold text-3xl focus:ring-0 focus-visible:ring-0"
 									autoFocus
 								/>
 							) : (
 								<h1
-									className="font-semibold text-2xl cursor-text hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors"
+									className="font-semibold text-3xl cursor-text hover:bg-muted/50 -mx-3 px-3 py-2 rounded-md transition-colors"
 									onClick={() => setIsEditingTitle(true)}
 								>
 									{title}
@@ -548,7 +548,7 @@ export function ConstructionTaskDetailsPage({
 						</div>
 
 						{/* Metadata Grid */}
-						<div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-8">
+						<div className="grid grid-cols-2 gap-x-12 gap-y-6 mb-8">
 							{/* Status */}
 							<div className="flex items-center justify-between">
 								<span className="text-sm text-muted-foreground">Статус</span>
@@ -571,7 +571,7 @@ export function ConstructionTaskDetailsPage({
 											<span className="text-sm">{assignee.name}</span>
 										</>
 									) : (
-										<Button variant="ghost" size="sm" className="h-7 px-2">
+										<Button variant="ghost" size="sm" className="h-8 px-3">
 											<User className="h-3.5 w-3.5 mr-1.5" />
 											Назначить
 										</Button>
@@ -598,7 +598,7 @@ export function ConstructionTaskDetailsPage({
 								<span className="text-sm text-muted-foreground">Срок выполнения</span>
 								<Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
 									<PopoverTrigger asChild>
-										<Button variant="ghost" size="sm" className="h-7 px-2 gap-1.5">
+										<Button variant="ghost" size="sm" className="h-8 px-3 gap-1.5">
 											<Calendar className="h-3.5 w-3.5" />
 											<span className="text-sm">
 												{selectedDate
@@ -625,7 +625,7 @@ export function ConstructionTaskDetailsPage({
 									<Button
 										variant="ghost"
 										size="sm"
-										className="h-7 px-2"
+										className="h-8 px-3"
 										onClick={() => navigate({ to: `/construction/${orgId}/projects/${project._id}/tasks` })}
 									>
 										<Hash className="h-3.5 w-3.5 mr-1.5" />
@@ -635,13 +635,13 @@ export function ConstructionTaskDetailsPage({
 							)}
 						</div>
 
-						<Separator className="mb-8" />
+						<Separator className="my-10" />
 
 						{/* Description Section */}
-						<div className="mb-8">
+						<div className="mb-10">
 							<div className="mb-4 flex items-center gap-2">
 								<FileText className="h-4 w-4 text-muted-foreground" />
-								<span className="font-medium">Описание</span>
+								<span className="font-medium text-base">Описание</span>
 							</div>
 							{isEditingDescription ? (
 								<div className="space-y-3">
@@ -670,7 +670,7 @@ export function ConstructionTaskDetailsPage({
 								</div>
 							) : (
 								<div
-									className="min-h-[80px] rounded-md border border-transparent hover:border-border hover:bg-muted/50 p-3 cursor-text transition-all"
+									className="min-h-[100px] rounded-lg border border-transparent hover:border-border hover:bg-muted/50 p-4 cursor-text transition-all"
 									onClick={() => setIsEditingDescription(true)}
 								>
 									{description ? (
@@ -684,20 +684,20 @@ export function ConstructionTaskDetailsPage({
 							)}
 						</div>
 
-						<Separator className="mb-8" />
+						<Separator className="my-10" />
 
 						{/* Subtasks Section */}
-						<div className="mb-8">
+						<div className="mb-10">
 							<ConstructionSubtasks task={task as ConstructionTask} />
 						</div>
 
-						<Separator className="mb-8" />
+						<Separator className="my-10" />
 
 						{/* Attachments Section */}
-						<div className="mb-8">
+						<div className="mb-10">
 							<div className="mb-4 flex items-center gap-2">
 								<Paperclip className="h-4 w-4 text-muted-foreground" />
-								<span className="font-medium">Вложения</span>
+								<span className="font-medium text-base">Вложения</span>
 							</div>
 							<ConstructionTaskAttachmentsGrid
 								task={task}
@@ -705,7 +705,7 @@ export function ConstructionTaskDetailsPage({
 							/>
 						</div>
 
-						<Separator className="mb-8" />
+						<Separator className="my-10" />
 
 						{/* Comments Section */}
 						<div>
@@ -716,11 +716,11 @@ export function ConstructionTaskDetailsPage({
 			</div>
 
 			{/* Right Sidebar */}
-			<div className="w-80 border-l bg-muted/30 p-6 overflow-y-auto">
-				<div className="space-y-6">
+			<div className="w-[450px] flex-shrink-0 border-l bg-muted/20 overflow-y-auto">
+				<div className="p-8 space-y-8">
 					{/* Activity */}
 					<div>
-						<h3 className="font-medium text-sm mb-3">Активность</h3>
+						<h3 className="font-semibold text-sm uppercase tracking-wide mb-4 text-muted-foreground">Активность</h3>
 						<div className="space-y-3">
 							<div className="flex items-start gap-3">
 								<div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
@@ -753,14 +753,14 @@ export function ConstructionTaskDetailsPage({
 
 					{/* Related Tasks */}
 					<div>
-						<h3 className="font-medium text-sm mb-3">Связанные задачи</h3>
+						<h3 className="font-semibold text-sm uppercase tracking-wide mb-4 text-muted-foreground">Связанные задачи</h3>
 						<p className="text-sm text-muted-foreground">Нет связанных задач</p>
 					</div>
 
 					{/* Labels */}
 					<div>
-						<h3 className="font-medium text-sm mb-3">Метки</h3>
-						<Button variant="outline" size="sm" className="h-7 px-2 gap-1.5">
+						<h3 className="font-semibold text-sm uppercase tracking-wide mb-4 text-muted-foreground">Метки</h3>
+						<Button variant="outline" size="sm" className="h-8 px-3 gap-1.5">
 							<Plus className="h-3.5 w-3.5" />
 							Добавить метку
 						</Button>
