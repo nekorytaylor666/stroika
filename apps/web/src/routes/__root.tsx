@@ -1,3 +1,4 @@
+import { CommandPalette } from "@/components/command-palette";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { QueryClient } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ function RootComponent() {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
 			<Outlet />
+			<CommandPalette />
 			<Toaster richColors />
 		</ThemeProvider>
 	);

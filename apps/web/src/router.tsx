@@ -4,6 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter as createTanStackRouter } from "@tanstack/react-router";
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import { ConvexProvider } from "convex/react";
+import { CommandPalette } from "./components/command-palette";
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
 import "./index.css";
