@@ -71,10 +71,9 @@ export function ConstructionTaskDetailsPage({
 	const { openTaskDetails } = useConstructionTaskDetailsStore();
 
 	// Fetch task by identifier
-	const task = useQuery(
-		api.constructionTasks.getByIdentifier,
-		{ identifier: taskId }
-	);
+	const task = useQuery(api.constructionTasks.getByIdentifier, {
+		identifier: taskId,
+	});
 
 	const updateTask = useMutation(api.constructionTasks.update);
 	const deleteTask = useMutation(api.constructionTasks.deleteTask);
@@ -103,8 +102,8 @@ export function ConstructionTaskDetailsPage({
 		return (
 			<div className="flex h-full items-center justify-center">
 				<div className="animate-pulse">
-					<div className="h-8 w-32 bg-muted rounded mb-2" />
-					<div className="h-4 w-48 bg-muted rounded" />
+					<div className="mb-2 h-8 w-32 rounded bg-muted" />
+					<div className="h-4 w-48 rounded bg-muted" />
 				</div>
 			</div>
 		);
@@ -317,8 +316,8 @@ export function ConstructionTaskDetailsPage({
 								<span className="text-sm">
 									{task.dueDate
 										? format(new Date(task.dueDate), "d MMM yyyy", {
-												locale: ru,
-											})
+											locale: ru,
+										})
 										: "Не указан"}
 								</span>
 								<ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -403,7 +402,7 @@ export function ConstructionTaskDetailsPage({
 							</div>
 							<ConstructionTaskAttachmentsGrid
 								task={task}
-								onAttachmentsUpdate={() => {}}
+								onAttachmentsUpdate={() => { }}
 							/>
 						</div>
 
@@ -451,7 +450,7 @@ export function ConstructionTaskDetailsPage({
 				<div className="relative flex h-14 items-center justify-between border-b px-8">
 					{/* Linear-style gradient border */}
 					<div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
-					
+
 					<div className="flex items-center gap-4">
 						<Button
 							variant="ghost"
@@ -701,7 +700,7 @@ export function ConstructionTaskDetailsPage({
 							</div>
 							<ConstructionTaskAttachmentsGrid
 								task={task}
-								onAttachmentsUpdate={() => {}}
+								onAttachmentsUpdate={() => { }}
 							/>
 						</div>
 

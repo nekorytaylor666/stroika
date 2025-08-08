@@ -25,4 +25,3 @@ To generate PWA icons, you can use one of these methods:
 
 For now, the app will work with the SVG favicon.
 `);
-

@@ -1,6 +1,7 @@
 "use client";
 
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
 import { useFilterStore } from "@/store/filter-store";
@@ -18,9 +19,8 @@ import { ConstructionGroupIssues } from "./construction-group-issues";
 import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
 import { LinearKanbanBoard } from "./linear-kanban-board";
-import { SearchConstructionTasks } from "./search-construction-tasks";
 import { MobileTaskListWrapper } from "./mobile/mobile-task-list-wrapper";
-import { useMobile } from "@/hooks/use-mobile";
+import { SearchConstructionTasks } from "./search-construction-tasks";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -69,7 +69,9 @@ interface ConstructionTasksProps {
 	projectId?: string;
 }
 
-export default function ConstructionTasks({ projectId }: ConstructionTasksProps = {}) {
+export default function ConstructionTasks({
+	projectId,
+}: ConstructionTasksProps = {}) {
 	const { isSearchOpen, searchQuery } = useSearchStore();
 	const { viewType } = useViewStore();
 	const { hasActiveFilters } = useFilterStore();
@@ -114,9 +116,15 @@ export default function ConstructionTasks({ projectId }: ConstructionTasksProps 
 						<SearchConstructionTasks />
 					</div>
 				) : isFiltering ? (
-					<FilteredConstructionTasksView isViewTypeGrid={isViewTypeGrid} projectId={projectId} />
+					<FilteredConstructionTasksView
+						isViewTypeGrid={isViewTypeGrid}
+						projectId={projectId}
+					/>
 				) : (
-					<GroupConstructionTasksListView isViewTypeGrid={isViewTypeGrid} projectId={projectId} />
+					<GroupConstructionTasksListView
+						isViewTypeGrid={isViewTypeGrid}
+						projectId={projectId}
+					/>
 				)}
 			</div>
 			<ConstructionTaskDetails
@@ -181,7 +189,7 @@ const FilteredConstructionTasksView: FC<{
 				(task) => task.projectId && filters.project.includes(task.projectId),
 			);
 		}
-		
+
 		// Filter by projectId prop (for project-specific views)
 		if (projectId) {
 			result = result.filter(

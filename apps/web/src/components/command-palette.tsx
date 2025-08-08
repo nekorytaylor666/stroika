@@ -79,14 +79,11 @@ export function CommandPalette() {
 				router.navigate({ to: `/issues/${orgId}/team/all/all` });
 				// Open task modal after navigation
 			} else {
-				router.navigate({ to: `/construction/${orgId}/tasks` });
-				setTimeout(() => {
-					setSelectedTaskId(taskId as any);
-				}, 100);
+				router.navigate({ to: `/construction/${orgId}/tasks/${taskId}` });
 			}
 			closeCommandPalette();
 		},
-		[orgId, router.navigate, setSelectedTaskId, closeCommandPalette],
+		[orgId, router.navigate, closeCommandPalette],
 	);
 
 	const handleProjectClick = useCallback(

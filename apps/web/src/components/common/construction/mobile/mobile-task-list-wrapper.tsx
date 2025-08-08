@@ -10,7 +10,9 @@ interface MobileTaskListWrapperProps {
 	projectId?: string;
 }
 
-export function MobileTaskListWrapper({ projectId }: MobileTaskListWrapperProps) {
+export function MobileTaskListWrapper({
+	projectId,
+}: MobileTaskListWrapperProps) {
 	const { tasks, statuses, priorities, users } = useConstructionData();
 	const { searchQuery } = useSearchStore();
 	const { filters } = useFilterStore();
@@ -20,8 +22,8 @@ export function MobileTaskListWrapper({ projectId }: MobileTaskListWrapperProps)
 			<div className="flex h-full items-center justify-center">
 				<div className="text-center">
 					<div className="animate-pulse">
-						<div className="h-8 w-32 bg-muted rounded mb-2" />
-						<div className="h-4 w-48 bg-muted rounded" />
+						<div className="mb-2 h-8 w-32 rounded bg-muted" />
+						<div className="h-4 w-48 rounded bg-muted" />
 					</div>
 				</div>
 			</div>

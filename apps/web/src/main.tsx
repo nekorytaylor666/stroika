@@ -33,10 +33,12 @@ function App() {
 	// Update theme color meta tag based on current theme
 	React.useEffect(() => {
 		const updateThemeColor = () => {
-			const isDark = document.documentElement.classList.contains('dark');
-			const themeColorMeta = document.querySelector('meta[name="theme-color"]:not([media])');
+			const isDark = document.documentElement.classList.contains("dark");
+			const themeColorMeta = document.querySelector(
+				'meta[name="theme-color"]:not([media])',
+			);
 			if (themeColorMeta) {
-				themeColorMeta.setAttribute('content', isDark ? '#101011' : '#ffffff');
+				themeColorMeta.setAttribute("content", isDark ? "#101011" : "#ffffff");
 			}
 		};
 
@@ -45,7 +47,10 @@ function App() {
 		// Watch for theme changes
 		const observer = new MutationObserver((mutations) => {
 			mutations.forEach((mutation) => {
-				if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+				if (
+					mutation.type === "attributes" &&
+					mutation.attributeName === "class"
+				) {
 					updateThemeColor();
 				}
 			});
@@ -53,7 +58,7 @@ function App() {
 
 		observer.observe(document.documentElement, {
 			attributes: true,
-			attributeFilter: ['class']
+			attributeFilter: ["class"],
 		});
 
 		return () => observer.disconnect();

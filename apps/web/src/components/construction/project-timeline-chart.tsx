@@ -116,7 +116,7 @@ export function ProjectTimelineChart({
 		// Get all tasks to track when they were created
 		const allTasks = timelineDataQuery.tasks || [];
 		const completedTasks = timelineDataQuery.completedTasks || [];
-		
+
 		for (const date of days) {
 			const dayEnd = endOfDay(date);
 
@@ -289,7 +289,10 @@ export function ProjectTimelineChart({
 				<div className="h-[200px]">
 					<ResponsiveContainer width="100%" height="100%">
 						<ComposedChart data={timelineData}>
-							<CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+							<CartesianGrid
+								strokeDasharray="3 3"
+								stroke="hsl(var(--border))"
+							/>
 							<XAxis
 								dataKey="date"
 								stroke="hsl(var(--muted-foreground))"
@@ -397,7 +400,9 @@ export function ProjectTimelineChart({
 									style={{ backgroundColor: "#3B82F6", opacity: 0.3 }}
 								/>
 							</div>
-							<span className="text-muted-foreground text-xs">Запланировано</span>
+							<span className="text-muted-foreground text-xs">
+								Запланировано
+							</span>
 						</div>
 						<div className="flex items-center gap-2">
 							<div className="flex items-center gap-1">

@@ -1,8 +1,8 @@
 import { CreateIssueModalProvider } from "@/components/common/issues/create-issue-modal-provider";
 import { AppSidebar } from "@/components/layout/sidebar/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import { useMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import { MobileNavigation } from "./mobile/mobile-navigation";
 
 interface MainLayoutProps {
@@ -29,9 +29,7 @@ export default function MainLayout({
 			<MobileNavigation>
 				<div className="flex h-full w-full flex-col items-center justify-start overflow-hidden bg-container">
 					{header}
-					<div className="w-full overflow-auto">
-						{children}
-					</div>
+					<div className="w-full overflow-auto">{children}</div>
 				</div>
 			</MobileNavigation>
 		);

@@ -59,12 +59,12 @@ function ConstructionTasksPage() {
 							}}
 							onFocus={() => {
 								const { setIsSearchOpen } = useSearchStore.getState();
-								setIsSearchOpen(true)
+								setIsSearchOpen(true);
 							}}
 							onBlur={(e) => {
 								if (e.target.value === "") {
 									const { setIsSearchOpen } = useSearchStore.getState();
-									setIsSearchOpen(false)
+									setIsSearchOpen(false);
 								}
 							}}
 						/>
@@ -81,5 +81,5 @@ function ConstructionTasksPage() {
 				<ConstructionTasks />
 			</div>
 		</div>
-	)
+	);
 }
