@@ -98,8 +98,9 @@ export const createInvite = mutation({
 				)
 				.first();
 
-			if (existingMembership) {
-				throw new Error("User is already a member of this organization");
+			// Only prevent invite if membership exists AND is active
+			if (existingMembership && existingMembership.isActive) {
+				throw new Error("User is already an active member of this organization");
 			}
 		}
 
@@ -273,7 +274,7 @@ export const acceptInvite = mutation({
 			throw new Error("This invite is for a different email address");
 		}
 
-		// Check if user is already a member
+		// Check if user already has a membership
 		const existingMembership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_user", (q) =>
@@ -282,18 +283,27 @@ export const acceptInvite = mutation({
 			.first();
 
 		if (existingMembership) {
-			throw new Error("You are already a member of this organization");
+			if (existingMembership.isActive) {
+				throw new Error("You are already an active member of this organization");
+			}
+			// Reactivate existing inactive membership
+			await ctx.db.patch(existingMembership._id, {
+				isActive: true,
+				roleId: invite.roleId,
+				joinedAt: Date.now(),
+				invitedBy: invite.invitedBy,
+			});
+		} else {
+			// Add user to organization with new membership
+			await ctx.db.insert("organizationMembers", {
+				organizationId: invite.organizationId,
+				userId: user._id,
+				roleId: invite.roleId,
+				joinedAt: Date.now(),
+				invitedBy: invite.invitedBy,
+				isActive: true,
+			});
 		}
-
-		// Add user to organization
-		await ctx.db.insert("organizationMembers", {
-			organizationId: invite.organizationId,
-			userId: user._id,
-			roleId: invite.roleId,
-			joinedAt: Date.now(),
-			invitedBy: invite.invitedBy,
-			isActive: true,
-		});
 
 		// Update invite status
 		await ctx.db.patch(invite._id, {
