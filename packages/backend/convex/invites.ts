@@ -195,37 +195,34 @@ export const getInviteByCode = query({
 export const acceptInvite = mutation({
 	args: { inviteCode: v.string() },
 	handler: async (ctx, args) => {
-		// First try to get user by auth ID
+		// Get authenticated user ID
 		const authUserId = await auth.getUserId(ctx);
-		let user = authUserId ? await ctx.db.get(authUserId) : null;
-		
-		// If no user found by auth ID, try using identity
-		if (!user) {
-			const identity = await ctx.auth.getUserIdentity();
-			if (!identity) {
-				throw new Error("Not authenticated");
-			}
-
-			// Extract email from identity object safely
-			const identityEmail =
-				(typeof identity.email === "string" ? identity.email : null) ||
-				(typeof identity.preferredUsername === "string"
-					? identity.preferredUsername
-					: null) ||
-				(typeof identity.emailVerified === "string"
-					? identity.emailVerified
-					: null);
-
-			if (!identityEmail) {
-				throw new Error("No email found in authentication identity");
-			}
-
-			// Try to find user by email
-			user = await ctx.db
-				.query("users")
-				.withIndex("by_email", (q) => q.eq("email", identityEmail))
-				.first();
+		if (!authUserId) {
+			throw new Error("Not authenticated");
 		}
+		
+		// Get the auth user data to get email and name
+		const authUser = await ctx.db.get(authUserId);
+		if (!authUser) {
+			throw new Error("Auth user not found");
+		}
+		
+		// Extract email and name from auth user
+		const userEmail = (authUser as any).email || (authUser as any).profile?.email;
+		const userName = (authUser as any).name || (authUser as any).profile?.name;
+		
+		if (!userEmail) {
+			// Fallback to identity if no email in auth user
+			const identity = await ctx.auth.getUserIdentity();
+			console.log("Identity for fallback:", JSON.stringify(identity, null, 2));
+			throw new Error("No email found in user profile. Please ensure your account has an email address.");
+		}
+		
+		// Try to find existing user in users table by email
+		let user = await ctx.db
+			.query("users")
+			.withIndex("by_email", (q) => q.eq("email", userEmail))
+			.first();
 
 		// Get the invite
 		const invite = await ctx.db
@@ -249,44 +246,18 @@ export const acceptInvite = mutation({
 
 		// Create user if doesn't exist
 		if (!user) {
-			// Get identity if we don't have it yet
-			const identity = await ctx.auth.getUserIdentity();
-			if (!identity) {
-				throw new Error("Not authenticated - cannot create user");
-			}
-
-			// Extract email from identity object safely
-			const identityEmail =
-				(typeof identity.email === "string" ? identity.email : null) ||
-				(typeof identity.preferredUsername === "string"
-					? identity.preferredUsername
-					: null) ||
-				(typeof identity.emailVerified === "string"
-					? identity.emailVerified
-					: null);
-
-			if (!identityEmail) {
-				throw new Error("No email found in authentication identity - cannot create user");
-			}
-
-			// Extract other identity properties safely
-			const identityName = typeof identity.name === "string" ? identity.name : undefined;
-			const identityPicture = typeof identity.pictureUrl === "string" ? identity.pictureUrl : undefined;
-			const identitySubject = typeof identity.subject === "string" ? identity.subject : undefined;
-			const identityTokenId = typeof identity.tokenIdentifier === "string" ? identity.tokenIdentifier : undefined;
-
-			// Create new user
+			// Create new user with data from auth user
 			const userId = await ctx.db.insert("users", {
-				name: identityName || identityEmail.split("@")[0],
-				email: identityEmail,
+				name: userName || userEmail.split("@")[0],
+				email: userEmail,
 				avatarUrl:
-					identityPicture ||
-					`https://api.dicebear.com/7.x/avataaars/svg?seed=${identityEmail}`,
+					(authUser as any).avatarUrl ||
+					(authUser as any).profile?.avatarUrl ||
+					`https://api.dicebear.com/7.x/avataaars/svg?seed=${userEmail}`,
 				status: "online",
 				joinedDate: new Date().toISOString(),
 				teamIds: [],
-				authId: identitySubject,
-				tokenIdentifier: identityTokenId,
+				authId: authUserId,
 				isActive: true,
 				lastLogin: new Date().toISOString(),
 			});

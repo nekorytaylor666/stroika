@@ -324,17 +324,13 @@ export const removeMember = mutation({
 		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		// Get current user using auth helper
+		const authUserId = await auth.getUserId(ctx);
+		if (!authUserId) {
 			throw new Error("Not authenticated");
 		}
 
-		// Check if user has permission
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
+		const user = await ctx.db.get(authUserId);
 		if (!user) {
 			throw new Error("User not found");
 		}
