@@ -221,10 +221,16 @@ export const getUserOrganizations = query({
 				(typeof identity.subject === "string" ? identity.subject : null);
 
 			if (email) {
-				user = await ctx.db
+				// Get all users with this email
+				const usersWithEmail = await ctx.db
 					.query("users")
 					.withIndex("by_email", (q) => q.eq("email", email))
-					.first();
+					.collect();
+				
+				if (usersWithEmail.length > 0) {
+					// Prefer user with currentOrganizationId set
+					user = usersWithEmail.find(u => u.currentOrganizationId) || usersWithEmail[0];
+				}
 			}
 		}
 
