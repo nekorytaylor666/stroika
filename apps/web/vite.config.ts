@@ -35,12 +35,26 @@ export default defineConfig({
 			},
 			workbox: {
 				globPatterns: ["**/*.{js,css,html,ico,png,svg,json,woff,woff2}"],
-				navigateFallback: "offline.html",
-				navigateFallbackDenylist: [/^\/api/],
+				navigateFallback: null,
+				navigateFallbackDenylist: [/^\/api/, /^\/$/],
 				// Import custom service worker code
 				importScripts: ["sw-push.js"],
 				// Use NetworkFirst for API calls (Convex)
 				runtimeCaching: [
+					{
+						urlPattern: ({ request }) => request.mode === 'navigate',
+						handler: 'NetworkFirst',
+						options: {
+							cacheName: 'pages',
+							plugins: [
+								{
+									handlerDidError: async () => {
+										return caches.match('/offline.html');
+									},
+								},
+							],
+						},
+					},
 					{
 						urlPattern: /^https:\/\/.*\.convex\.cloud\/.*/i,
 						handler: "NetworkFirst",
