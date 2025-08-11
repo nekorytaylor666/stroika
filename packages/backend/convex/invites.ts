@@ -220,25 +220,45 @@ export const acceptInvite = mutation({
 			throw new Error("Invite has already been used");
 		}
 
+		// Extract email from identity object safely
+		const identityEmail =
+			(typeof identity.email === "string" ? identity.email : null) ||
+			(typeof identity.preferredUsername === "string"
+				? identity.preferredUsername
+				: null) ||
+			(typeof identity.emailVerified === "string"
+				? identity.emailVerified
+				: null);
+
+		if (!identityEmail) {
+			throw new Error("No email found in authentication identity");
+		}
+
 		// Get or create user
 		let user = await ctx.db
 			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
+			.withIndex("by_email", (q) => q.eq("email", identityEmail))
 			.first();
 
 		if (!user) {
+			// Extract other identity properties safely
+			const identityName = typeof identity.name === "string" ? identity.name : null;
+			const identityPicture = typeof identity.pictureUrl === "string" ? identity.pictureUrl : null;
+			const identitySubject = typeof identity.subject === "string" ? identity.subject : null;
+			const identityTokenId = typeof identity.tokenIdentifier === "string" ? identity.tokenIdentifier : null;
+
 			// Create new user
 			const userId = await ctx.db.insert("users", {
-				name: identity.name || identity.email!.split("@")[0],
-				email: identity.email!,
+				name: identityName || identityEmail.split("@")[0],
+				email: identityEmail,
 				avatarUrl:
-					identity.pictureUrl ||
-					`https://api.dicebear.com/7.x/avataaars/svg?seed=${identity.email}`,
+					identityPicture ||
+					`https://api.dicebear.com/7.x/avataaars/svg?seed=${identityEmail}`,
 				status: "online",
 				joinedDate: new Date().toISOString(),
 				teamIds: [],
-				authId: identity.subject,
-				tokenIdentifier: identity.tokenIdentifier,
+				authId: identitySubject,
+				tokenIdentifier: identityTokenId,
 				isActive: true,
 				lastLogin: new Date().toISOString(),
 			});
