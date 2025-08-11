@@ -31,6 +31,14 @@ export const Route = createFileRoute("/")({
 		}
 		console.log("organizations", organizations);
 
+		// If user has no organizations, redirect to auth or a setup page
+		if (!organizations || organizations.length === 0) {
+			// You could redirect to an onboarding page or auth page
+			return redirect({
+				to: "/auth",
+			});
+		}
+
 		return redirect({
 			to: "/construction/$orgId/inbox",
 			params: {
