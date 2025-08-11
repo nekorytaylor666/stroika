@@ -1,5 +1,15 @@
 "use client";
 
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,8 +20,9 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Check, Clock, Copy, Link, Plus, UserCheck, Users } from "lucide-react";
+import { Check, Clock, Copy, Link, Plus, Trash2, UserCheck, Users } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../../../../../packages/backend/convex/_generated/api";
 import InviteMemberModal from "./invite-member-modal";
 import MemberLine from "./member-line";
@@ -22,6 +33,7 @@ export default function Members() {
 	const [activeTab, setActiveTab] = useState("members");
 	const [selectedInvite, setSelectedInvite] = useState<typeof invites extends (infer T)[] | null | undefined ? T : never | null>(null);
 	const [copied, setCopied] = useState(false);
+	const [memberToDelete, setMemberToDelete] = useState<{ id: Id<"users">; name: string } | null>(null);
 
 	// Fetch organization members
 	const members = useQuery(api.organizationMembers.list, {
@@ -36,6 +48,9 @@ export default function Members() {
 
 	// Cancel invite mutation
 	const cancelInvite = useMutation(api.invites.cancelInvite);
+	
+	// Remove member mutation
+	const removeMember = useMutation(api.organizationMembers.removeMember);
 
 	const handleCancelInvite = async (inviteId: Id<"organizationInvites">) => {
 		try {
@@ -51,6 +66,21 @@ export default function Members() {
 			navigator.clipboard.writeText(inviteUrl);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
+		}
+	};
+
+	const handleDeleteMember = async () => {
+		if (!memberToDelete) return;
+		
+		try {
+			await removeMember({
+				organizationId: params.orgId as Id<"organizations">,
+				userId: memberToDelete.id,
+			});
+			toast.success(`${memberToDelete.name} has been removed from the organization`);
+			setMemberToDelete(null);
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "Failed to remove member");
 		}
 	};
 
@@ -83,35 +113,50 @@ export default function Members() {
 
 					<TabsContent value="members" className="mt-4">
 						<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
-							<div className="w-[70%] md:w-[60%] lg:w-[55%]">Name</div>
-							<div className="w-[30%] md:w-[20%] lg:w-[15%]">Role</div>
+							<div className="w-[65%] md:w-[55%] lg:w-[50%]">Name</div>
+							<div className="w-[25%] md:w-[20%] lg:w-[15%]">Role</div>
 							<div className="hidden w-[15%] lg:block">Joined</div>
-							<div className="hidden w-[30%] md:block md:w-[20%] lg:w-[15%]">
+							<div className="hidden w-[25%] md:block md:w-[20%] lg:w-[15%]">
 								Teams
 							</div>
+							<div className="w-[10%] md:w-[5%] lg:w-[5%]"></div>
 						</div>
 
 						<div className="w-full">
 							{members?.map(
 								(member) =>
 									member.user && (
-										<MemberLine
-											key={member._id}
-											memberId={member._id}
-											user={{
-												id: member.user._id,
-												name: member.user.name,
-												email: member.user.email,
-												avatarUrl: member.user.avatarUrl,
-												status: member.user.status,
-												role:
-													member.role?.displayName ||
-													member.role?.name ||
-													"Member",
-												joinedDate: new Date(member.joinedAt).toISOString(),
-												teamIds: member.teams.map((t) => t._id),
-											}}
-										/>
+										<div key={member._id} className="group flex w-full items-center border-muted-foreground/5 border-b text-sm last:border-b-0 hover:bg-sidebar/50">
+											<MemberLine
+												memberId={member._id}
+												user={{
+													id: member.user._id,
+													name: member.user.name,
+													email: member.user.email,
+													avatarUrl: member.user.avatarUrl,
+													status: member.user.status,
+													role:
+														member.role?.displayName ||
+														member.role?.name ||
+														"Member",
+													joinedDate: new Date(member.joinedAt).toISOString(),
+													teamIds: member.teams.map((t) => t._id),
+												}}
+											/>
+											<div className="w-[10%] px-2 md:w-[5%] lg:w-[5%]">
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={(e) => {
+														e.stopPropagation();
+														setMemberToDelete({ id: member.user._id, name: member.user.name });
+													}}
+													className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+												>
+													<Trash2 className="h-4 w-4" />
+												</Button>
+											</div>
+										</div>
 									),
 							)}
 						</div>
@@ -263,6 +308,27 @@ export default function Members() {
 					)}
 				</DialogContent>
 			</Dialog>
+
+			<AlertDialog open={!!memberToDelete} onOpenChange={(open) => !open && setMemberToDelete(null)}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Remove Member</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to remove <strong>{memberToDelete?.name}</strong> from the organization?
+							This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDeleteMember}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Remove
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

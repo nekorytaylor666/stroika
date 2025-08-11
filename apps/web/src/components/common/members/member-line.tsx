@@ -24,9 +24,9 @@ export default function MemberLine({ user, memberId }: MemberLineProps) {
 		<Link
 			to="/construction/$orgId/member/$memberId"
 			params={{ orgId: params.orgId, memberId }}
-			className="flex w-full cursor-pointer items-center border-muted-foreground/5 border-b px-6 py-3 text-sm transition-colors last:border-b-0 hover:bg-sidebar/50"
+			className="flex flex-1 cursor-pointer items-center px-6 py-3 text-sm transition-colors"
 		>
-			<div className="flex w-[70%] items-center gap-2 md:w-[60%] lg:w-[55%]">
+			<div className="flex w-[65%] items-center gap-2 md:w-[55%] lg:w-[50%]">
 				<div className="relative">
 					<Avatar className="size-8 shrink-0">
 						<AvatarImage src={user.avatarUrl} alt={user.name} />
@@ -46,13 +46,13 @@ export default function MemberLine({ user, memberId }: MemberLineProps) {
 					</span>
 				</div>
 			</div>
-			<div className="w-[30%] text-muted-foreground text-xs md:w-[20%] lg:w-[15%]">
+			<div className="w-[25%] text-muted-foreground text-xs md:w-[20%] lg:w-[15%]">
 				{user.role}
 			</div>
 			<div className="hidden w-[15%] text-muted-foreground text-xs lg:block">
 				{format(new Date(user.joinedDate), "MMM yyyy")}
 			</div>
-			<div className="hidden w-[30%] text-muted-foreground text-xs md:flex md:w-[20%] lg:w-[15%]">
+			<div className="hidden w-[25%] text-muted-foreground text-xs md:flex md:w-[20%] lg:w-[15%]">
 				<TeamsTooltip teamIds={user.teamIds} />
 			</div>
 		</Link>
