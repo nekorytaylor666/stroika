@@ -5,7 +5,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { Building, Loader2 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 export const Route = createFileRoute("/invite/$code")({
 	component: InvitePage,
@@ -14,13 +14,29 @@ export const Route = createFileRoute("/invite/$code")({
 function InvitePage() {
 	const { code } = Route.useParams();
 	const navigate = useNavigate();
-	const { isAuthenticated } = useConvexAuth();
+	const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
 	const [isAccepting, setIsAccepting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [hasTriedAccept, setHasTriedAccept] = useState(false);
 
 	// Query invite details
 	const invite = useQuery(api.invites.getInviteByCode, { inviteCode: code });
 	const acceptInvite = useMutation(api.invites.acceptInvite);
+
+	// Auto-redirect to auth if not authenticated (after auth loading completes)
+	React.useEffect(() => {
+		if (!isAuthLoading && !isAuthenticated && invite && !invite.isExpired && invite.status === "pending") {
+			// Redirect to auth page with return URL
+			navigate({ to: "/auth", search: { returnTo: `/invite/${code}` } });
+		}
+	}, [isAuthLoading, isAuthenticated, invite, code, navigate]);
+
+	// Auto-accept invite if authenticated and haven't tried yet
+	React.useEffect(() => {
+		if (isAuthenticated && invite && !invite.isExpired && invite.status === "pending" && !isAccepting && !hasTriedAccept) {
+			handleAcceptInvite();
+		}
+	}, [isAuthenticated, invite, isAccepting, hasTriedAccept]);
 
 	const handleAcceptInvite = async () => {
 		if (!isAuthenticated) {
@@ -31,12 +47,15 @@ function InvitePage() {
 
 		setIsAccepting(true);
 		setError(null);
+		setHasTriedAccept(true);
 
 		try {
 			const result = await acceptInvite({ inviteCode: code });
-			// Redirect to the organization
+			// Redirect to the organization inbox
+			const orgId = invite?.organizationId || result.organizationId;
 			navigate({
-				to: `/construction/${invite?.organization?.slug || result.organizationId}`,
+				to: "/construction/$orgId/inbox",
+				params: { orgId },
 			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Failed to accept invite");

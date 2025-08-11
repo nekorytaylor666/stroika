@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@stroika/backend";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useConvex, useQuery } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 export function AuthForm() {
 	const { signIn } = useAuthActions();
 	const navigate = useNavigate();
+	const searchParams = useSearch({ from: "/auth" });
 	const [isLoading, setIsLoading] = useState(false);
 	const convex = useConvex();
 
@@ -37,14 +38,27 @@ export function AuthForm() {
 			toast.success(
 				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
 			);
-			const organizations = await convex.query(
-				api.organizations.getUserOrganizations,
-			);
-			// Redirect to construction tasks after successful authentication
-			navigate({
-				to: "/construction/$orgId/inbox",
-				params: { orgId: organizations[0]._id },
-			});
+			
+			// Check if there's a returnTo parameter
+			const returnTo = (searchParams as any)?.returnTo;
+			if (returnTo) {
+				// Redirect to the return URL (e.g., invite page)
+				navigate({ to: returnTo });
+			} else {
+				// Default redirect to construction tasks
+				const organizations = await convex.query(
+					api.organizations.getUserOrganizations,
+				);
+				if (organizations && organizations.length > 0) {
+					navigate({
+						to: "/construction/$orgId/inbox",
+						params: { orgId: organizations[0]._id },
+					});
+				} else {
+					// If no organizations, stay on auth page
+					toast.info("Пожалуйста, дождитесь приглашения в организацию");
+				}
+			}
 		} catch (error) {
 			toast.error(
 				error instanceof Error

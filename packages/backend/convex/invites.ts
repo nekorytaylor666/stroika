@@ -195,9 +195,36 @@ export const getInviteByCode = query({
 export const acceptInvite = mutation({
 	args: { inviteCode: v.string() },
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
+		// First try to get user by auth ID
+		const authUserId = await auth.getUserId(ctx);
+		let user = authUserId ? await ctx.db.get(authUserId) : null;
+		
+		// If no user found by auth ID, try using identity
+		if (!user) {
+			const identity = await ctx.auth.getUserIdentity();
+			if (!identity) {
+				throw new Error("Not authenticated");
+			}
+
+			// Extract email from identity object safely
+			const identityEmail =
+				(typeof identity.email === "string" ? identity.email : null) ||
+				(typeof identity.preferredUsername === "string"
+					? identity.preferredUsername
+					: null) ||
+				(typeof identity.emailVerified === "string"
+					? identity.emailVerified
+					: null);
+
+			if (!identityEmail) {
+				throw new Error("No email found in authentication identity");
+			}
+
+			// Try to find user by email
+			user = await ctx.db
+				.query("users")
+				.withIndex("by_email", (q) => q.eq("email", identityEmail))
+				.first();
 		}
 
 		// Get the invite
@@ -220,27 +247,28 @@ export const acceptInvite = mutation({
 			throw new Error("Invite has already been used");
 		}
 
-		// Extract email from identity object safely
-		const identityEmail =
-			(typeof identity.email === "string" ? identity.email : null) ||
-			(typeof identity.preferredUsername === "string"
-				? identity.preferredUsername
-				: null) ||
-			(typeof identity.emailVerified === "string"
-				? identity.emailVerified
-				: null);
-
-		if (!identityEmail) {
-			throw new Error("No email found in authentication identity");
-		}
-
-		// Get or create user
-		let user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identityEmail))
-			.first();
-
+		// Create user if doesn't exist
 		if (!user) {
+			// Get identity if we don't have it yet
+			const identity = await ctx.auth.getUserIdentity();
+			if (!identity) {
+				throw new Error("Not authenticated - cannot create user");
+			}
+
+			// Extract email from identity object safely
+			const identityEmail =
+				(typeof identity.email === "string" ? identity.email : null) ||
+				(typeof identity.preferredUsername === "string"
+					? identity.preferredUsername
+					: null) ||
+				(typeof identity.emailVerified === "string"
+					? identity.emailVerified
+					: null);
+
+			if (!identityEmail) {
+				throw new Error("No email found in authentication identity - cannot create user");
+			}
+
 			// Extract other identity properties safely
 			const identityName = typeof identity.name === "string" ? identity.name : undefined;
 			const identityPicture = typeof identity.pictureUrl === "string" ? identity.pictureUrl : undefined;
