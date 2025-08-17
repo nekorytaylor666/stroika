@@ -7,31 +7,22 @@ export const viewer = query({
 	handler: async (ctx) => {
 		// Try to get userId from auth
 		const userId = await auth.getUserId(ctx);
-		console.log("[viewer] Auth userId:", userId);
 
 		if (userId) {
 			// Try to get user by auth user ID
 			const userByAuthId = await ctx.db.get(userId);
 			if (userByAuthId) {
-				console.log("[viewer] Found user by auth ID");
 				return userByAuthId;
 			}
 		}
 
 		// Fall back to getUserIdentity
 		const identity = await ctx.auth.getUserIdentity();
-		console.log("[viewer] Identity check:", identity ? "Found" : "Not found");
 
 		if (!identity) {
-			console.log("[viewer] No identity, returning null");
 			return null;
 		}
 
-		// Log identity for debugging
-		console.log(
-			"[viewer] Full identity object:",
-			JSON.stringify(identity, null, 2),
-		);
 
 		// Try multiple fields for email - ensure it's a string
 		const email =
@@ -48,10 +39,8 @@ export const viewer = query({
 				: null) ||
 			(typeof identity.sub === "string" ? identity.sub : null);
 
-		console.log("[viewer] Extracted email:", email);
 
 		if (!email) {
-			console.log("[viewer] No email found in identity");
 			return null;
 		}
 
@@ -61,10 +50,6 @@ export const viewer = query({
 			.withIndex("by_email", (q) => q.eq("email", email))
 			.first();
 
-		console.log(
-			"[viewer] User lookup result:",
-			user ? `Found user ${user._id}` : "No user found",
-		);
 
 		return user;
 	},
@@ -79,11 +64,9 @@ export const getAll = query({
 			throw new Error("Not authenticated");
 		}
 
-		console.log("[users.getAll] Identity email:", identity.email);
 
 		// Get the user using auth.getUserId instead of email lookup
 		const authUserId = await auth.getUserId(ctx);
-		console.log("[users.getAll] Auth user ID:", authUserId);
 
 		if (!authUserId) {
 			throw new Error("Not authenticated");
@@ -91,16 +74,8 @@ export const getAll = query({
 
 		const user = await ctx.db.get(authUserId);
 
-		console.log("[users.getAll] User:", user);
-		console.log(
-			"[users.getAll] Current organization ID:",
-			user?.currentOrganizationId,
-		);
 
 		if (!user || !user.currentOrganizationId) {
-			console.log(
-				"[users.getAll] No user or no currentOrganizationId, returning empty array",
-			);
 			// Return empty array if user doesn't exist or has no organization
 			return [];
 		}
@@ -114,10 +89,6 @@ export const getAll = query({
 			.filter((q) => q.eq(q.field("isActive"), true))
 			.collect();
 
-		console.log(
-			"[users.getAll] Organization members found:",
-			orgMembers.length,
-		);
 
 		// Get user details for each member
 		const users = await Promise.all(
@@ -128,7 +99,6 @@ export const getAll = query({
 		);
 
 		const filteredUsers = users.filter(Boolean);
-		console.log("[users.getAll] Returning users:", filteredUsers.length);
 
 		return filteredUsers;
 	},

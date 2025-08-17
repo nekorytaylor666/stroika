@@ -326,7 +326,6 @@ export const create = mutation({
 			...args,
 			organizationId: organization._id,
 		});
-		console.log("project", project);
 
 		return project;
 	},

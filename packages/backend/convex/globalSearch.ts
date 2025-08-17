@@ -19,10 +19,6 @@ export const search = query({
 		const searchTerm = args.query.toLowerCase().trim();
 		const category = args.category || "all";
 
-		console.log(
-			`Search query: "${args.query}" -> searchTerm: "${searchTerm}", category: "${category}"`,
-		);
-		console.log(`Search term length: ${searchTerm.length}`);
 
 		if (searchTerm === "") {
 			return {
@@ -58,18 +54,7 @@ export const search = query({
 				(issue) => !issue.isConstructionTask,
 			);
 
-			console.log(
-				`Found ${allIssues.length} total issues, ${regularTasks.length} regular tasks`,
-			);
 
-			// Log sample data for debugging
-			if (regularTasks.length > 0) {
-				console.log("Sample regular task:", {
-					title: regularTasks[0].title,
-					identifier: regularTasks[0].identifier,
-					description: regularTasks[0].description?.substring(0, 50),
-				});
-			}
 
 			const filteredTasks = regularTasks.filter((task: any) => {
 				// More robust search
@@ -86,18 +71,10 @@ export const search = query({
 				const identMatch = taskIdent.includes(searchStr);
 				const match = titleMatch || descMatch || identMatch;
 
-				if (match) {
-					console.log(
-						`Task match found: "${task.title}" (titleMatch: ${titleMatch}, descMatch: ${descMatch}, identMatch: ${identMatch})`,
-					);
-				}
 
 				return match;
 			});
 
-			console.log(
-				`Filtered tasks: ${filteredTasks.length}/${regularTasks.length}`,
-			);
 
 			results.tasks = filteredTasks.slice(0, 10).map((task: any) => {
 				const status = allStatuses.find((s: any) => s._id === task.statusId);
@@ -120,16 +97,7 @@ export const search = query({
 				(issue) => issue.isConstructionTask,
 			);
 
-			console.log(`Found ${constructionTasks.length} construction tasks`);
-			if (constructionTasks.length > 0) {
-				console.log("Sample construction task:", {
-					title: constructionTasks[0].title,
-					identifier: constructionTasks[0].identifier,
-					description: constructionTasks[0].description?.substring(0, 50),
-				});
-			}
 
-			let debugCount = 0;
 			const filteredConstructionTasks = constructionTasks.filter(
 				(task: any) => {
 					// More robust search
@@ -146,33 +114,12 @@ export const search = query({
 					const identMatch = taskIdent.includes(searchStr);
 					const match = titleMatch || descMatch || identMatch;
 
-					// Debug first few construction tasks
-					if (debugCount < 2) {
-						debugCount++;
-						console.log(`Testing construction task: "${task.title}"`, {
-							taskTitle,
-							taskDesc: taskDesc.substring(0, 30),
-							taskIdent,
-							searchStr,
-							titleMatch,
-							descMatch,
-							identMatch,
-						});
-					}
 
-					if (match) {
-						console.log(
-							`Construction task match found: "${task.title}" (titleMatch: ${titleMatch}, descMatch: ${descMatch}, identMatch: ${identMatch})`,
-						);
-					}
 
 					return match;
 				},
 			);
 
-			console.log(
-				`Filtered construction tasks: ${filteredConstructionTasks.length}/${constructionTasks.length}`,
-			);
 
 			// Process construction tasks synchronously to avoid timing issues
 			const processedConstructionTasks = filteredConstructionTasks
@@ -193,9 +140,6 @@ export const search = query({
 					};
 				});
 
-			console.log(
-				`Processed ${processedConstructionTasks.length} construction tasks`,
-			);
 
 			// Put construction tasks in BOTH results.constructionTasks AND results.tasks
 			// since in this system, "tasks" means construction tasks
@@ -205,9 +149,6 @@ export const search = query({
 			// This ensures the frontend can find them regardless of which array it checks
 			if (regularTasks.length === 0 && processedConstructionTasks.length > 0) {
 				results.tasks = processedConstructionTasks;
-				console.log(
-					`Also putting ${processedConstructionTasks.length} construction tasks in results.tasks`,
-				);
 			}
 		}
 
@@ -247,16 +188,7 @@ export const search = query({
 			const allUsers = await ctx.db.query("users").collect();
 			const allRoles = await ctx.db.query("roles").collect();
 
-			console.log(`Found ${allUsers.length} total users`);
-			if (allUsers.length > 0) {
-				console.log("Sample user:", {
-					name: allUsers[0].name,
-					email: allUsers[0].email,
-					position: allUsers[0].position,
-				});
-			}
 
-			let userDebugCount = 0;
 			const filteredUsers = allUsers.filter((user: any) => {
 				// More robust search that handles partial matches and encoding issues
 				const normalizeForSearch = (str: string) =>
@@ -273,29 +205,11 @@ export const search = query({
 				const positionMatch = userPosition.includes(searchStr);
 				const match = nameMatch || emailMatch || positionMatch;
 
-				// Debug first few users to understand the data
-				if (userDebugCount < 2) {
-					userDebugCount++;
-					console.log(`Testing user: "${user.name}"`, {
-						userName,
-						userEmail,
-						searchStr,
-						nameMatch,
-						emailMatch,
-						positionMatch,
-					});
-				}
 
-				if (match) {
-					console.log(
-						`User match found: "${user.name}" (nameMatch: ${nameMatch}, emailMatch: ${emailMatch}, positionMatch: ${positionMatch})`,
-					);
-				}
 
 				return match;
 			});
 
-			console.log(`Filtered users: ${filteredUsers.length}/${allUsers.length}`);
 
 			results.members = filteredUsers.slice(0, 10).map((user: any) => {
 				const role = allRoles.find((r: any) => r._id === user.roleId);
@@ -340,15 +254,6 @@ export const search = query({
 				}));
 		}
 
-		console.log("Final search results:", {
-			tasks: results.tasks.length,
-			constructionTasks: results.constructionTasks.length,
-			projects: results.projects.length,
-			constructionProjects: results.constructionProjects.length,
-			members: results.members.length,
-			teams: results.teams.length,
-			constructionTeams: results.constructionTeams.length,
-		});
 
 		return results;
 	},

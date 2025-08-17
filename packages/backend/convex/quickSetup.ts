@@ -11,7 +11,6 @@ export const joinAsOwner = mutation({
 			throw new Error("Not authenticated");
 		}
 
-		console.log("[joinAsOwner] Identity:", JSON.stringify(identity, null, 2));
 
 		// First try to get the user using auth.getUserId
 		const authUserId = await auth.getUserId(ctx);
@@ -24,7 +23,6 @@ export const joinAsOwner = mutation({
 			if (userById && "email" in userById) {
 				user = userById as any;
 				userEmail = user.email;
-				console.log("[joinAsOwner] Found user by auth ID:", user.email);
 			}
 		}
 
@@ -280,12 +278,6 @@ export const joinAsOwner = mutation({
 			await ctx.db.delete(tempOwner._id);
 		}
 
-		console.log("[joinAsOwner] Final state:", {
-			userId: user!._id,
-			organizationId: organization._id,
-			userEmail: user!.email,
-			membershipCreated: !!existingMembership || "new",
-		});
 
 		return {
 			message: "Successfully joined organization",

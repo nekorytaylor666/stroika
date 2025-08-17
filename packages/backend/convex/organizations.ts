@@ -234,11 +234,6 @@ export const getUserOrganizations = query({
 			return [];
 		}
 
-		console.log(
-			"[getUserOrganizations] Looking for memberships for user:",
-			user._id,
-			user.email,
-		);
 
 		// Get all organization memberships
 		const memberships = await ctx.db
@@ -247,10 +242,6 @@ export const getUserOrganizations = query({
 			.filter((q) => q.eq(q.field("isActive"), true))
 			.collect();
 
-		console.log(
-			"[getUserOrganizations] Found memberships:",
-			memberships.length,
-		);
 
 		// Get organization details for each membership
 		const organizations = await Promise.all(

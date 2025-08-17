@@ -257,8 +257,8 @@ export const acceptInvite = mutation({
 				status: "online",
 				joinedDate: new Date().toISOString(),
 				teamIds: [],
-				authId: identitySubject,
-				tokenIdentifier: identityTokenId,
+				authId: identitySubject || undefined,
+				tokenIdentifier: identityTokenId || undefined,
 				isActive: true,
 				lastLogin: new Date().toISOString(),
 			});

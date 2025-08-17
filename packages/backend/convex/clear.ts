@@ -48,7 +48,6 @@ export const all = mutation({
 				}
 				deletedCounts[table] = count;
 			} catch (error) {
-				console.log(`Error clearing table ${table}:`, error);
 				deletedCounts[table] = 0;
 			}
 		}
