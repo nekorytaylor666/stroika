@@ -114,7 +114,7 @@ export function ConstructionStatusSelector({
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Выберите статус..." />
+						<CommandInput autoFocus={false} placeholder="Выберите статус..." />
 						<CommandList>
 							<CommandEmpty>Статус не найден.</CommandEmpty>
 							<CommandGroup>

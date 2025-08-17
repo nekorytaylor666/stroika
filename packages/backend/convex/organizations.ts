@@ -234,14 +234,12 @@ export const getUserOrganizations = query({
 			return [];
 		}
 
-
 		// Get all organization memberships
 		const memberships = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_user", (q) => q.eq("userId", user._id))
 			.filter((q) => q.eq(q.field("isActive"), true))
 			.collect();
-
 
 		// Get organization details for each membership
 		const organizations = await Promise.all(

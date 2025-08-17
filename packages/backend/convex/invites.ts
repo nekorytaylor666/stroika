@@ -242,10 +242,16 @@ export const acceptInvite = mutation({
 
 		if (!user) {
 			// Extract other identity properties safely
-			const identityName = typeof identity.name === "string" ? identity.name : null;
-			const identityPicture = typeof identity.pictureUrl === "string" ? identity.pictureUrl : null;
-			const identitySubject = typeof identity.subject === "string" ? identity.subject : null;
-			const identityTokenId = typeof identity.tokenIdentifier === "string" ? identity.tokenIdentifier : null;
+			const identityName =
+				typeof identity.name === "string" ? identity.name : null;
+			const identityPicture =
+				typeof identity.pictureUrl === "string" ? identity.pictureUrl : null;
+			const identitySubject =
+				typeof identity.subject === "string" ? identity.subject : null;
+			const identityTokenId =
+				typeof identity.tokenIdentifier === "string"
+					? identity.tokenIdentifier
+					: null;
 
 			// Create new user
 			const userId = await ctx.db.insert("users", {

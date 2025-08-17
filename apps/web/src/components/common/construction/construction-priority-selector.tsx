@@ -14,9 +14,13 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { useConstructionData } from "@/hooks/use-construction-data";
+import { api } from "@stroika/backend";
+import type { Id } from "@stroika/backend";
+import { useMutation } from "convex/react";
 import {
 	AlertTriangle,
-	CheckIcon,
+	Check,
 	ChevronDown,
 	ChevronUp,
 	Minus,
@@ -67,6 +71,20 @@ export function ConstructionPrioritySelector({
 }: ConstructionPrioritySelectorProps) {
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
+	const { priorities } = useConstructionData();
+	const updatePriority = useMutation(api.constructionTasks.updatePriority);
+
+	const handlePriorityChange = async (priorityId: string) => {
+		try {
+			await updatePriority({
+				id: issueId as Id<"issues">,
+				priorityId: priorityId as Id<"priorities">,
+			});
+			setOpen(false);
+		} catch (error) {
+			console.error("Failed to update priority:", error);
+		}
+	};
 
 	return (
 		<div className="*:not-first:mt-2">
@@ -97,9 +115,21 @@ export function ConstructionPrioritySelector({
 						<CommandList>
 							<CommandEmpty>Приоритет не найден.</CommandEmpty>
 							<CommandGroup>
-								<CommandItem className="text-muted-foreground">
-									Изменение приоритета в разработке
-								</CommandItem>
+								{priorities?.map((p) => (
+									<CommandItem
+										key={p._id}
+										onSelect={() => handlePriorityChange(p._id)}
+										className="flex items-center justify-between"
+									>
+										<div className="flex items-center gap-2">
+											<PriorityIcon iconName={p.iconName} color={p.color} />
+											<span>{p.name}</span>
+										</div>
+										{priority._id === p._id && (
+											<Check className="h-3.5 w-3.5" />
+										)}
+									</CommandItem>
+								))}
 							</CommandGroup>
 						</CommandList>
 					</Command>

@@ -63,7 +63,7 @@ export function LabelSelector({
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Выберите метки..." />
+						<CommandInput autoFocus={false} placeholder="Выберите метки..." />
 						<CommandList>
 							<CommandEmpty>Метка не найдена.</CommandEmpty>
 							<CommandGroup>

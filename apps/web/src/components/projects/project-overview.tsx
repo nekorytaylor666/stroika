@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { differenceInDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -112,6 +113,7 @@ const priorityStyles = {
 };
 
 export function ProjectOverview({ project }: ProjectOverviewProps) {
+	const isMobile = useMobile();
 	const { stats } = project;
 	const notStarted = stats.scope - stats.inProgress - stats.completed;
 	const progressPercentage =
@@ -136,6 +138,385 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 		project.progressData ||
 		generateSampleProgressData(project.startDate, project.targetDate, stats);
 
+	// Mobile view
+	if (isMobile) {
+		return (
+			<div className="h-full overflow-auto bg-background">
+				<div className="space-y-4 p-4">
+					{/* Mobile Header */}
+					<motion.div
+						className="space-y-3"
+						initial={{ opacity: 0, y: -20 }}
+						animate={{ opacity: 1, y: 0 }}
+					>
+						<div className="flex items-start justify-between">
+							<div className="space-y-1">
+								<h1 className="font-semibold text-xl">{project.name}</h1>
+								{project.description && (
+									<p className="text-muted-foreground text-sm">{project.description}</p>
+								)}
+							</div>
+							<Button variant="ghost" size="icon" className="h-8 w-8">
+								<MoreHorizontal className="h-4 w-4" />
+							</Button>
+						</div>
+
+						{/* Status Bar - Mobile */}
+						<div className="flex flex-wrap items-center gap-2 text-xs">
+							<div
+								className={cn(
+									"flex items-center gap-1 rounded-md px-2 py-1",
+									statusStyles[project.status].bg,
+									statusStyles[project.status].borderColor,
+									"border",
+								)}
+							>
+								<StatusIcon
+									className={cn(
+										"h-3 w-3",
+										statusStyles[project.status].color,
+									)}
+								/>
+								<span className={statusStyles[project.status].color}>
+									{project.status}
+								</span>
+							</div>
+
+							{project.priority && (
+								<Badge
+									className={cn("border-0 text-xs", priorityStyles[project.priority])}
+								>
+									{project.priority}
+								</Badge>
+							)}
+
+							<div className="flex items-center gap-1">
+								<Calendar className="h-3 w-3 text-muted-foreground" />
+								<span className="text-muted-foreground">
+									{format(project.targetDate, "d MMM", { locale: ru })}
+								</span>
+							</div>
+						</div>
+					</motion.div>
+
+					<Separator />
+
+					{/* Quick Stats - Mobile */}
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ delay: 0.1 }}
+					>
+						<div className="grid grid-cols-3 gap-2">
+							<Card className="border-muted p-3">
+								<div className="space-y-1">
+									<p className="font-semibold text-xl">{stats.scope}</p>
+									<p className="text-muted-foreground text-xs">Total</p>
+								</div>
+							</Card>
+
+							<Card className="border-yellow-200 bg-yellow-50/50 p-3">
+								<div className="space-y-1">
+									<p className="font-semibold text-xl">{stats.inProgress}</p>
+									<p className="text-muted-foreground text-xs">Active</p>
+								</div>
+							</Card>
+
+							<Card className="border-green-200 bg-green-50/50 p-3">
+								<div className="space-y-1">
+									<p className="font-semibold text-xl">{stats.completed}</p>
+									<p className="text-muted-foreground text-xs">Done</p>
+								</div>
+							</Card>
+						</div>
+
+						{/* Progress Bar - Mobile */}
+						<div className="mt-4">
+							<div className="mb-2 flex items-center justify-between">
+								<span className="text-muted-foreground text-xs">Progress</span>
+								<span className="font-medium text-xs">
+									{Math.round(progressPercentage)}%
+								</span>
+							</div>
+							<div className="h-2 w-full rounded-full bg-muted">
+								<div
+									className="h-full rounded-full bg-green-500 transition-all"
+									style={{ width: `${progressPercentage}%` }}
+								/>
+							</div>
+						</div>
+					</motion.div>
+
+					{/* Properties Section - Mobile */}
+					<Card className="p-4">
+						<h3 className="mb-3 font-medium text-sm">Details</h3>
+						<div className="space-y-3">
+							{/* Lead */}
+							{project.lead && (
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-xs">Lead</span>
+									<div className="flex items-center gap-2">
+										<Avatar className="h-5 w-5">
+											<AvatarImage src={project.lead.avatar} />
+											<AvatarFallback>{project.lead.name[0]}</AvatarFallback>
+										</Avatar>
+										<span className="text-sm">{project.lead.name}</span>
+									</div>
+								</div>
+							)}
+
+							{/* Dates */}
+							<div className="flex items-center justify-between">
+								<span className="text-muted-foreground text-xs">Timeline</span>
+								<span className="text-sm">
+									{format(project.startDate, "d MMM", { locale: ru })} -{" "}
+									{format(project.targetDate, "d MMM", { locale: ru })}
+								</span>
+							</div>
+
+							{/* Days Left */}
+							<div className="flex items-center justify-between">
+								<span className="text-muted-foreground text-xs">Time left</span>
+								<span className={cn(
+									"text-sm font-medium",
+									daysUntilTarget < 0 && "text-red-600"
+								)}>
+									{daysUntilTarget > 0
+										? `${daysUntilTarget} days`
+										: "Overdue"}
+								</span>
+							</div>
+
+							{/* Team */}
+							{project.team && (
+								<div className="flex items-center justify-between">
+									<span className="text-muted-foreground text-xs">Team</span>
+									<Badge variant="secondary" className="text-xs">
+										{project.team}
+									</Badge>
+								</div>
+							)}
+
+							{/* Members */}
+							{project.members && project.members.length > 0 && (
+								<div>
+									<p className="mb-2 text-muted-foreground text-xs">Members</p>
+									<div className="-space-x-1 flex">
+										{project.members.slice(0, 6).map((member) => (
+											<Avatar
+												key={member.id}
+												className="h-6 w-6 border-2 border-background"
+											>
+												<AvatarImage src={member.avatar} />
+												<AvatarFallback className="text-xs">
+													{member.name[0]}
+												</AvatarFallback>
+											</Avatar>
+										))}
+										{project.members.length > 6 && (
+											<div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
+												+{project.members.length - 6}
+											</div>
+										)}
+									</div>
+								</div>
+							)}
+						</div>
+					</Card>
+
+					{/* Charts Section - Mobile */}
+					<div className="space-y-4">
+						{/* Pie Chart - Mobile */}
+						<Card className="p-4">
+							<h3 className="mb-3 font-medium text-sm">Task Distribution</h3>
+							<div className="h-[180px]">
+								<ResponsiveContainer width="100%" height="100%">
+									<PieChart>
+										<Pie
+											data={pieData}
+											cx="50%"
+											cy="50%"
+											innerRadius={40}
+											outerRadius={60}
+											paddingAngle={2}
+											dataKey="value"
+										>
+											{pieData.map((entry, index) => (
+												<Cell key={`cell-${index}`} fill={entry.color} />
+											))}
+										</Pie>
+										<Tooltip
+											formatter={(value: number) => `${value} tasks`}
+											contentStyle={{
+												backgroundColor: "var(--background)",
+												border: "1px solid var(--border)",
+												borderRadius: "6px",
+												fontSize: "12px",
+											}}
+										/>
+									</PieChart>
+								</ResponsiveContainer>
+							</div>
+							<div className="mt-3 flex flex-wrap items-center justify-center gap-3">
+								{pieData.map((item) => (
+									<div
+										key={item.name}
+										className="flex items-center gap-1.5"
+									>
+										<div
+											className="h-2.5 w-2.5 rounded-sm"
+											style={{ backgroundColor: item.color }}
+										/>
+										<span className="text-muted-foreground text-xs">
+											{item.name} ({item.value})
+										</span>
+									</div>
+								))}
+							</div>
+						</Card>
+
+						{/* Timeline Chart - Mobile */}
+						<Card className="p-4">
+							<div className="mb-3 flex items-center justify-between">
+								<h3 className="font-medium text-sm">Timeline</h3>
+								<span className="text-muted-foreground text-xs">
+									{daysUntilTarget > 0
+										? `${daysUntilTarget}d left`
+										: "Overdue"}
+								</span>
+							</div>
+							<div className="h-[200px]">
+								<ResponsiveContainer width="100%" height="100%">
+									<AreaChart data={progressChartData}>
+										<defs>
+											<linearGradient
+												id="colorCompletedMobile"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop
+													offset="5%"
+													stopColor="hsl(142, 76%, 36%)"
+													stopOpacity={0.3}
+												/>
+												<stop
+													offset="95%"
+													stopColor="hsl(142, 76%, 36%)"
+													stopOpacity={0}
+												/>
+											</linearGradient>
+										</defs>
+										<XAxis
+											dataKey="date"
+											stroke="hsl(var(--muted-foreground))"
+											fontSize={10}
+											tickLine={false}
+											axisLine={false}
+										/>
+										<YAxis
+											hide
+										/>
+										<Tooltip
+											contentStyle={{
+												backgroundColor: "var(--background)",
+												border: "1px solid var(--border)",
+												borderRadius: "6px",
+												fontSize: "12px",
+											}}
+										/>
+										<Area
+											type="monotone"
+											dataKey="completed"
+											stroke="hsl(142, 76%, 36%)"
+											fillOpacity={1}
+											fill="url(#colorCompletedMobile)"
+											strokeWidth={2}
+										/>
+									</AreaChart>
+								</ResponsiveContainer>
+							</div>
+						</Card>
+					</div>
+
+					{/* Milestones - Mobile */}
+					{project.milestones && project.milestones.length > 0 && (
+						<div>
+							<div className="mb-3 flex items-center justify-between">
+								<h3 className="font-medium text-sm">Milestones</h3>
+								<Button variant="ghost" size="sm" className="h-7 text-xs">
+									<Plus className="mr-1 h-3 w-3" />
+									Add
+								</Button>
+							</div>
+
+							<Card className="p-3">
+								<div className="space-y-2">
+									{project.milestones.slice(0, 3).map((milestone) => (
+										<div
+											key={milestone.id}
+											className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50"
+										>
+											<div
+												className={cn(
+													"flex h-6 w-6 items-center justify-center rounded-full",
+													milestone.completed
+														? "bg-green-100"
+														: "bg-gray-100",
+												)}
+											>
+												{milestone.completed ? (
+													<CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+												) : (
+													<Circle className="h-3.5 w-3.5 text-gray-600" />
+												)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<p className="font-medium text-sm truncate">
+													{milestone.name}
+												</p>
+												<p className="text-muted-foreground text-xs">
+													{format(milestone.date, "d MMM", {
+														locale: ru,
+													})}
+												</p>
+											</div>
+										</div>
+									))}
+									{project.milestones.length > 3 && (
+										<Button
+											variant="ghost"
+											size="sm"
+											className="w-full h-8 text-xs"
+										>
+											View all {project.milestones.length} milestones
+										</Button>
+									)}
+								</div>
+							</Card>
+						</div>
+					)}
+
+					{/* Labels - Mobile */}
+					{project.labels && project.labels.length > 0 && (
+						<div>
+							<h3 className="mb-2 font-medium text-sm">Labels</h3>
+							<div className="flex flex-wrap gap-1.5">
+								{project.labels.map((label) => (
+									<Badge key={label} variant="outline" className="text-xs">
+										{label}
+									</Badge>
+								))}
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	// Desktop view
 	return (
 		<div className="flex h-full">
 			{/* Main Content */}
@@ -224,7 +605,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 						<div>
 							<h2 className="mb-4 font-medium text-base">Progress</h2>
 
-							<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+							<div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
 								{/* Stats Cards */}
 								<div className="space-y-4">
 									<div className="grid grid-cols-3 gap-4">
@@ -259,8 +640,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 														•{" "}
 														{stats.scope > 0
 															? Math.round(
-																	(stats.inProgress / stats.scope) * 100,
-																)
+																(stats.inProgress / stats.scope) * 100,
+															)
 															: 0}
 														%
 													</span>
@@ -494,7 +875,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 			</div>
 
 			{/* Sidebar */}
-			<div className="w-80 space-y-6 border-l bg-muted/10 p-6">
+			<div className="hidden w-80 space-y-6 border-l bg-muted/10 p-6 lg:block">
 				<div>
 					<h3 className="mb-4 font-medium text-sm">Properties</h3>
 					<div className="space-y-4">

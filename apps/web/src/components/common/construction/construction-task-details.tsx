@@ -23,6 +23,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -41,7 +42,6 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { ConstructionAssigneeUser } from "./construction-assignee-user";
 import { ParentTaskDisplay } from "./construction-parent-task";
 import { ConstructionPrioritySelector } from "./construction-priority-selector";
@@ -159,7 +159,7 @@ export function ConstructionTaskDetails({
 			onOpenChange(false);
 			navigate({
 				to: "/construction/$orgId/tasks/$taskId",
-				params: { orgId, taskId: currentTask.identifier }
+				params: { orgId, taskId: currentTask.identifier },
 			});
 		}
 	};
@@ -192,9 +192,9 @@ export function ConstructionTaskDetails({
 						</div>
 						<div className="flex items-center gap-1">
 							{orgId && (
-								<Button 
-									variant="ghost" 
-									size="sm" 
+								<Button
+									variant="ghost"
+									size="sm"
 									onClick={handleFullscreen}
 									title="Открыть в полноэкранном режиме"
 								>

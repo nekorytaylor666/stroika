@@ -13,6 +13,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerHeader,
+	DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -24,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
@@ -33,11 +41,13 @@ import {
 	Calendar,
 	Check,
 	CheckCircle2,
+	Filter,
 	Grid3X3,
 	List,
 	Search,
 	UserPlus,
 	Users,
+	X,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +60,7 @@ interface ProjectTeamManagementLinearProps {
 export function ProjectTeamManagementLinear({
 	projectId,
 }: ProjectTeamManagementLinearProps) {
+	const isMobile = useMobile();
 	const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 	const [selectedUserIds, setSelectedUserIds] = useState<Id<"users">[]>([]);
 	const [memberSearchQuery, setMemberSearchQuery] = useState("");
@@ -60,6 +71,7 @@ export function ProjectTeamManagementLinear({
 	const [sortBy, setSortBy] = useState<string>("name");
 	const [selectedMember, setSelectedMember] = useState<any>(null);
 	const [activeTab, setActiveTab] = useState("members");
+	const [showFilters, setShowFilters] = useState(false);
 
 	// Fetch team data with statistics
 	const teamData = useQuery(api.constructionTeams.getProjectTeamWithStats, {
@@ -122,10 +134,9 @@ export function ProjectTeamManagementLinear({
 				userId,
 			});
 			toast.success(
-				`Участник удален из команды${
-					result.unassignedTasks > 0
-						? `. ${result.unassignedTasks} задач были сняты с назначения`
-						: ""
+				`Участник удален из команды${result.unassignedTasks > 0
+					? `. ${result.unassignedTasks} задач были сняты с назначения`
+					: ""
 				}`,
 			);
 		} catch (error) {
@@ -164,12 +175,13 @@ export function ProjectTeamManagementLinear({
 				return a.name.localeCompare(b.name);
 			case "workload":
 				return (b.workload || 0) - (a.workload || 0);
-			case "performance":
+			case "performance": {
 				const aRate =
 					a.taskStats.plan > 0 ? a.taskStats.fact / a.taskStats.plan : 0;
 				const bRate =
 					b.taskStats.plan > 0 ? b.taskStats.fact / b.taskStats.plan : 0;
 				return bRate - aRate;
+			}
 			case "tasks":
 				return b.taskStats.total - a.taskStats.total;
 			default:
@@ -179,7 +191,8 @@ export function ProjectTeamManagementLinear({
 
 	// Filter out existing team members from available users and apply search
 	const availableUsers = allUsers
-		?.filter(
+		?.filter((user): user is NonNullable<typeof user> => user !== null)
+		.filter(
 			(user) => !teamData?.members.some((member) => member._id === user._id),
 		)
 		.filter((user) => {
@@ -214,42 +227,51 @@ export function ProjectTeamManagementLinear({
 			<div className="flex flex-shrink-0 items-center justify-between">
 				<div>
 					<h2 className="font-semibold text-xl">Команда проекта</h2>
-					<p className="text-muted-foreground text-sm">
-						Управление участниками и отслеживание активности
-					</p>
+					{!isMobile && (
+						<p className="text-muted-foreground text-sm">
+							Управление участниками и отслеживание активности
+						</p>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
-					<Button
-						variant={viewMode === "grid" ? "default" : "outline"}
-						size="sm"
-						onClick={() => setViewMode("grid")}
-						className="gap-2"
-					>
-						<Grid3X3 className="h-4 w-4" />
-						Сетка
-					</Button>
-					<Button
-						variant={viewMode === "list" ? "default" : "outline"}
-						size="sm"
-						onClick={() => setViewMode("list")}
-						className="gap-2"
-					>
-						<List className="h-4 w-4" />
-						Список
-					</Button>
+					{!isMobile && (
+						<>
+							<Button
+								variant={viewMode === "grid" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setViewMode("grid")}
+								className="gap-2"
+							>
+								<Grid3X3 className="h-4 w-4" />
+								Сетка
+							</Button>
+							<Button
+								variant={viewMode === "list" ? "default" : "outline"}
+								size="sm"
+								onClick={() => setViewMode("list")}
+								className="gap-2"
+							>
+								<List className="h-4 w-4" />
+								Список
+							</Button>
+						</>
+					)}
 					<Button
 						size="sm"
 						onClick={() => setIsAddMemberOpen(true)}
-						className="ml-2"
+						className={cn(isMobile && "px-2")}
 					>
-						<UserPlus className="mr-2 h-4 w-4" />
-						Добавить участника
+						<UserPlus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+						{!isMobile && "Добавить участника"}
 					</Button>
 				</div>
 			</div>
 
 			{/* Team Overview Stats */}
-			<div className="grid flex-shrink-0 gap-3 md:grid-cols-4">
+			<div className={cn(
+				"grid flex-shrink-0 gap-3",
+				isMobile ? "grid-cols-2" : "md:grid-cols-4"
+			)}>
 				<Card className="p-3">
 					<div className="flex items-center justify-between">
 						<p className="text-muted-foreground text-xs">Участники</p>
@@ -284,7 +306,7 @@ export function ProjectTeamManagementLinear({
 						{Math.round(
 							(teamData.teamStats.completedTasks /
 								teamData.teamStats.plannedTasks) *
-								100,
+							100,
 						) || 0}
 						%
 					</p>
@@ -327,56 +349,145 @@ export function ProjectTeamManagementLinear({
 				>
 					{/* Filters Bar */}
 					<Card className="flex-shrink-0 p-3">
-						<div className="flex flex-wrap items-center gap-3">
-							<div className="relative min-w-[200px] flex-1">
-								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-								<Input
-									placeholder="Поиск по имени или email..."
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									className="pl-9"
-								/>
+						{isMobile ? (
+							<div className="space-y-3">
+								{/* Mobile Search */}
+								<div className="relative">
+									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+									<Input
+										placeholder="Поиск участников..."
+										value={searchQuery}
+										onChange={(e) => setSearchQuery(e.target.value)}
+										className="pl-9"
+									/>
+								</div>
+
+								{/* Mobile Filters Toggle */}
+								<div className="flex items-center justify-between">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setShowFilters(!showFilters)}
+										className="gap-2"
+									>
+										<Filter className="h-4 w-4" />
+										Фильтры
+									</Button>
+									<div className="flex gap-1">
+										<Button
+											variant={viewMode === "grid" ? "default" : "outline"}
+											size="sm"
+											onClick={() => setViewMode("grid")}
+										>
+											<Grid3X3 className="h-4 w-4" />
+										</Button>
+										<Button
+											variant={viewMode === "list" ? "default" : "outline"}
+											size="sm"
+											onClick={() => setViewMode("list")}
+										>
+											<List className="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
+
+								{/* Mobile Filters Panel */}
+								{showFilters && (
+									<div className="space-y-3 border-t pt-3">
+										<Select
+											value={departmentFilter}
+											onValueChange={setDepartmentFilter}
+										>
+											<SelectTrigger>
+												<SelectValue placeholder="Все отделы" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="all">Все отделы</SelectItem>
+												{departments?.map((dept) => (
+													<SelectItem key={dept._id} value={dept._id}>
+														{dept.displayName}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<Select value={statusFilter} onValueChange={setStatusFilter}>
+											<SelectTrigger>
+												<SelectValue placeholder="Все статусы" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="all">Все статусы</SelectItem>
+												<SelectItem value="available">Доступны</SelectItem>
+												<SelectItem value="on-site">На объекте</SelectItem>
+												<SelectItem value="office">В офисе</SelectItem>
+												<SelectItem value="remote">Удаленно</SelectItem>
+											</SelectContent>
+										</Select>
+										<Select value={sortBy} onValueChange={setSortBy}>
+											<SelectTrigger>
+												<SelectValue placeholder="Сортировка" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="name">По имени</SelectItem>
+												<SelectItem value="workload">По загрузке</SelectItem>
+												<SelectItem value="performance">По выполнению</SelectItem>
+												<SelectItem value="tasks">По задачам</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								)}
 							</div>
-							<Select
-								value={departmentFilter}
-								onValueChange={setDepartmentFilter}
-							>
-								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder="Все отделы" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">Все отделы</SelectItem>
-									{departments?.map((dept) => (
-										<SelectItem key={dept._id} value={dept._id}>
-											{dept.displayName}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<Select value={statusFilter} onValueChange={setStatusFilter}>
-								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder="Все статусы" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="all">Все статусы</SelectItem>
-									<SelectItem value="available">Доступны</SelectItem>
-									<SelectItem value="on-site">На объекте</SelectItem>
-									<SelectItem value="office">В офисе</SelectItem>
-									<SelectItem value="remote">Удаленно</SelectItem>
-								</SelectContent>
-							</Select>
-							<Select value={sortBy} onValueChange={setSortBy}>
-								<SelectTrigger className="w-[180px]">
-									<SelectValue placeholder="Сортировка" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="name">По имени</SelectItem>
-									<SelectItem value="workload">По загрузке</SelectItem>
-									<SelectItem value="performance">По выполнению</SelectItem>
-									<SelectItem value="tasks">По задачам</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
+						) : (
+							<div className="flex flex-wrap items-center gap-3">
+								<div className="relative min-w-[200px] flex-1">
+									<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+									<Input
+										placeholder="Поиск по имени или email..."
+										value={searchQuery}
+										onChange={(e) => setSearchQuery(e.target.value)}
+										className="pl-9"
+									/>
+								</div>
+								<Select
+									value={departmentFilter}
+									onValueChange={setDepartmentFilter}
+								>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue placeholder="Все отделы" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">Все отделы</SelectItem>
+										{departments?.map((dept) => (
+											<SelectItem key={dept._id} value={dept._id}>
+												{dept.displayName}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<Select value={statusFilter} onValueChange={setStatusFilter}>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue placeholder="Все статусы" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="all">Все статусы</SelectItem>
+										<SelectItem value="available">Доступны</SelectItem>
+										<SelectItem value="on-site">На объекте</SelectItem>
+										<SelectItem value="office">В офисе</SelectItem>
+										<SelectItem value="remote">Удаленно</SelectItem>
+									</SelectContent>
+								</Select>
+								<Select value={sortBy} onValueChange={setSortBy}>
+									<SelectTrigger className="w-[180px]">
+										<SelectValue placeholder="Сортировка" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="name">По имени</SelectItem>
+										<SelectItem value="workload">По загрузке</SelectItem>
+										<SelectItem value="performance">По выполнению</SelectItem>
+										<SelectItem value="tasks">По задачам</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						)}
 					</Card>
 
 					{/* Members Grid/List - Scrollable Container */}
@@ -396,7 +507,9 @@ export function ProjectTeamManagementLinear({
 								className={cn(
 									"pb-4",
 									viewMode === "grid"
-										? "grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+										? isMobile
+											? "grid gap-3 grid-cols-1"
+											: "grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 										: "space-y-2",
 								)}
 							>
@@ -427,132 +540,277 @@ export function ProjectTeamManagementLinear({
 				</TabsContent>
 			</Tabs>
 
-			{/* Add Members Dialog */}
-			<Dialog
-				open={isAddMemberOpen}
-				onOpenChange={(open) => {
-					setIsAddMemberOpen(open);
-					if (!open) {
-						setSelectedUserIds([]);
-						setMemberSearchQuery("");
-					}
-				}}
-			>
-				<DialogContent className="max-w-2xl">
-					<DialogHeader>
-						<DialogTitle>Добавить участников в команду</DialogTitle>
-						<DialogDescription>
-							Выберите одного или нескольких пользователей для добавления в
-							команду проекта
-						</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4">
-						{/* Search Input */}
-						<div className="relative">
-							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Поиск по имени или email..."
-								value={memberSearchQuery}
-								onChange={(e) => setMemberSearchQuery(e.target.value)}
-								className="pl-9"
-							/>
-						</div>
-
-						{/* Selected Count */}
-						{selectedUserIds.length > 0 && (
-							<div className="flex items-center justify-between">
-								<p className="text-muted-foreground text-sm">
-									Выбрано: {selectedUserIds.length} участник
-									{selectedUserIds.length === 1 ? "" : "ов"}
-								</p>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setSelectedUserIds([])}
-								>
-									Очистить выбор
-								</Button>
+			{/* Add Members Dialog/Drawer */}
+			{isMobile ? (
+				<Drawer
+					open={isAddMemberOpen}
+					onOpenChange={(open) => {
+						setIsAddMemberOpen(open);
+						if (!open) {
+							setSelectedUserIds([]);
+							setMemberSearchQuery("");
+						}
+					}}
+				>
+					<DrawerContent className="max-h-[90vh]">
+						<DrawerHeader>
+							<DrawerTitle>Добавить участников</DrawerTitle>
+							<DrawerDescription>
+								Выберите пользователей для добавления в команду
+							</DrawerDescription>
+						</DrawerHeader>
+						<div className="flex flex-col space-y-4 p-4">
+							{/* Search Input */}
+							<div className="relative">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Поиск по имени..."
+									value={memberSearchQuery}
+									onChange={(e) => setMemberSearchQuery(e.target.value)}
+									className="pl-9"
+								/>
 							</div>
-						)}
 
-						{/* Users List */}
-						<ScrollArea className="h-[400px] rounded-md border p-4">
-							{availableUsers && availableUsers.length > 0 ? (
-								<div className="space-y-2">
-									{availableUsers.map((user) => (
-										<label
-											key={user._id}
-											className={cn(
-												"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50",
-												selectedUserIds.includes(user._id) && "bg-primary/10",
-											)}
-										>
-											<Checkbox
-												checked={selectedUserIds.includes(user._id)}
-												onCheckedChange={() => toggleUserSelection(user._id)}
-											/>
-											<Avatar className="h-10 w-10">
-												<AvatarImage src={user.avatarUrl || undefined} />
-												<AvatarFallback>
-													{user.name
-														.split(" ")
-														.map((n) => n[0])
-														.join("")
-														.toUpperCase()}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex-1">
-												<div className="font-medium">{user.name}</div>
-												<div className="text-muted-foreground text-sm">
-													{user.email}
-												</div>
-												{user.position && (
-													<Badge variant="outline" className="mt-1">
-														{user.position}
-													</Badge>
-												)}
-											</div>
-											{selectedUserIds.includes(user._id) && (
-												<Check className="h-5 w-5 text-primary" />
-											)}
-										</label>
-									))}
-								</div>
-							) : (
-								<div className="flex h-[300px] flex-col items-center justify-center text-center">
-									<Users className="mb-4 h-12 w-12 text-muted-foreground/40" />
-									<p className="text-muted-foreground">
-										{memberSearchQuery
-											? "Пользователи не найдены"
-											: "Все пользователи уже добавлены в команду"}
+							{/* Selected Count */}
+							{selectedUserIds.length > 0 && (
+								<div className="flex items-center justify-between rounded-lg bg-primary/10 p-3">
+									<p className="text-primary text-sm font-medium">
+										Выбрано: {selectedUserIds.length}
 									</p>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setSelectedUserIds([])}
+									>
+										<X className="h-4 w-4" />
+									</Button>
 								</div>
 							)}
-						</ScrollArea>
 
-						{/* Actions */}
-						<div className="flex justify-end gap-2">
-							<Button
-								variant="outline"
-								onClick={() => {
-									setIsAddMemberOpen(false);
-									setSelectedUserIds([]);
-									setMemberSearchQuery("");
-								}}
-							>
-								Отмена
-							</Button>
-							<Button
-								onClick={handleAddMembers}
-								disabled={selectedUserIds.length === 0}
-							>
-								Добавить{" "}
-								{selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
-							</Button>
+							{/* Users List */}
+							<div className="min-h-0 flex-1 overflow-y-auto">
+								{availableUsers && availableUsers.length > 0 ? (
+									<div className="space-y-2">
+										{availableUsers.map((user) => (
+											<div
+												key={user._id}
+												className={cn(
+													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50 active:bg-muted",
+													selectedUserIds.includes(user._id) && "border border-primary/20 bg-primary/10",
+												)}
+												onClick={() => toggleUserSelection(user._id)}
+												onKeyDown={(e) => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														toggleUserSelection(user._id);
+													}
+												}}
+												role="button"
+												tabIndex={0}
+											>
+												<Checkbox
+													checked={selectedUserIds.includes(user._id)}
+													onCheckedChange={() => toggleUserSelection(user._id)}
+												/>
+												<Avatar className="h-10 w-10">
+													<AvatarImage src={user.avatarUrl || undefined} />
+													<AvatarFallback>
+														{user.name
+															.split(" ")
+															.map((n) => n[0])
+															.join("")
+															.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<div className="min-w-0 flex-1">
+													<div className="truncate font-medium">{user.name}</div>
+													<div className="truncate text-sm text-muted-foreground">
+														{user.email}
+													</div>
+													{user.position && (
+														<Badge variant="outline" className="mt-1 text-xs">
+															{user.position}
+														</Badge>
+													)}
+												</div>
+												{selectedUserIds.includes(user._id) && (
+													<Check className="h-5 w-5 flex-shrink-0 text-primary" />
+												)}
+											</div>
+										))}
+									</div>
+								) : (
+									<div className="flex h-[200px] flex-col items-center justify-center text-center">
+										<Users className="mb-4 h-12 w-12 text-muted-foreground/40" />
+										<p className="text-muted-foreground text-sm">
+											{memberSearchQuery
+												? "Пользователи не найдены"
+												: "Все пользователи уже добавлены"}
+										</p>
+									</div>
+								)}
+							</div>
+
+							{/* Actions */}
+							<div className="flex gap-2 border-t pt-4">
+								<Button
+									variant="outline"
+									className="flex-1"
+									onClick={() => {
+										setIsAddMemberOpen(false);
+										setSelectedUserIds([]);
+										setMemberSearchQuery("");
+									}}
+								>
+									Отмена
+								</Button>
+								<Button
+									className="flex-1"
+									onClick={handleAddMembers}
+									disabled={selectedUserIds.length === 0}
+								>
+									Добавить {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+								</Button>
+							</div>
 						</div>
-					</div>
-				</DialogContent>
-			</Dialog>
+					</DrawerContent>
+				</Drawer>
+			) : (
+				<Dialog
+					open={isAddMemberOpen}
+					onOpenChange={(open) => {
+						setIsAddMemberOpen(open);
+						if (!open) {
+							setSelectedUserIds([]);
+							setMemberSearchQuery("");
+						}
+					}}
+				>
+					<DialogContent className="max-w-2xl">
+						<DialogHeader>
+							<DialogTitle>Добавить участников в команду</DialogTitle>
+							<DialogDescription>
+								Выберите одного или нескольких пользователей для добавления в
+								команду проекта
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4">
+							{/* Search Input */}
+							<div className="relative">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Поиск по имени или email..."
+									value={memberSearchQuery}
+									onChange={(e) => setMemberSearchQuery(e.target.value)}
+									className="pl-9"
+								/>
+							</div>
+
+							{/* Selected Count */}
+							{selectedUserIds.length > 0 && (
+								<div className="flex items-center justify-between">
+									<p className="text-muted-foreground text-sm">
+										Выбрано: {selectedUserIds.length} участник
+										{selectedUserIds.length === 1 ? "" : "ов"}
+									</p>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setSelectedUserIds([])}
+									>
+										Очистить выбор
+									</Button>
+								</div>
+							)}
+
+							{/* Users List */}
+							<ScrollArea className="h-[400px] rounded-md border p-4">
+								{availableUsers && availableUsers.length > 0 ? (
+									<div className="space-y-2">
+										{availableUsers.map((user) => (
+											<div
+												key={user._id}
+												className={cn(
+													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50",
+													selectedUserIds.includes(user._id) && "bg-primary/10",
+												)}
+												onClick={() => toggleUserSelection(user._id)}
+												onKeyDown={(e) => {
+													if (e.key === "Enter" || e.key === " ") {
+														e.preventDefault();
+														toggleUserSelection(user._id);
+													}
+												}}
+												role="button"
+												tabIndex={0}
+											>
+												<Checkbox
+													checked={selectedUserIds.includes(user._id)}
+													onCheckedChange={() => toggleUserSelection(user._id)}
+												/>
+												<Avatar className="h-10 w-10">
+													<AvatarImage src={user.avatarUrl || undefined} />
+													<AvatarFallback>
+														{user.name
+															.split(" ")
+															.map((n) => n[0])
+															.join("")
+															.toUpperCase()}
+													</AvatarFallback>
+												</Avatar>
+												<div className="flex-1">
+													<div className="font-medium">{user.name}</div>
+													<div className="text-muted-foreground text-sm">
+														{user.email}
+													</div>
+													{user.position && (
+														<Badge variant="outline" className="mt-1">
+															{user.position}
+														</Badge>
+													)}
+												</div>
+												{selectedUserIds.includes(user._id) && (
+													<Check className="h-5 w-5 text-primary" />
+												)}
+											</div>
+										))}
+									</div>
+								) : (
+									<div className="flex h-[300px] flex-col items-center justify-center text-center">
+										<Users className="mb-4 h-12 w-12 text-muted-foreground/40" />
+										<p className="text-muted-foreground">
+											{memberSearchQuery
+												? "Пользователи не найдены"
+												: "Все пользователи уже добавлены в команду"}
+										</p>
+									</div>
+								)}
+							</ScrollArea>
+
+							{/* Actions */}
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									onClick={() => {
+										setIsAddMemberOpen(false);
+										setSelectedUserIds([]);
+										setMemberSearchQuery("");
+									}}
+								>
+									Отмена
+								</Button>
+								<Button
+									onClick={handleAddMembers}
+									disabled={selectedUserIds.length === 0}
+								>
+									Добавить{" "}
+									{selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+								</Button>
+							</div>
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
 
 			{/* Member Details Dialog */}
 			<Dialog
@@ -644,10 +902,10 @@ export function ProjectTeamManagementLinear({
 												<span className="font-medium">
 													{selectedMember.taskStats.plan > 0
 														? Math.round(
-																(selectedMember.taskStats.fact /
-																	selectedMember.taskStats.plan) *
-																	100,
-															)
+															(selectedMember.taskStats.fact /
+																selectedMember.taskStats.plan) *
+															100,
+														)
 														: 0}
 													%
 												</span>
@@ -722,7 +980,7 @@ function ProjectTeamSkeleton() {
 
 			<div className="grid gap-4 md:grid-cols-4">
 				{[...Array(4)].map((_, i) => (
-					<Card key={i} className="p-4">
+					<Card key={`stats-${i}`} className="p-4">
 						<Skeleton className="mb-2 h-4 w-20" />
 						<Skeleton className="h-8 w-16" />
 					</Card>
@@ -735,7 +993,7 @@ function ProjectTeamSkeleton() {
 
 			<div className="grid gap-4 md:grid-cols-3">
 				{[...Array(6)].map((_, i) => (
-					<Card key={i} className="p-5">
+					<Card key={`member-${i}`} className="p-5">
 						<div className="mb-4 flex items-start gap-3">
 							<Skeleton className="h-12 w-12 rounded-full" />
 							<div className="flex-1">
@@ -746,7 +1004,7 @@ function ProjectTeamSkeleton() {
 						<div className="space-y-3">
 							<div className="grid grid-cols-3 gap-3">
 								{[...Array(3)].map((_, j) => (
-									<Skeleton key={j} className="h-12 w-full rounded-lg" />
+									<Skeleton key={`metric-${i}-${j}`} className="h-12 w-full rounded-lg" />
 								))}
 							</div>
 							<Skeleton className="h-2 w-full" />

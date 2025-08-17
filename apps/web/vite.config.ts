@@ -42,14 +42,14 @@ export default defineConfig({
 				// Use NetworkFirst for API calls (Convex)
 				runtimeCaching: [
 					{
-						urlPattern: ({ request }) => request.mode === 'navigate',
-						handler: 'NetworkFirst',
+						urlPattern: ({ request }) => request.mode === "navigate",
+						handler: "NetworkFirst",
 						options: {
-							cacheName: 'pages',
+							cacheName: "pages",
 							plugins: [
 								{
 									handlerDidError: async () => {
-										return caches.match('/offline.html');
+										return caches.match("/offline.html");
 									},
 								},
 							],

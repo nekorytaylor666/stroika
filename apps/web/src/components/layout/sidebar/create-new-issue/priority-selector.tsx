@@ -69,7 +69,7 @@ export function PrioritySelector({
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Выберите приоритет..." />
+						<CommandInput autoFocus={false} placeholder="Выберите приоритет..." />
 						<CommandList>
 							<CommandEmpty>Приоритет не найден.</CommandEmpty>
 							<CommandGroup>

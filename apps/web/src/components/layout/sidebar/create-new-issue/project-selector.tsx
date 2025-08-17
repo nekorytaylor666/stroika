@@ -69,7 +69,7 @@ export function ProjectSelector({ project, onChange }: ProjectSelectorProps) {
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Выберите проект..." />
+						<CommandInput autoFocus={false} placeholder="Выберите проект..." />
 						<CommandList>
 							<CommandEmpty>Проект не найден.</CommandEmpty>
 							<CommandGroup>

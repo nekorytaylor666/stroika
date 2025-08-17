@@ -102,7 +102,7 @@ export function AssigneeSelector({
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Назначить..." />
+						<CommandInput autoFocus={false} placeholder="Назначить..." />
 						<CommandList>
 							<CommandEmpty>Пользователь не найден.</CommandEmpty>
 							<CommandGroup>

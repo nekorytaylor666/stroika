@@ -1,22 +1,23 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { differenceInDays, format } from "date-fns";
+import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
 	Building2,
 	Calendar,
 	CheckCircle2,
+	ChevronRight,
 	Circle,
 	CircleDot,
 	Clock,
@@ -24,25 +25,10 @@ import {
 	MapPin,
 	MoreHorizontal,
 	Plus,
-	Tag,
 	Target,
-	User,
-	Users,
 	XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
-import {
-	Area,
-	AreaChart,
-	Bar,
-	BarChart,
-	CartesianGrid,
-	ReferenceLine,
-	ResponsiveContainer,
-	Tooltip,
-	XAxis,
-	YAxis,
-} from "recharts";
 import {
 	EditableDate,
 	EditableNumber,
@@ -50,7 +36,6 @@ import {
 	EditableText,
 	EditableTextarea,
 	EditableUserSelect,
-	type SelectOption,
 } from "./project-overview/editable";
 import { ProjectTimelineChart } from "./project-timeline-chart";
 
@@ -98,22 +83,18 @@ const priorityStyles = {
 	Критический: "bg-red-100 text-red-700",
 };
 
-const projectTypeTranslations = {
-	residential: "Жилое",
-	commercial: "Коммерческое",
-	industrial: "Промышленное",
-	infrastructure: "Инфраструктура",
-};
+
 
 export function ConstructionProjectOverview({
 	projectId,
 }: ConstructionProjectOverviewProps) {
+	const isMobile = useMobile();
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
 	});
 	const statuses = useQuery(api.metadata.getAllStatus);
 	const priorities = useQuery(api.metadata.getAllPriorities);
-	const users = useQuery(api.users.getAll);
+	const allUsers = useQuery(api.users.getAll);
 
 	const updateProject = useMutation(api.constructionProjects.update);
 	const updateStatus = useMutation(api.constructionProjects.updateStatus);
@@ -123,6 +104,15 @@ export function ConstructionProjectOverview({
 		from: "/construction/$orgId/projects/$projectId/overview",
 	});
 
+	// Filter out null values and map to UserOption format
+	const users = allUsers?.filter((user): user is NonNullable<typeof user> => user !== null).map(user => ({
+		_id: user._id,
+		name: user.name,
+		email: user.email,
+		avatarUrl: user.avatarUrl,
+		role: user.position,
+	}));
+
 	if (!projectData) {
 		return <ProjectOverviewSkeleton />;
 	}
@@ -130,19 +120,10 @@ export function ConstructionProjectOverview({
 	const { taskStats } = projectData;
 	const progressPercentage =
 		taskStats.total > 0 ? (taskStats.completed / taskStats.total) * 100 : 0;
-	const targetDate = projectData.targetDate
-		? new Date(projectData.targetDate)
-		: new Date();
-	const daysUntilTarget = differenceInDays(targetDate, new Date());
 
 	const StatusIcon =
 		statusStyles[projectData.status?.name as keyof typeof statusStyles]?.icon ||
 		Circle;
-
-	// Generate progress data from monthly revenue
-	const progressChartData = generateProgressDataFromRevenue(
-		projectData.monthlyRevenue || [],
-	);
 
 	// Format currency
 	const formatCurrency = (amount: number) => {
@@ -153,6 +134,396 @@ export function ConstructionProjectOverview({
 		}).format(amount);
 	};
 
+	// Mobile view
+	if (isMobile) {
+		return (
+			<motion.div
+				initial={{ opacity: 0, x: 20 }}
+				animate={{ opacity: 1, x: 0 }}
+				exit={{ opacity: 0, x: -20 }}
+				className="flex h-full flex-col bg-background"
+			>
+				{/* Mobile Header */}
+				<div className="flex items-center justify-between border-b px-4 py-3">
+					<div className="flex items-center gap-3">
+						<div className="flex items-center gap-2">
+							{projectData.status && (
+								<div
+									className={cn(
+										"flex h-6 w-6 items-center justify-center rounded",
+										statusStyles[projectData.status.name as keyof typeof statusStyles]?.bg,
+										statusStyles[projectData.status.name as keyof typeof statusStyles]?.color,
+									)}
+								>
+									<StatusIcon className="h-3 w-3" />
+								</div>
+							)}
+							<span className="max-w-40 truncate text-sm font-medium">
+								{projectData.name}
+							</span>
+						</div>
+					</div>
+					<Button variant="ghost" size="icon" className="h-8 w-8">
+						<MoreHorizontal className="h-4 w-4" />
+					</Button>
+				</div>
+
+				{/* Mobile Content */}
+				<div className="flex-1 overflow-y-auto">
+					<div className="space-y-0 p-4">
+						{/* Project Name */}
+						<div className="mb-6">
+							<EditableText
+								value={projectData.name}
+								onSave={async (value) => {
+									await updateProject({ id: projectId, name: value });
+								}}
+								variant="h1"
+								placeholder="Project name"
+								className="text-xl font-semibold"
+							/>
+						</div>
+
+						{/* Status Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<span className="text-muted-foreground text-sm">Статус</span>
+							</div>
+							<div className="flex items-center gap-2">
+								{statuses && (
+									<EditableSelect
+										value={projectData.status?._id || ""}
+										options={statuses.map((status) => {
+											return {
+												value: status._id,
+												label: status.name,
+												className: cn(
+													"border-0",
+													statusStyles[status.name as keyof typeof statusStyles]?.bg,
+													statusStyles[status.name as keyof typeof statusStyles]?.borderColor,
+													statusStyles[status.name as keyof typeof statusStyles]?.color,
+												),
+											};
+										})}
+										onSave={async (value) => {
+											await updateStatus({
+												id: projectId,
+												statusId: value as Id<"status">,
+											});
+										}}
+										placeholder="Select status"
+										searchable={false}
+									/>
+								)}
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						{/* Priority Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<span className="text-muted-foreground text-sm">Приоритет</span>
+							</div>
+							<div className="flex items-center gap-2">
+								{priorities && (
+									<EditableSelect
+										value={projectData.priority?._id || ""}
+										options={priorities.map((priority) => ({
+											value: priority._id,
+											label: priority.name,
+											className: cn(
+												"border-0",
+												priorityStyles[priority.name as keyof typeof priorityStyles],
+											),
+										}))}
+										onSave={async (value) => {
+											await updateProject({
+												id: projectId,
+												priorityId: value as Id<"priorities">,
+											});
+										}}
+										placeholder="Select priority"
+										searchable={false}
+									/>
+								)}
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						{/* Lead Row */}
+						<div className="-mx-4 flex items-center justify-between p-3">
+							<div className="flex items-center gap-3">
+								<span className="text-muted-foreground text-sm">Руководитель</span>
+							</div>
+							{users && (
+								<EditableUserSelect
+									value={projectData.lead?._id || null}
+									users={users}
+									onSave={async (value) => {
+										if (value) {
+											await updateProject({ id: projectId, leadId: value });
+										}
+									}}
+									placeholder="Select lead"
+									multiple={false}
+								/>
+							)}
+						</div>
+
+						{/* Client Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<Building2 className="h-4 w-4 text-muted-foreground" />
+								<span className="text-muted-foreground text-sm">Клиент</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<EditableText
+									value={projectData.client}
+									onSave={async (value) => {
+										await updateProject({ id: projectId, client: value });
+									}}
+									placeholder="Client name"
+									className="text-sm"
+								/>
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						{/* Location Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<MapPin className="h-4 w-4 text-muted-foreground" />
+								<span className="text-muted-foreground text-sm">Местоположение</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<EditableText
+									value={projectData.location}
+									onSave={async (value) => {
+										await updateProject({ id: projectId, location: value });
+									}}
+									placeholder="Location"
+									className="text-sm"
+								/>
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						{/* Contract Value Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<DollarSign className="h-4 w-4 text-muted-foreground" />
+								<span className="text-muted-foreground text-sm">Стоимость</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<EditableNumber
+									value={projectData.contractValue}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											contractValue: value,
+										});
+									}}
+									formatValue={formatCurrency}
+									min={0}
+									step={1000000}
+									className="text-sm"
+								/>
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						{/* Start Date Row */}
+						<div className="-mx-4 flex items-center justify-between p-3">
+							<div className="flex items-center gap-3">
+								<Calendar className="h-4 w-4 text-muted-foreground" />
+								<span className="text-muted-foreground text-sm">Дата начала</span>
+							</div>
+							<EditableDate
+								value={projectData.startDate}
+								onSave={async (value) => {
+									await updateProject({
+										id: projectId,
+										startDate: value || new Date().toISOString(),
+									});
+								}}
+								placeholder="Start date"
+								allowClear={false}
+							/>
+						</div>
+
+						{/* Target Date Row */}
+						<div className="-mx-4 flex items-center justify-between p-3">
+							<div className="flex items-center gap-3">
+								<Target className="h-4 w-4 text-muted-foreground" />
+								<span className="text-muted-foreground text-sm">Цель</span>
+							</div>
+							<EditableDate
+								value={projectData.targetDate}
+								onSave={async (value) => {
+									await updateProject({
+										id: projectId,
+										targetDate: value || undefined,
+									});
+								}}
+								placeholder="Target date"
+								minDate={new Date(projectData.startDate)}
+							/>
+						</div>
+
+						{/* Project Type Row */}
+						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
+							<div className="flex items-center gap-3">
+								<span className="text-muted-foreground text-sm">Тип проекта</span>
+							</div>
+							<div className="flex items-center gap-2">
+								<EditableSelect
+									value={projectData.projectType}
+									options={[
+										{ value: "residential", label: "Жилое" },
+										{ value: "commercial", label: "Коммерческое" },
+										{ value: "industrial", label: "Промышленное" },
+										{ value: "infrastructure", label: "Инфраструктура" },
+									]}
+									onSave={async (value) => {
+										await updateProject({
+											id: projectId,
+											projectType: value as
+												| "residential"
+												| "commercial"
+												| "industrial"
+												| "infrastructure",
+										});
+									}}
+									placeholder="Select type"
+									searchable={false}
+								/>
+								<ChevronRight className="h-4 w-4 text-muted-foreground" />
+							</div>
+						</div>
+
+						<Separator className="my-4" />
+
+						{/* Progress Section */}
+						<div className="space-y-4">
+							<h2 className="font-medium text-base">Прогресс</h2>
+
+							{/* Stats Cards */}
+							<div className="grid grid-cols-3 gap-3">
+								<Card className="border-muted p-3">
+									<div className="space-y-1">
+										<p className="font-semibold text-lg">{taskStats.total}</p>
+										<p className="text-muted-foreground text-xs">Всего</p>
+									</div>
+								</Card>
+
+								<Card className="border-yellow-200 bg-yellow-50/50 p-3">
+									<div className="space-y-1">
+										<p className="font-semibold text-lg">{taskStats.inProgress}</p>
+										<p className="text-muted-foreground text-xs">В работе</p>
+									</div>
+								</Card>
+
+								<Card className="border-green-200 bg-green-50/50 p-3">
+									<div className="space-y-1">
+										<p className="font-semibold text-lg">{taskStats.completed}</p>
+										<p className="text-muted-foreground text-xs">Готово</p>
+									</div>
+								</Card>
+							</div>
+
+							{/* Progress Bar */}
+							<div className="space-y-2">
+								<div className="flex items-center justify-between text-sm">
+									<span>Выполнено</span>
+									<span className="font-medium">{Math.round(progressPercentage)}%</span>
+								</div>
+								<div className="h-2 overflow-hidden rounded-full bg-muted">
+									<div
+										className="h-full bg-primary transition-all"
+										style={{ width: `${progressPercentage}%` }}
+									/>
+								</div>
+							</div>
+						</div>
+
+						<Separator className="my-4" />
+
+						{/* Recent Tasks */}
+						{projectData.tasks && projectData.tasks.length > 0 && (
+							<div className="pb-6">
+								<div className="mb-3 flex items-center justify-between">
+									<h2 className="font-medium text-base">Последние задачи</h2>
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-8"
+										onClick={() =>
+											navigate({
+												to: "/construction/$orgId/projects/$projectId/tasks",
+												params: {
+													orgId: params.orgId,
+													projectId: projectData._id,
+												},
+											})
+										}
+									>
+										Все задачи
+									</Button>
+								</div>
+
+								<div className="space-y-2">
+									{projectData.tasks.slice(0, 3).map((task) => (
+										<div
+											key={task._id}
+											className="flex items-center justify-between rounded-lg border p-3"
+										>
+											<div className="flex min-w-0 flex-1 items-center gap-3">
+												<div
+													className={cn(
+														"flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-xs font-medium",
+														task.priority?.name === "Срочный"
+															? "bg-red-100 text-red-700"
+															: task.priority?.name === "Высокий"
+																? "bg-orange-100 text-orange-700"
+																: task.priority?.name === "Средний"
+																	? "bg-blue-100 text-blue-700"
+																	: "bg-gray-100 text-gray-700",
+													)}
+												>
+													{task.identifier}
+												</div>
+												<div className="min-w-0 flex-1">
+													<p className="font-medium text-sm truncate">{task.title}</p>
+													<div className="flex items-center gap-2 text-muted-foreground text-xs">
+														{task.assignee && (
+															<span className="truncate">{task.assignee.name}</span>
+														)}
+														{task.dueDate && (
+															<span>
+																•{" "}
+																{format(new Date(task.dueDate), "d MMM", {
+																	locale: ru,
+																})}
+															</span>
+														)}
+													</div>
+												</div>
+											</div>
+											<Badge variant="outline" className="flex-shrink-0 text-xs">
+												{task.status?.name}
+											</Badge>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				</div>
+			</motion.div>
+		);
+	}
+
+	// Desktop view
 	return (
 		<div className="flex h-full">
 			{/* Main Content */}
@@ -262,7 +633,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-												priority.name as keyof typeof priorityStyles
+											priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -369,9 +740,9 @@ export function ConstructionProjectOverview({
 														•{" "}
 														{taskStats.total > 0
 															? Math.round(
-																	(taskStats.inProgress / taskStats.total) *
-																		100,
-																)
+																(taskStats.inProgress / taskStats.total) *
+																100,
+															)
 															: 0}
 														%
 													</span>
@@ -497,7 +868,7 @@ export function ConstructionProjectOverview({
 			</div>
 
 			{/* Sidebar */}
-			<div className="w-80 space-y-6 border-l bg-muted/10 p-6">
+			<div className="hidden lg:block lg:w-80 space-y-6 border-l bg-muted/10 p-6">
 				<div>
 					<h3 className="mb-4 font-medium text-sm">Свойства</h3>
 					<div className="space-y-4">
@@ -550,7 +921,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-												priority.name as keyof typeof priorityStyles
+											priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -616,8 +987,8 @@ export function ConstructionProjectOverview({
 								<span>
 									{projectData.targetDate
 										? format(new Date(projectData.targetDate), "d MMM yyyy", {
-												locale: ru,
-											})
+											locale: ru,
+										})
 										: "Не определено"}
 								</span>
 							</div>
@@ -722,137 +1093,9 @@ export function ConstructionProjectOverview({
 	);
 }
 
-// Helper function to generate progress data from monthly revenue
-function generateProgressDataFromRevenue(
-	monthlyRevenue: Array<{ month: string; planned: number; actual: number }>,
-) {
-	if (!monthlyRevenue || monthlyRevenue.length === 0) {
-		// Generate sample data if no revenue data
-		return [
-			{ month: "Янв", planned: 5000000, actual: 4500000 },
-			{ month: "Фев", planned: 8000000, actual: 7200000 },
-			{ month: "Мар", planned: 10000000, actual: 9500000 },
-			{ month: "Апр", planned: 12000000, actual: 0 },
-			{ month: "Май", planned: 15000000, actual: 0 },
-		];
-	}
 
-	return monthlyRevenue.map((item) => ({
-		month: item.month,
-		planned: item.planned,
-		actual: item.actual,
-	}));
-}
 
-// Helper function to generate timeline data for task completion
-function generateTimelineData(projectData: {
-	startDate: string;
-	targetDate?: string | null;
-	taskStats: {
-		total: number;
-		completed: number;
-		inProgress: number;
-		notStarted: number;
-	};
-}) {
-	const startDate = new Date(projectData.startDate);
-	const targetDate = projectData.targetDate
-		? new Date(projectData.targetDate)
-		: new Date();
-	const currentDate = new Date();
 
-	// Generate data points from start to current date
-	const dataPoints = [];
-	const totalDays = Math.max(differenceInDays(targetDate, startDate), 1);
-	const daysPassed = Math.max(differenceInDays(currentDate, startDate), 0);
-	const daysToShow = Math.min(daysPassed, totalDays);
-
-	// If no tasks yet, return empty chart data
-	if (projectData.taskStats.total === 0) {
-		return [
-			{
-				date: format(currentDate, "d MMM", { locale: ru }),
-				total: 0,
-				completed: 0,
-				inProgress: 0,
-				notStarted: 0,
-				expected: 0,
-			},
-		];
-	}
-
-	// Create data points for every 7 days (weekly)
-	for (let i = 0; i <= daysToShow; i += 7) {
-		const date = new Date(startDate);
-		date.setDate(date.getDate() + i);
-
-		// Calculate expected completion based on linear progress
-		const expectedProgress =
-			totalDays > 0 ? (i / totalDays) * projectData.taskStats.total : 0;
-
-		// For demo purposes, show gradual completion
-		// In real implementation, this would come from historical task data
-		const progressRatio = daysToShow > 0 ? i / daysToShow : 0;
-
-		// Simulate task progression over time
-		const completedTasks = Math.min(
-			Math.round(progressRatio * projectData.taskStats.completed),
-			projectData.taskStats.completed,
-		);
-
-		const inProgressTasks = Math.min(
-			Math.round(progressRatio * projectData.taskStats.inProgress),
-			projectData.taskStats.inProgress,
-		);
-
-		// Not started tasks decrease as tasks move to in progress and completed
-		const totalProgressedTasks = completedTasks + inProgressTasks;
-		const notStartedTasks = Math.max(
-			projectData.taskStats.total - totalProgressedTasks,
-			projectData.taskStats.notStarted,
-		);
-
-		dataPoints.push({
-			date: format(date, "d MMM", { locale: ru }),
-			total: projectData.taskStats.total,
-			completed: completedTasks,
-			inProgress: inProgressTasks + completedTasks,
-			notStarted: notStartedTasks + inProgressTasks + completedTasks,
-			expected: Math.round(expectedProgress),
-		});
-	}
-
-	// Add current state as the last point
-	if (daysToShow > 0 && projectData.taskStats.total > 0) {
-		dataPoints.push({
-			date: format(currentDate, "d MMM", { locale: ru }),
-			total: projectData.taskStats.total,
-			completed: projectData.taskStats.completed,
-			inProgress:
-				projectData.taskStats.completed + projectData.taskStats.inProgress,
-			notStarted: projectData.taskStats.total,
-			expected: Math.round(
-				totalDays > 0
-					? (daysPassed / totalDays) * projectData.taskStats.total
-					: 0,
-			),
-		});
-	}
-
-	// Add deadline point if it's in the future
-	if (projectData.targetDate && targetDate > currentDate) {
-		dataPoints.push({
-			date: format(targetDate, "d MMM", { locale: ru }),
-			total: projectData.taskStats.total,
-			completed: projectData.taskStats.total, // Expected to be complete by deadline
-			inProgress: projectData.taskStats.total,
-			notStarted: projectData.taskStats.total,
-			expected: projectData.taskStats.total,
-		});
-	}
-
-	return dataPoints;
-}
 
 // Skeleton loader
 function ProjectOverviewSkeleton() {

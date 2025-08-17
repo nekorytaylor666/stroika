@@ -1,12 +1,20 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+} from "@/components/ui/select";
+import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { Link, useLocation, useParams } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import {
 	Activity,
 	BarChart3,
 	Calendar,
+	ChevronDown,
 	Folder,
 	LayoutGrid,
 	Paperclip,
@@ -21,6 +29,8 @@ interface NavItem {
 }
 
 export function ProjectNavigation() {
+	const isMobile = useMobile();
+	const navigate = useNavigate();
 	const { orgId, projectId } = useParams({
 		from: "/construction/$orgId/projects/$projectId",
 	});
@@ -69,6 +79,43 @@ export function ProjectNavigation() {
 		},
 	];
 
+	const currentNavItem = navItems.find((item) => location.pathname === item.href);
+
+	const handleNavChange = (href: string) => {
+		navigate({ to: href });
+	};
+
+	// Mobile view with select dropdown
+	if (isMobile) {
+		return (
+			<div className="border-b px-4 py-3">
+				<Select value={location.pathname} onValueChange={handleNavChange}>
+					<SelectTrigger className="h-10 w-full justify-between">
+						<div className="flex items-center gap-2">
+							{currentNavItem && (
+								<>
+									<currentNavItem.icon className="h-4 w-4" />
+									<span className="font-medium">{currentNavItem.label}</span>
+								</>
+							)}
+						</div>
+					</SelectTrigger>
+					<SelectContent>
+						{navItems.map((item) => (
+							<SelectItem key={item.href} value={item.href}>
+								<div className="flex items-center gap-2">
+									<item.icon className="h-4 w-4" />
+									<span>{item.label}</span>
+								</div>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+		);
+	}
+
+	// Desktop view with tab navigation
 	return (
 		<div className="flex items-center gap-1 border-b px-6 py-1">
 			{navItems.map((item) => {

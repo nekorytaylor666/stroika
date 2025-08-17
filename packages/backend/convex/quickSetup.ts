@@ -11,7 +11,6 @@ export const joinAsOwner = mutation({
 			throw new Error("Not authenticated");
 		}
 
-
 		// First try to get the user using auth.getUserId
 		const authUserId = await auth.getUserId(ctx);
 		let user = null;
@@ -277,7 +276,6 @@ export const joinAsOwner = mutation({
 			// Delete temp owner user
 			await ctx.db.delete(tempOwner._id);
 		}
-
 
 		return {
 			message: "Successfully joined organization",

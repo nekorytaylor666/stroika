@@ -1,4 +1,4 @@
-import { ConstructionProjectOverview } from "@/components/construction/project-overview";
+import { ConstructionProjectOverview } from "@/components/construction/construction-project-overview";
 import Header from "@/components/header";
 import MainLayout from "@/components/layout/main-layout";
 import type { Id } from "@stroika/backend";

@@ -23,7 +23,6 @@ export const viewer = query({
 			return null;
 		}
 
-
 		// Try multiple fields for email - ensure it's a string
 		const email =
 			(typeof identity.email === "string" ? identity.email : null) ||
@@ -39,7 +38,6 @@ export const viewer = query({
 				: null) ||
 			(typeof identity.sub === "string" ? identity.sub : null);
 
-
 		if (!email) {
 			return null;
 		}
@@ -49,7 +47,6 @@ export const viewer = query({
 			.query("users")
 			.withIndex("by_email", (q) => q.eq("email", email))
 			.first();
-
 
 		return user;
 	},
@@ -64,7 +61,6 @@ export const getAll = query({
 			throw new Error("Not authenticated");
 		}
 
-
 		// Get the user using auth.getUserId instead of email lookup
 		const authUserId = await auth.getUserId(ctx);
 
@@ -73,7 +69,6 @@ export const getAll = query({
 		}
 
 		const user = await ctx.db.get(authUserId);
-
 
 		if (!user || !user.currentOrganizationId) {
 			// Return empty array if user doesn't exist or has no organization
@@ -88,7 +83,6 @@ export const getAll = query({
 			)
 			.filter((q) => q.eq(q.field("isActive"), true))
 			.collect();
-
 
 		// Get user details for each member
 		const users = await Promise.all(

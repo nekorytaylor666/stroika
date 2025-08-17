@@ -19,7 +19,6 @@ export const search = query({
 		const searchTerm = args.query.toLowerCase().trim();
 		const category = args.category || "all";
 
-
 		if (searchTerm === "") {
 			return {
 				tasks: [],
@@ -54,8 +53,6 @@ export const search = query({
 				(issue) => !issue.isConstructionTask,
 			);
 
-
-
 			const filteredTasks = regularTasks.filter((task: any) => {
 				// More robust search
 				const normalizeForSearch = (str: string) =>
@@ -71,10 +68,8 @@ export const search = query({
 				const identMatch = taskIdent.includes(searchStr);
 				const match = titleMatch || descMatch || identMatch;
 
-
 				return match;
 			});
-
 
 			results.tasks = filteredTasks.slice(0, 10).map((task: any) => {
 				const status = allStatuses.find((s: any) => s._id === task.statusId);
@@ -97,7 +92,6 @@ export const search = query({
 				(issue) => issue.isConstructionTask,
 			);
 
-
 			const filteredConstructionTasks = constructionTasks.filter(
 				(task: any) => {
 					// More robust search
@@ -114,12 +108,9 @@ export const search = query({
 					const identMatch = taskIdent.includes(searchStr);
 					const match = titleMatch || descMatch || identMatch;
 
-
-
 					return match;
 				},
 			);
-
 
 			// Process construction tasks synchronously to avoid timing issues
 			const processedConstructionTasks = filteredConstructionTasks
@@ -139,7 +130,6 @@ export const search = query({
 						type: "constructionTask",
 					};
 				});
-
 
 			// Put construction tasks in BOTH results.constructionTasks AND results.tasks
 			// since in this system, "tasks" means construction tasks
@@ -188,7 +178,6 @@ export const search = query({
 			const allUsers = await ctx.db.query("users").collect();
 			const allRoles = await ctx.db.query("roles").collect();
 
-
 			const filteredUsers = allUsers.filter((user: any) => {
 				// More robust search that handles partial matches and encoding issues
 				const normalizeForSearch = (str: string) =>
@@ -205,11 +194,8 @@ export const search = query({
 				const positionMatch = userPosition.includes(searchStr);
 				const match = nameMatch || emailMatch || positionMatch;
 
-
-
 				return match;
 			});
-
 
 			results.members = filteredUsers.slice(0, 10).map((user: any) => {
 				const role = allRoles.find((r: any) => r._id === user.roleId);
@@ -253,7 +239,6 @@ export const search = query({
 					type: "constructionTeam",
 				}));
 		}
-
 
 		return results;
 	},
