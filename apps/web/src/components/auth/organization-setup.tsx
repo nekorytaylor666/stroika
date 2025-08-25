@@ -11,14 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@stroika/backend";
-import { useRouter } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 export function OrganizationSetup() {
 	const { isAuthenticated } = useConvexAuth();
-	const router = useRouter();
+	const navigate = useNavigate();
 	const [inviteCode, setInviteCode] = useState("");
 	const [isJoining, setIsJoining] = useState(false);
 
@@ -29,7 +29,7 @@ export function OrganizationSetup() {
 
 	// If user has organizations, redirect to the first one
 	if (organizations && organizations.length > 0) {
-		router.navigate({
+		navigate({
 			to: "/construction/$orgId/inbox",
 			params: { orgId: organizations[0]._id },
 		});
@@ -44,7 +44,7 @@ export function OrganizationSetup() {
 		try {
 			const result = await acceptInvite({ inviteCode: inviteCode.trim() });
 			if (result.organizationId) {
-				router.navigate({
+				navigate({
 					to: "/construction/$orgId/inbox",
 					params: { orgId: result.organizationId },
 				});
