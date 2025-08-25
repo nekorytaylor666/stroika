@@ -93,6 +93,7 @@ export default defineSchema({
 		name: v.string(),
 		email: v.string(),
 		avatarUrl: v.string(),
+		phone: v.optional(v.string()),
 		status: v.union(
 			v.literal("online"),
 			v.literal("offline"),
@@ -602,6 +603,7 @@ export default defineSchema({
 			v.literal("task_status_changed"),
 			v.literal("task_commented"),
 			v.literal("task_due_soon"),
+			v.literal("task_priority_changed"),
 			v.literal("project_update"),
 		),
 		data: v.optional(
@@ -617,4 +619,27 @@ export default defineSchema({
 	})
 		.index("by_user", ["userId"])
 		.index("by_user_and_read", ["userId", "read"]),
+
+	// Password reset tokens
+	passwordResetTokens: defineTable({
+		userId: v.id("users"),
+		token: v.string(),
+		email: v.string(),
+		expiresAt: v.number(),
+		usedAt: v.optional(v.number()),
+		createdAt: v.number(),
+	})
+		.index("by_token", ["token"])
+		.index("by_user", ["userId"])
+		.index("by_email", ["email"]),
+
+	// User generated passwords (for admin-created accounts)
+	userGeneratedPasswords: defineTable({
+		userId: v.id("users"),
+		temporaryPassword: v.string(),
+		mustChangePassword: v.boolean(),
+		generatedBy: v.id("users"),
+		generatedAt: v.number(),
+		changedAt: v.optional(v.number()),
+	}).index("by_user", ["userId"]),
 });

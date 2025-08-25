@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@stroika/backend";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useConvex, useQuery } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +19,8 @@ import { toast } from "sonner";
 export function AuthForm() {
 	const { signIn } = useAuthActions();
 	const navigate = useNavigate();
+	const search = useSearch({ from: "/auth" });
+	const returnTo = (search as any)?.returnTo;
 	const [isLoading, setIsLoading] = useState(false);
 	const convex = useConvex();
 
@@ -37,14 +39,20 @@ export function AuthForm() {
 			toast.success(
 				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
 			);
-			const organizations = await convex.query(
-				api.organizations.getUserOrganizations,
-			);
-			// Redirect to construction tasks after successful authentication
-			navigate({
-				to: "/construction/$orgId/inbox",
-				params: { orgId: organizations[0]._id },
-			});
+
+			// If there's a returnTo URL, redirect there
+			if (returnTo) {
+				navigate({ to: returnTo });
+			} else {
+				// Otherwise, redirect to the default organization
+				const organizations = await convex.query(
+					api.organizations.getUserOrganizations,
+				);
+				navigate({
+					to: "/construction/$orgId/inbox",
+					params: { orgId: organizations[0]._id },
+				});
+			}
 		} catch (error) {
 			toast.error(
 				error instanceof Error
@@ -98,6 +106,14 @@ export function AuthForm() {
 										required
 										disabled={isLoading}
 									/>
+								</div>
+								<div className="flex items-center justify-end">
+									<Link
+										to="/auth/forgot-password"
+										className="text-muted-foreground text-sm hover:underline"
+									>
+										Забыли пароль?
+									</Link>
 								</div>
 								<Button type="submit" className="w-full" disabled={isLoading}>
 									{isLoading ? "Вход..." : "Войти"}

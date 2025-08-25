@@ -447,6 +447,81 @@ export const removeMember = mutation({
 	},
 });
 
+// Deactivate member (soft delete)
+export const deactivateMember = mutation({
+	args: {
+		memberId: v.id("organizationMembers"),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Not authenticated");
+		}
+
+		// Get the user using auth.getUserId
+		const authUserId = await auth.getUserId(ctx);
+
+		if (!authUserId) {
+			throw new Error("Not authenticated");
+		}
+
+		const user = await ctx.db.get(authUserId);
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		const member = await ctx.db.get(args.memberId);
+		if (!member) {
+			throw new Error("Member not found");
+		}
+
+		// Check if requester has permission (must be admin)
+		const requesterMembership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_user", (q) =>
+				q.eq("organizationId", member.organizationId).eq("userId", user._id),
+			)
+			.first();
+
+		if (!requesterMembership || !requesterMembership.isActive) {
+			throw new Error("Not a member of this organization");
+		}
+
+		const requesterRole = await ctx.db.get(requesterMembership.roleId);
+		if (!requesterRole || requesterRole.name !== "admin") {
+			throw new Error("Only admins can deactivate members");
+		}
+
+		// Cannot deactivate self
+		if (member.userId === user._id) {
+			throw new Error("Cannot deactivate yourself");
+		}
+
+		// Deactivate member
+		await ctx.db.patch(args.memberId, {
+			isActive: false,
+		});
+
+		// Also update user's isActive status
+		await ctx.db.patch(member.userId, {
+			isActive: false,
+		});
+
+		// Log the change
+		await ctx.db.insert("permissionAuditLog", {
+			userId: user._id,
+			targetUserId: member.userId,
+			action: "member_deactivated",
+			details: JSON.stringify({
+				organizationId: member.organizationId,
+			}),
+			createdAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
 // Leave organization
 export const leaveOrganization = mutation({
 	args: {

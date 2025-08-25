@@ -153,7 +153,9 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							<div className="space-y-1">
 								<h1 className="font-semibold text-xl">{project.name}</h1>
 								{project.description && (
-									<p className="text-muted-foreground text-sm">{project.description}</p>
+									<p className="text-muted-foreground text-sm">
+										{project.description}
+									</p>
 								)}
 							</div>
 							<Button variant="ghost" size="icon" className="h-8 w-8">
@@ -172,10 +174,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 								)}
 							>
 								<StatusIcon
-									className={cn(
-										"h-3 w-3",
-										statusStyles[project.status].color,
-									)}
+									className={cn("h-3 w-3", statusStyles[project.status].color)}
 								/>
 								<span className={statusStyles[project.status].color}>
 									{project.status}
@@ -184,7 +183,10 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 
 							{project.priority && (
 								<Badge
-									className={cn("border-0 text-xs", priorityStyles[project.priority])}
+									className={cn(
+										"border-0 text-xs",
+										priorityStyles[project.priority],
+									)}
 								>
 									{project.priority}
 								</Badge>
@@ -277,13 +279,13 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							{/* Days Left */}
 							<div className="flex items-center justify-between">
 								<span className="text-muted-foreground text-xs">Time left</span>
-								<span className={cn(
-									"text-sm font-medium",
-									daysUntilTarget < 0 && "text-red-600"
-								)}>
-									{daysUntilTarget > 0
-										? `${daysUntilTarget} days`
-										: "Overdue"}
+								<span
+									className={cn(
+										"font-medium text-sm",
+										daysUntilTarget < 0 && "text-red-600",
+									)}
+								>
+									{daysUntilTarget > 0 ? `${daysUntilTarget} days` : "Overdue"}
 								</span>
 							</div>
 
@@ -359,10 +361,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							</div>
 							<div className="mt-3 flex flex-wrap items-center justify-center gap-3">
 								{pieData.map((item) => (
-									<div
-										key={item.name}
-										className="flex items-center gap-1.5"
-									>
+									<div key={item.name} className="flex items-center gap-1.5">
 										<div
 											className="h-2.5 w-2.5 rounded-sm"
 											style={{ backgroundColor: item.color }}
@@ -380,9 +379,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 							<div className="mb-3 flex items-center justify-between">
 								<h3 className="font-medium text-sm">Timeline</h3>
 								<span className="text-muted-foreground text-xs">
-									{daysUntilTarget > 0
-										? `${daysUntilTarget}d left`
-										: "Overdue"}
+									{daysUntilTarget > 0 ? `${daysUntilTarget}d left` : "Overdue"}
 								</span>
 							</div>
 							<div className="h-[200px]">
@@ -415,9 +412,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 											tickLine={false}
 											axisLine={false}
 										/>
-										<YAxis
-											hide
-										/>
+										<YAxis hide />
 										<Tooltip
 											contentStyle={{
 												backgroundColor: "var(--background)",
@@ -461,9 +456,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 											<div
 												className={cn(
 													"flex h-6 w-6 items-center justify-center rounded-full",
-													milestone.completed
-														? "bg-green-100"
-														: "bg-gray-100",
+													milestone.completed ? "bg-green-100" : "bg-gray-100",
 												)}
 											>
 												{milestone.completed ? (
@@ -472,8 +465,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 													<Circle className="h-3.5 w-3.5 text-gray-600" />
 												)}
 											</div>
-											<div className="flex-1 min-w-0">
-												<p className="font-medium text-sm truncate">
+											<div className="min-w-0 flex-1">
+												<p className="truncate font-medium text-sm">
 													{milestone.name}
 												</p>
 												<p className="text-muted-foreground text-xs">
@@ -488,7 +481,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 										<Button
 											variant="ghost"
 											size="sm"
-											className="w-full h-8 text-xs"
+											className="h-8 w-full text-xs"
 										>
 											View all {project.milestones.length} milestones
 										</Button>
@@ -640,8 +633,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 														•{" "}
 														{stats.scope > 0
 															? Math.round(
-																(stats.inProgress / stats.scope) * 100,
-															)
+																	(stats.inProgress / stats.scope) * 100,
+																)
 															: 0}
 														%
 													</span>

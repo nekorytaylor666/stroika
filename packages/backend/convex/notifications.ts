@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { type Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUser } from "./helpers/getCurrentUser";
 
 // Subscribe to push notifications
 export const subscribeToPush = mutation({
@@ -16,19 +17,7 @@ export const subscribeToPush = mutation({
 		userAgent: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated");
-		}
-
-		// Get user by token identifier
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
+		const user = await getCurrentUser(ctx);
 		if (!user) {
 			throw new Error("User not found");
 		}
@@ -92,6 +81,8 @@ export const unsubscribeFromPush = mutation({
 		endpoint: v.string(),
 	},
 	handler: async (ctx, args) => {
+		// We don't need the full user object for this operation
+		// Just verify authentication
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) {
 			throw new Error("Unauthenticated");
@@ -111,28 +102,22 @@ export const unsubscribeFromPush = mutation({
 // Get notification preferences
 export const getNotificationPreferences = query({
 	handler: async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		try {
+			const user = await getCurrentUser(ctx);
+			if (!user) {
+				return null;
+			}
+
+			const preferences = await ctx.db
+				.query("notificationPreferences")
+				.withIndex("by_user", (q) => q.eq("userId", user._id))
+				.unique();
+
+			return preferences;
+		} catch (error) {
+			// Return null if user is not authenticated
 			return null;
 		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) {
-			return null;
-		}
-
-		const preferences = await ctx.db
-			.query("notificationPreferences")
-			.withIndex("by_user", (q) => q.eq("userId", user._id))
-			.unique();
-
-		return preferences;
 	},
 });
 
@@ -148,21 +133,7 @@ export const updateNotificationPreferences = mutation({
 		emailEnabled: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated");
-		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
+		const user = await getCurrentUser(ctx);
 
 		const preferences = await ctx.db
 			.query("notificationPreferences")
@@ -198,37 +169,31 @@ export const getNotifications = query({
 		unreadOnly: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			return [];
-		}
+		try {
+			const user = await getCurrentUser(ctx);
+			if (!user) {
+				return [];
+			}
 
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) {
-			return [];
-		}
-
-		let query = ctx.db
-			.query("notifications")
-			.withIndex("by_user", (q) => q.eq("userId", user._id));
-
-		if (args.unreadOnly) {
-			query = ctx.db
+			let query = ctx.db
 				.query("notifications")
-				.withIndex("by_user_and_read", (q) =>
-					q.eq("userId", user._id).eq("read", false),
-				);
+				.withIndex("by_user", (q) => q.eq("userId", user._id));
+
+			if (args.unreadOnly) {
+				query = ctx.db
+					.query("notifications")
+					.withIndex("by_user_and_read", (q) =>
+						q.eq("userId", user._id).eq("read", false),
+					);
+			}
+
+			const notifications = await query.order("desc").take(args.limit ?? 50);
+
+			return notifications;
+		} catch (error) {
+			// Return empty array if user is not authenticated
+			return [];
 		}
-
-		const notifications = await query.order("desc").take(args.limit ?? 50);
-
-		return notifications;
 	},
 });
 
@@ -238,10 +203,7 @@ export const markNotificationAsRead = mutation({
 		notificationId: v.id("notifications"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated");
-		}
+		const user = await getCurrentUser(ctx);
 
 		const notification = await ctx.db.get(args.notificationId);
 		if (!notification) {
@@ -257,21 +219,7 @@ export const markNotificationAsRead = mutation({
 // Mark all notifications as read
 export const markAllNotificationsAsRead = mutation({
 	handler: async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Unauthenticated");
-		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) =>
-				q.eq("tokenIdentifier", identity.tokenIdentifier),
-			)
-			.unique();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
+		const user = await getCurrentUser(ctx);
 
 		const unreadNotifications = await ctx.db
 			.query("notifications")
@@ -309,6 +257,7 @@ export const sendNotification = mutation({
 			v.literal("task_status_changed"),
 			v.literal("task_commented"),
 			v.literal("task_due_soon"),
+			v.literal("task_priority_changed"),
 			v.literal("project_update"),
 		),
 		data: v.optional(
@@ -340,6 +289,7 @@ export const sendNotification = mutation({
 			task_status_changed: "taskStatusChanged",
 			task_commented: "taskCommented",
 			task_due_soon: "taskDueSoon",
+			task_priority_changed: "taskStatusChanged", // Use same preference as status change
 			project_update: "projectUpdates",
 		};
 
@@ -371,16 +321,82 @@ export const sendNotification = mutation({
 		// Send push notification to all user's devices
 		// This will be handled by the action that calls the Push API
 		if (subscriptions.length > 0) {
+			// Clean subscriptions to remove _creationTime field
+			const cleanedSubscriptions = subscriptions.map((sub) => ({
+				_id: sub._id,
+				userId: sub.userId,
+				endpoint: sub.endpoint,
+				keys: sub.keys,
+				userAgent: sub.userAgent,
+				createdAt: sub.createdAt,
+				updatedAt: sub.updatedAt,
+			}));
+
 			await ctx.scheduler.runAfter(
 				0,
 				api.notificationsAction.sendPushNotification,
 				{
-					subscriptions,
+					subscriptions: cleanedSubscriptions,
 					title: args.title,
 					body: args.body,
 					data: args.data,
 				},
 			);
 		}
+	},
+});
+
+// Send test notification to current user
+export const sendTestNotification = mutation({
+	handler: async (ctx) => {
+		const user = await getCurrentUser(ctx);
+
+		// Check if user has push notifications enabled
+		const preferences = await ctx.db
+			.query("notificationPreferences")
+			.withIndex("by_user", (q) => q.eq("userId", user._id))
+			.unique();
+
+		if (!preferences?.pushEnabled) {
+			throw new Error(
+				"Push notifications are disabled. Please enable them in settings.",
+			);
+		}
+
+		// Check if user has any push subscriptions
+		const subscriptions = await ctx.db
+			.query("pushSubscriptions")
+			.withIndex("by_user", (q) => q.eq("userId", user._id))
+			.collect();
+
+		if (subscriptions.length === 0) {
+			throw new Error(
+				"No push subscription found. Please enable notifications in your browser.",
+			);
+		}
+
+		console.log(
+			`Found ${subscriptions.length} subscription(s) for user ${user._id}`,
+		);
+		subscriptions.forEach((sub) => {
+			console.log("Subscription endpoint:", sub.endpoint);
+		});
+
+		// Send test notification
+		await ctx.runMutation(api.notifications.sendNotification, {
+			userId: user._id,
+			title: "Test Notification 🔔",
+			body: `This is a test notification sent at ${new Date().toLocaleTimeString("ru-RU")}`,
+			type: "project_update",
+			data: {
+				url: "/settings/notifications",
+			},
+		});
+
+		return {
+			success: true,
+			message: "Test notification sent successfully!",
+			subscriptionCount: subscriptions.length,
+		};
 	},
 });

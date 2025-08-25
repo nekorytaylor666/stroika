@@ -1,18 +1,20 @@
 "use client";
 
 import { AssigneeSelector } from "@/components/layout/sidebar/create-new-issue/assignee-selector";
-import { AttachmentUpload, type UploadedAttachment } from "@/components/layout/sidebar/create-new-issue/attachment-upload";
+import {
+	AttachmentUpload,
+	type UploadedAttachment,
+} from "@/components/layout/sidebar/create-new-issue/attachment-upload";
 import { ConstructionStatusSelector } from "@/components/layout/sidebar/create-new-issue/construction-status-selector";
 import { LabelSelector } from "@/components/layout/sidebar/create-new-issue/label-selector";
 import { PrioritySelector } from "@/components/layout/sidebar/create-new-issue/priority-selector";
 import { ProjectSelector } from "@/components/layout/sidebar/create-new-issue/project-selector";
-import { type SubtaskData, SubtasksInput } from "@/components/layout/sidebar/create-new-issue/subtasks-input";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-} from "@/components/ui/dialog";
+	type SubtaskData,
+	SubtasksInput,
+} from "@/components/layout/sidebar/create-new-issue/subtasks-input";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

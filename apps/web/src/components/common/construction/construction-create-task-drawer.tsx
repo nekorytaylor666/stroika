@@ -1,12 +1,18 @@
 "use client";
 
 import { AssigneeSelector } from "@/components/layout/sidebar/create-new-issue/assignee-selector";
-import { AttachmentUpload, type UploadedAttachment } from "@/components/layout/sidebar/create-new-issue/attachment-upload";
+import {
+	AttachmentUpload,
+	type UploadedAttachment,
+} from "@/components/layout/sidebar/create-new-issue/attachment-upload";
 import { ConstructionStatusSelector } from "@/components/layout/sidebar/create-new-issue/construction-status-selector";
 import { LabelSelector } from "@/components/layout/sidebar/create-new-issue/label-selector";
 import { PrioritySelector } from "@/components/layout/sidebar/create-new-issue/priority-selector";
 import { ProjectSelector } from "@/components/layout/sidebar/create-new-issue/project-selector";
-import { type SubtaskData, SubtasksInput } from "@/components/layout/sidebar/create-new-issue/subtasks-input";
+import {
+	type SubtaskData,
+	SubtasksInput,
+} from "@/components/layout/sidebar/create-new-issue/subtasks-input";
 import { Button } from "@/components/ui/button";
 import {
 	Drawer,
@@ -81,7 +87,7 @@ export function ConstructionCreateTaskDrawer() {
 		const defaultStatusId = defaultStatus
 			? defaultStatus.id
 			: statuses?.find((s) => s.name === "К выполнению")?._id ||
-			statuses?.[0]?._id;
+				statuses?.[0]?._id;
 		const defaultPriorityId =
 			priorities?.find((p) => p.name === "Средний")?._id ||
 			priorities?.[0]?._id;
@@ -100,12 +106,7 @@ export function ConstructionCreateTaskDrawer() {
 			attachments: [],
 			subtasks: [],
 		};
-	}, [
-		defaultStatus,
-		generateUniqueIdentifier,
-		statuses,
-		priorities,
-	]);
+	}, [defaultStatus, generateUniqueIdentifier, statuses, priorities]);
 
 	const [addTaskForm, setAddTaskForm] = useState<ConstructionTaskForm>(
 		createDefaultData(),
@@ -216,19 +217,23 @@ export function ConstructionCreateTaskDrawer() {
 	}
 
 	return (
-		<Drawer open={isOpen} onOpenChange={(open) => !open && closeModal()} repositionInputs={false}>
+		<Drawer
+			open={isOpen}
+			onOpenChange={(open) => !open && closeModal()}
+			repositionInputs={false}
+		>
 			<DrawerContent className="max-h-[90vh]">
-				<DrawerHeader>
-					<DrawerTitle>
-						<div className="flex items-center gap-2">
+				<DrawerHeader className="text-left">
+					<DrawerTitle className="text-left">
+						Создание новой задачи строительства
+					</DrawerTitle>
+					<DrawerDescription className="text-left">
+						<div className="flex items-start gap-2">
 							<Button size="sm" variant="outline" className="gap-1.5">
 								<Heart className="size-4 fill-orange-500 text-orange-500" />
 								<span className="font-medium">СТРОИТЕЛЬСТВО</span>
 							</Button>
 						</div>
-					</DrawerTitle>
-					<DrawerDescription>
-						Создание новой задачи строительства
 					</DrawerDescription>
 				</DrawerHeader>
 
@@ -336,10 +341,7 @@ export function ConstructionCreateTaskDrawer() {
 							<Label htmlFor="create-more">Создать ещё</Label>
 						</div>
 						<div className="flex gap-2">
-							<Button
-								onClick={createConstructionTask}
-								disabled={isLoading}
-							>
+							<Button onClick={createConstructionTask} disabled={isLoading}>
 								Создать задачу
 							</Button>
 							<DrawerClose asChild>

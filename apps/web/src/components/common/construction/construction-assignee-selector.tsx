@@ -49,10 +49,16 @@ export function ConstructionAssigneeSelector({
 	};
 
 	const handleAssigneeChange = async (userId: Id<"users"> | null) => {
+		if (!currentUser) {
+			console.error("No current user found");
+			return;
+		}
+
 		try {
 			await updateAssignee({
 				id: issueId,
 				assigneeId: userId,
+				userId: currentUser._id,
 			});
 			setOpen(false);
 		} catch (error) {

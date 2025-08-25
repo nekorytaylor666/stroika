@@ -50,12 +50,13 @@ export function MobileNavHeader({ scrollDirection }: MobileNavHeaderProps) {
 	return (
 		<header
 			className={cn(
-				"sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+				"sticky z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
 				"transform transition-transform duration-300",
 				scrollDirection === "down" && !isSearchOpen
 					? "-translate-y-full"
 					: "translate-y-0",
 			)}
+			style={{ top: "env(safe-area-inset-top, 0px)" }}
 		>
 			<div className="flex h-14 items-center px-4">
 				{/* Left side - Menu and Title */}

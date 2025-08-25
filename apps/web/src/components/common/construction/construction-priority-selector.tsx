@@ -15,6 +15,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation } from "convex/react";
@@ -72,13 +73,20 @@ export function ConstructionPrioritySelector({
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
 	const { priorities } = useConstructionData();
+	const currentUser = useCurrentUser();
 	const updatePriority = useMutation(api.constructionTasks.updatePriority);
 
 	const handlePriorityChange = async (priorityId: string) => {
+		if (!currentUser) {
+			console.error("No current user found");
+			return;
+		}
+
 		try {
 			await updatePriority({
 				id: issueId as Id<"issues">,
 				priorityId: priorityId as Id<"priorities">,
+				userId: currentUser._id,
 			});
 			setOpen(false);
 		} catch (error) {

@@ -44,8 +44,17 @@ export const sendPushNotification = action({
 
 		if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
 			console.error("VAPID keys not configured in Convex environment");
+			console.error("VAPID_PUBLIC_KEY exists:", !!VAPID_PUBLIC_KEY);
+			console.error("VAPID_PRIVATE_KEY exists:", !!VAPID_PRIVATE_KEY);
 			return [];
 		}
+
+		console.log("VAPID configuration:", {
+			subject: VAPID_SUBJECT,
+			publicKeyLength: VAPID_PUBLIC_KEY?.length,
+			privateKeyLength: VAPID_PRIVATE_KEY?.length,
+			publicKeyFirst20: VAPID_PUBLIC_KEY?.substring(0, 20),
+		});
 
 		// Set VAPID details
 		webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
@@ -72,15 +81,18 @@ export const sendPushNotification = action({
 		const results = await Promise.allSettled(
 			args.subscriptions.map(async (subscription) => {
 				try {
-					await webpush.sendNotification(
+					console.log("Sending push notification to:", subscription.endpoint);
+					const result = await webpush.sendNotification(
 						{
 							endpoint: subscription.endpoint,
 							keys: subscription.keys,
 						},
 						JSON.stringify(notification),
 					);
+					console.log("Push notification sent successfully:", result);
 					return { success: true, subscriptionId: subscription._id };
 				} catch (error: any) {
+					console.error("Push notification error:", error);
 					// Handle expired subscriptions
 					if (error.statusCode === 410) {
 						// Delete expired subscription

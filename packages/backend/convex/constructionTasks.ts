@@ -416,6 +416,15 @@ export const create = mutation({
 			newValue: args.title,
 		});
 
+		// Send notification if task is assigned
+		if (args.assigneeId && args.assigneeId !== userId) {
+			await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
+				issueId: taskId,
+				assigneeId: args.assigneeId,
+				assignedBy: userId,
+			});
+		}
+
 		return taskId;
 	},
 });
@@ -462,6 +471,14 @@ export const update = mutation({
 				},
 			});
 
+			// Send notification for status change
+			await ctx.runMutation(api.issueNotifications.notifyTaskStatusChanged, {
+				issueId: id,
+				oldStatusId: currentTask.statusId,
+				newStatusId: updates.statusId,
+				changedBy: userId,
+			});
+
 			// Check if task was completed
 			if (
 				newStatus?.name === "завершено" ||
@@ -490,6 +507,15 @@ export const update = mutation({
 					newAssigneeId: updates.assigneeId,
 				},
 			});
+
+			// Send notification for assignee change
+			if (updates.assigneeId) {
+				await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
+					issueId: id,
+					assigneeId: updates.assigneeId,
+					assignedBy: userId,
+				});
+			}
 		}
 
 		if (updates.priorityId && updates.priorityId !== currentTask.priorityId) {
@@ -501,6 +527,14 @@ export const update = mutation({
 					oldPriorityId: currentTask.priorityId,
 					newPriorityId: updates.priorityId,
 				},
+			});
+
+			// Send notification for priority change
+			await ctx.runMutation(api.issueNotifications.notifyTaskPriorityChanged, {
+				issueId: id,
+				oldPriorityId: currentTask.priorityId,
+				newPriorityId: updates.priorityId,
+				changedBy: userId,
 			});
 		}
 
@@ -551,6 +585,14 @@ export const updateStatus = mutation({
 				},
 			});
 
+			// Send notification for status change
+			await ctx.runMutation(api.issueNotifications.notifyTaskStatusChanged, {
+				issueId: args.id,
+				oldStatusId: currentTask.statusId,
+				newStatusId: args.statusId,
+				changedBy: args.userId,
+			});
+
 			// Check if task was completed
 			if (
 				newStatus?.name === "завершено" ||
@@ -575,8 +617,35 @@ export const updateAssignee = mutation({
 	args: {
 		id: v.id("issues"),
 		assigneeId: v.optional(v.id("users")),
+		userId: v.id("users"), // User making the change
 	},
 	handler: async (ctx, args) => {
+		// Get current task to check for changes
+		const currentTask = await ctx.db.get(args.id);
+		if (!currentTask) throw new Error("Task not found");
+
+		// Track activity
+		if (args.assigneeId !== currentTask.assigneeId) {
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: args.id,
+				userId: args.userId,
+				type: "assignee_changed",
+				metadata: {
+					oldAssigneeId: currentTask.assigneeId,
+					newAssigneeId: args.assigneeId,
+				},
+			});
+
+			// Send notification for assignee change
+			if (args.assigneeId) {
+				await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
+					issueId: args.id,
+					assigneeId: args.assigneeId,
+					assignedBy: args.userId,
+				});
+			}
+		}
+
 		await ctx.db.patch(args.id, { assigneeId: args.assigneeId });
 		return { success: true };
 	},
@@ -586,8 +655,34 @@ export const updatePriority = mutation({
 	args: {
 		id: v.id("issues"),
 		priorityId: v.id("priorities"),
+		userId: v.id("users"), // User making the change
 	},
 	handler: async (ctx, args) => {
+		// Get current task to check for changes
+		const currentTask = await ctx.db.get(args.id);
+		if (!currentTask) throw new Error("Task not found");
+
+		// Track activity and send notification
+		if (args.priorityId !== currentTask.priorityId) {
+			await ctx.runMutation(api.activities.createActivity, {
+				issueId: args.id,
+				userId: args.userId,
+				type: "priority_changed",
+				metadata: {
+					oldPriorityId: currentTask.priorityId,
+					newPriorityId: args.priorityId,
+				},
+			});
+
+			// Send notification for priority change
+			await ctx.runMutation(api.issueNotifications.notifyTaskPriorityChanged, {
+				issueId: args.id,
+				oldPriorityId: currentTask.priorityId,
+				newPriorityId: args.priorityId,
+				changedBy: args.userId,
+			});
+		}
+
 		await ctx.db.patch(args.id, { priorityId: args.priorityId });
 		return { success: true };
 	},

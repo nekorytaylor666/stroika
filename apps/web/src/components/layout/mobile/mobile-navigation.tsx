@@ -10,7 +10,15 @@ interface MobileNavigationProps {
 export function MobileNavigation({ children }: MobileNavigationProps) {
 	return (
 		<>
-			<div className="min-h-svh pb-16 lg:pb-0">{children}</div>
+			<div
+				className="min-h-svh lg:pb-0"
+				style={{
+					paddingTop: "env(safe-area-inset-top, 0px)",
+					paddingBottom: "env(safe-area-inset-bottom, 0px)",
+				}}
+			>
+				{children}
+			</div>
 			<MobileNavTabs />
 			<ConstructionCreateTaskDrawer />
 		</>

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { api } from "./_generated/api";
 import { Doc, type Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 
@@ -34,6 +35,13 @@ export const create = mutation({
 				});
 			}
 		}
+
+		// Send notification for new comment
+		await ctx.runMutation(api.issueNotifications.notifyTaskCommented, {
+			issueId: args.issueId,
+			commentId,
+			commentAuthorId: args.authorId,
+		});
 
 		return commentId;
 	},

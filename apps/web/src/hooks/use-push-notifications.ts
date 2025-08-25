@@ -1,4 +1,4 @@
-import { api } from "@/lib/convex";
+import { api } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";

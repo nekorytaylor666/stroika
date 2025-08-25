@@ -5,7 +5,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { Building, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/invite/$code")({
 	component: InvitePage,
@@ -14,13 +14,20 @@ export const Route = createFileRoute("/invite/$code")({
 function InvitePage() {
 	const { code } = Route.useParams();
 	const navigate = useNavigate();
-	const { isAuthenticated } = useConvexAuth();
+	const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
 	const [isAccepting, setIsAccepting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	// Query invite details
 	const invite = useQuery(api.invites.getInviteByCode, { inviteCode: code });
 	const acceptInvite = useMutation(api.invites.acceptInvite);
+
+	// Automatically redirect to auth if not authenticated
+	useEffect(() => {
+		if (!isAuthLoading && !isAuthenticated) {
+			navigate({ to: "/auth", search: { returnTo: `/invite/${code}` } });
+		}
+	}, [isAuthenticated, isAuthLoading, navigate, code]);
 
 	const handleAcceptInvite = async () => {
 		if (!isAuthenticated) {
@@ -43,6 +50,18 @@ function InvitePage() {
 			setIsAccepting(false);
 		}
 	};
+
+	// Show loading state while checking authentication
+	if (isAuthLoading || (!isAuthenticated && !isAuthLoading)) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-muted/30">
+				<div className="flex items-center gap-2">
+					<Loader2 className="h-4 w-4 animate-spin" />
+					<span>Checking authentication...</span>
+				</div>
+			</div>
+		);
+	}
 
 	if (!invite) {
 		return (

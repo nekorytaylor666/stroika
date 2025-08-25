@@ -211,9 +211,11 @@ export function ConstructionProjectOverview({
 										)}
 									/>
 									<span
-										className={statusStyles[
-											project.status.name as keyof typeof statusStyles
-										]?.color || "text-gray-600"}
+										className={
+											statusStyles[
+												project.status.name as keyof typeof statusStyles
+											]?.color || "text-gray-600"
+										}
 									>
 										{project.status.name}
 									</span>
@@ -240,7 +242,9 @@ export function ConstructionProjectOverview({
 									{project.targetDate && (
 										<>
 											{" → "}
-											{format(parseISO(project.targetDate), "d MMM", { locale: ru })}
+											{format(parseISO(project.targetDate), "d MMM", {
+												locale: ru,
+											})}
 										</>
 									)}
 								</span>
@@ -266,7 +270,9 @@ export function ConstructionProjectOverview({
 
 							<Card className="border-yellow-200 bg-yellow-50/50 p-3">
 								<div className="space-y-1">
-									<p className="font-semibold text-xl">{taskStats.inProgress}</p>
+									<p className="font-semibold text-xl">
+										{taskStats.inProgress}
+									</p>
 									<p className="text-muted-foreground text-xs">В работе</p>
 								</div>
 							</Card>
@@ -327,7 +333,9 @@ export function ConstructionProjectOverview({
 							{/* Lead */}
 							{project.lead && (
 								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-xs">Руководитель</span>
+									<span className="text-muted-foreground text-xs">
+										Руководитель
+									</span>
 									<div className="flex items-center gap-2">
 										<Avatar className="h-5 w-5">
 											<AvatarImage src={project.lead.avatarUrl} />
@@ -342,9 +350,12 @@ export function ConstructionProjectOverview({
 							<div className="flex items-center justify-between">
 								<span className="text-muted-foreground text-xs">Сроки</span>
 								<span className="text-sm">
-									{format(parseISO(project.startDate), "d MMM", { locale: ru })} -{" "}
+									{format(parseISO(project.startDate), "d MMM", { locale: ru })}{" "}
+									-{" "}
 									{project.targetDate
-										? format(parseISO(project.targetDate), "d MMM", { locale: ru })
+										? format(parseISO(project.targetDate), "d MMM", {
+												locale: ru,
+											})
 										: "Не определено"}
 								</span>
 							</div>
@@ -352,11 +363,15 @@ export function ConstructionProjectOverview({
 							{/* Days Left */}
 							{daysUntilTarget !== null && (
 								<div className="flex items-center justify-between">
-									<span className="text-muted-foreground text-xs">Осталось</span>
-									<span className={cn(
-										"text-sm font-medium",
-										daysUntilTarget < 0 && "text-red-600"
-									)}>
+									<span className="text-muted-foreground text-xs">
+										Осталось
+									</span>
+									<span
+										className={cn(
+											"font-medium text-sm",
+											daysUntilTarget < 0 && "text-red-600",
+										)}
+									>
 										{daysUntilTarget > 0
 											? `${daysUntilTarget} дней`
 											: "Просрочено"}
@@ -438,10 +453,7 @@ export function ConstructionProjectOverview({
 							</div>
 							<div className="mt-3 flex flex-wrap items-center justify-center gap-3">
 								{pieData.map((item) => (
-									<div
-										key={item.name}
-										className="flex items-center gap-1.5"
-									>
+									<div key={item.name} className="flex items-center gap-1.5">
 										<div
 											className="h-2.5 w-2.5 rounded-sm"
 											style={{ backgroundColor: item.color }}
@@ -477,9 +489,7 @@ export function ConstructionProjectOverview({
 												tickLine={false}
 												axisLine={false}
 											/>
-											<YAxis
-												hide
-											/>
+											<YAxis hide />
 											<Tooltip
 												formatter={(value: number) => formatCurrency(value)}
 												contentStyle={{
@@ -523,7 +533,7 @@ export function ConstructionProjectOverview({
 										key={task._id}
 										className="flex items-center justify-between p-3 transition-colors hover:bg-muted/50"
 									>
-										<div className="flex items-center gap-3 min-w-0">
+										<div className="flex min-w-0 items-center gap-3">
 											<div
 												className={cn(
 													"flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full",
@@ -539,14 +549,16 @@ export function ConstructionProjectOverview({
 												)}
 											</div>
 											<div className="min-w-0">
-												<p className="font-medium text-sm truncate">{task.title}</p>
+												<p className="truncate font-medium text-sm">
+													{task.title}
+												</p>
 												<p className="text-muted-foreground text-xs">
 													{task.identifier}
 												</p>
 											</div>
 										</div>
 										{task.dueDate && (
-											<span className="text-muted-foreground text-xs flex-shrink-0">
+											<span className="flex-shrink-0 text-muted-foreground text-xs">
 												{format(parseISO(task.dueDate), "d MMM", {
 													locale: ru,
 												})}
@@ -558,7 +570,7 @@ export function ConstructionProjectOverview({
 									<Button
 										variant="ghost"
 										size="sm"
-										className="w-full h-8 text-xs"
+										className="h-8 w-full text-xs"
 									>
 										Показать все {project.tasks.length} задач
 									</Button>

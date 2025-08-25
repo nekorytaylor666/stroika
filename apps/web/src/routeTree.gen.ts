@@ -9,9 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteCodeRouteImport } from './routes/invite.$code'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as ConstructionOrgIdRouteRouteImport } from './routes/construction.$orgId/route'
 import { Route as ConstructionOrgIdIndexRouteImport } from './routes/construction.$orgId/index'
 import { Route as ConstructionOrgIdSettingsRouteImport } from './routes/construction.$orgId/settings'
@@ -40,6 +43,11 @@ import { Route as ConstructionOrgIdProjectsProjectIdAttachmentsRouteImport } fro
 import { Route as ConstructionOrgIdProjectsProjectIdAnalyticsRouteImport } from './routes/construction.$orgId/projects.$projectId/analytics'
 import { Route as ConstructionOrgIdProjectsProjectIdActivityRouteImport } from './routes/construction.$orgId/projects.$projectId/activity'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -54,6 +62,16 @@ const InviteCodeRoute = InviteCodeRouteImport.update({
   id: '/invite/$code',
   path: '/invite/$code',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AuthRoute,
 } as any)
 const ConstructionOrgIdRouteRoute = ConstructionOrgIdRouteRouteImport.update({
   id: '/construction/$orgId',
@@ -215,8 +233,11 @@ const ConstructionOrgIdProjectsProjectIdActivityRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
@@ -247,7 +268,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
@@ -279,8 +303,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
   '/construction/$orgId/attachments': typeof ConstructionOrgIdAttachmentsRoute
@@ -314,7 +341,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/settings'
     | '/construction/$orgId'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
@@ -346,6 +376,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/settings'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
@@ -377,7 +410,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/settings'
     | '/construction/$orgId'
+    | '/auth/forgot-password'
+    | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
     | '/construction/$orgId/attachments'
@@ -409,13 +445,21 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
   ConstructionOrgIdRouteRoute: typeof ConstructionOrgIdRouteRouteWithChildren
   InviteCodeRoute: typeof InviteCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -436,6 +480,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$code'
       preLoaderRoute: typeof InviteCodeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/construction/$orgId': {
       id: '/construction/$orgId'
@@ -629,6 +687,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 interface ConstructionOrgIdProjectsProjectIdRouteRouteChildren {
   ConstructionOrgIdProjectsProjectIdActivityRoute: typeof ConstructionOrgIdProjectsProjectIdActivityRoute
   ConstructionOrgIdProjectsProjectIdAnalyticsRoute: typeof ConstructionOrgIdProjectsProjectIdAnalyticsRoute
@@ -722,7 +792,8 @@ const ConstructionOrgIdRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
+  SettingsRoute: SettingsRoute,
   ConstructionOrgIdRouteRoute: ConstructionOrgIdRouteRouteWithChildren,
   InviteCodeRoute: InviteCodeRoute,
 }

@@ -5,7 +5,7 @@ import { useConstructionCreateIssueStore } from "@/store/construction/constructi
 import { api } from "@stroika/backend";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { Building, CheckSquare, Home, Inbox, Plus } from "lucide-react";
+import { Building, CheckSquare, Home, Inbox, Plus, User } from "lucide-react";
 
 interface MobileNavItem {
 	name: string;
@@ -45,14 +45,14 @@ export function MobileNavTabs() {
 			icon: CheckSquare,
 		},
 		{
-			name: "Проекты",
-			href: `/construction/${orgId}/construction-projects`,
-			icon: Building,
+			name: "Профиль",
+			href: `/settings`,
+			icon: User,
 		},
 	];
 
 	return (
-		<div className="fixed right-0 bottom-0 left-0 z-50 border-t bg-background lg:hidden">
+		<div className="safe-area-bottom fixed right-0 bottom-0 left-0 z-50 border-t bg-background lg:hidden">
 			<nav className="flex h-16 items-center justify-around px-2">
 				{navItems.map((item) => {
 					const isActive = location.pathname.includes(item.href.split("/")[3]);

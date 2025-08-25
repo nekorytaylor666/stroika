@@ -3,6 +3,19 @@ import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
 
 // Get current authenticated user
+export const getCurrentUser = query({
+	handler: async (ctx) => {
+		const userId = await auth.getUserId(ctx);
+		if (!userId) {
+			return null;
+		}
+
+		const user = await ctx.db.get(userId);
+		return user;
+	},
+});
+
+// Get current authenticated user (alias for backward compatibility)
 export const viewer = query({
 	handler: async (ctx) => {
 		// Try to get userId from auth
@@ -95,6 +108,58 @@ export const getAll = query({
 		const filteredUsers = users.filter(Boolean);
 
 		return filteredUsers;
+	},
+});
+
+// Get current user (alias for viewer)
+export const me = query({
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			return null;
+		}
+
+		const tokenIdentifier = identity.tokenIdentifier;
+
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+			.first();
+
+		return user;
+	},
+});
+
+// Update current user's profile
+export const updateProfile = mutation({
+	args: {
+		name: v.optional(v.string()),
+		phone: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new Error("Not authenticated");
+		}
+
+		const tokenIdentifier = identity.tokenIdentifier;
+
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
+			.first();
+
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		const updates: any = {};
+		if (args.name !== undefined) updates.name = args.name;
+		if (args.phone !== undefined) updates.phone = args.phone;
+
+		await ctx.db.patch(user._id, updates);
+
+		return { success: true };
 	},
 });
 

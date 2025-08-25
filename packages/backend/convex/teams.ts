@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUser } from "./helpers/getCurrentUser";
 
 // Create a new team
 export const create = mutation({
@@ -109,17 +110,8 @@ export const list = query({
 		includeInactive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Check if user is a member
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
+		// Use the getCurrentUser helper
+		const user = await getCurrentUser(ctx);
 		if (!user) {
 			throw new Error("User not found");
 		}

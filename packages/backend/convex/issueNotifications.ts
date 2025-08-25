@@ -1,10 +1,10 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { internalMutation } from "./_generated/server";
+import { mutation } from "./_generated/server";
 
 // Send notification when task is assigned
-export const notifyTaskAssigned = internalMutation({
+export const notifyTaskAssigned = mutation({
 	args: {
 		issueId: v.id("issues"),
 		assigneeId: v.id("users"),
@@ -37,7 +37,7 @@ export const notifyTaskAssigned = internalMutation({
 });
 
 // Send notification when task status changes
-export const notifyTaskStatusChanged = internalMutation({
+export const notifyTaskStatusChanged = mutation({
 	args: {
 		issueId: v.id("issues"),
 		oldStatusId: v.id("status"),
@@ -74,7 +74,7 @@ export const notifyTaskStatusChanged = internalMutation({
 });
 
 // Send notification when task is commented
-export const notifyTaskCommented = internalMutation({
+export const notifyTaskCommented = mutation({
 	args: {
 		issueId: v.id("issues"),
 		commentId: v.id("issueComments"),
@@ -127,8 +127,45 @@ export const notifyTaskCommented = internalMutation({
 	},
 });
 
+// Send notification when task priority changes
+export const notifyTaskPriorityChanged = mutation({
+	args: {
+		issueId: v.id("issues"),
+		oldPriorityId: v.id("priorities"),
+		newPriorityId: v.id("priorities"),
+		changedBy: v.id("users"),
+	},
+	handler: async (ctx, args) => {
+		// Get issue details
+		const issue = await ctx.db.get(args.issueId);
+		if (!issue || !issue.assigneeId) return;
+
+		// Don't notify if user changed their own task
+		if (issue.assigneeId === args.changedBy) return;
+
+		// Get priority details
+		const oldPriority = await ctx.db.get(args.oldPriorityId);
+		const newPriority = await ctx.db.get(args.newPriorityId);
+		const changer = await ctx.db.get(args.changedBy);
+
+		if (!oldPriority || !newPriority || !changer) return;
+
+		// Send notification
+		await ctx.runMutation(api.notifications.sendNotification, {
+			userId: issue.assigneeId,
+			title: "Приоритет задачи изменен",
+			body: `${changer.name} изменил приоритет задачи "${issue.title}" с "${oldPriority.name}" на "${newPriority.name}"`,
+			type: "task_priority_changed",
+			data: {
+				issueId: args.issueId,
+				url: `/issues/${issue.identifier}`,
+			},
+		});
+	},
+});
+
 // Send notification when task is due soon
-export const notifyTaskDueSoon = internalMutation({
+export const notifyTaskDueSoon = mutation({
 	args: {
 		issueId: v.id("issues"),
 		hoursUntilDue: v.number(),

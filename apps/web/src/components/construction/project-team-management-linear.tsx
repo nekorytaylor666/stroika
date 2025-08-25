@@ -134,9 +134,10 @@ export function ProjectTeamManagementLinear({
 				userId,
 			});
 			toast.success(
-				`Участник удален из команды${result.unassignedTasks > 0
-					? `. ${result.unassignedTasks} задач были сняты с назначения`
-					: ""
+				`Участник удален из команды${
+					result.unassignedTasks > 0
+						? `. ${result.unassignedTasks} задач были сняты с назначения`
+						: ""
 				}`,
 			);
 		} catch (error) {
@@ -268,10 +269,12 @@ export function ProjectTeamManagementLinear({
 			</div>
 
 			{/* Team Overview Stats */}
-			<div className={cn(
-				"grid flex-shrink-0 gap-3",
-				isMobile ? "grid-cols-2" : "md:grid-cols-4"
-			)}>
+			<div
+				className={cn(
+					"grid flex-shrink-0 gap-3",
+					isMobile ? "grid-cols-2" : "md:grid-cols-4",
+				)}
+			>
 				<Card className="p-3">
 					<div className="flex items-center justify-between">
 						<p className="text-muted-foreground text-xs">Участники</p>
@@ -306,7 +309,7 @@ export function ProjectTeamManagementLinear({
 						{Math.round(
 							(teamData.teamStats.completedTasks /
 								teamData.teamStats.plannedTasks) *
-							100,
+								100,
 						) || 0}
 						%
 					</p>
@@ -410,7 +413,10 @@ export function ProjectTeamManagementLinear({
 												))}
 											</SelectContent>
 										</Select>
-										<Select value={statusFilter} onValueChange={setStatusFilter}>
+										<Select
+											value={statusFilter}
+											onValueChange={setStatusFilter}
+										>
 											<SelectTrigger>
 												<SelectValue placeholder="Все статусы" />
 											</SelectTrigger>
@@ -429,7 +435,9 @@ export function ProjectTeamManagementLinear({
 											<SelectContent>
 												<SelectItem value="name">По имени</SelectItem>
 												<SelectItem value="workload">По загрузке</SelectItem>
-												<SelectItem value="performance">По выполнению</SelectItem>
+												<SelectItem value="performance">
+													По выполнению
+												</SelectItem>
 												<SelectItem value="tasks">По задачам</SelectItem>
 											</SelectContent>
 										</Select>
@@ -508,7 +516,7 @@ export function ProjectTeamManagementLinear({
 									"pb-4",
 									viewMode === "grid"
 										? isMobile
-											? "grid gap-3 grid-cols-1"
+											? "grid grid-cols-1 gap-3"
 											: "grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
 										: "space-y-2",
 								)}
@@ -574,7 +582,7 @@ export function ProjectTeamManagementLinear({
 							{/* Selected Count */}
 							{selectedUserIds.length > 0 && (
 								<div className="flex items-center justify-between rounded-lg bg-primary/10 p-3">
-									<p className="text-primary text-sm font-medium">
+									<p className="font-medium text-primary text-sm">
 										Выбрано: {selectedUserIds.length}
 									</p>
 									<Button
@@ -596,7 +604,8 @@ export function ProjectTeamManagementLinear({
 												key={user._id}
 												className={cn(
 													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50 active:bg-muted",
-													selectedUserIds.includes(user._id) && "border border-primary/20 bg-primary/10",
+													selectedUserIds.includes(user._id) &&
+														"border border-primary/20 bg-primary/10",
 												)}
 												onClick={() => toggleUserSelection(user._id)}
 												onKeyDown={(e) => {
@@ -623,8 +632,10 @@ export function ProjectTeamManagementLinear({
 													</AvatarFallback>
 												</Avatar>
 												<div className="min-w-0 flex-1">
-													<div className="truncate font-medium">{user.name}</div>
-													<div className="truncate text-sm text-muted-foreground">
+													<div className="truncate font-medium">
+														{user.name}
+													</div>
+													<div className="truncate text-muted-foreground text-sm">
 														{user.email}
 													</div>
 													{user.position && (
@@ -669,7 +680,8 @@ export function ProjectTeamManagementLinear({
 									onClick={handleAddMembers}
 									disabled={selectedUserIds.length === 0}
 								>
-									Добавить {selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
+									Добавить{" "}
+									{selectedUserIds.length > 0 && `(${selectedUserIds.length})`}
 								</Button>
 							</div>
 						</div>
@@ -902,10 +914,10 @@ export function ProjectTeamManagementLinear({
 												<span className="font-medium">
 													{selectedMember.taskStats.plan > 0
 														? Math.round(
-															(selectedMember.taskStats.fact /
-																selectedMember.taskStats.plan) *
-															100,
-														)
+																(selectedMember.taskStats.fact /
+																	selectedMember.taskStats.plan) *
+																	100,
+															)
 														: 0}
 													%
 												</span>
@@ -1004,7 +1016,10 @@ function ProjectTeamSkeleton() {
 						<div className="space-y-3">
 							<div className="grid grid-cols-3 gap-3">
 								{[...Array(3)].map((_, j) => (
-									<Skeleton key={`metric-${i}-${j}`} className="h-12 w-full rounded-lg" />
+									<Skeleton
+										key={`metric-${i}-${j}`}
+										className="h-12 w-full rounded-lg"
+									/>
 								))}
 							</div>
 							<Skeleton className="h-2 w-full" />

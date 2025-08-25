@@ -440,10 +440,11 @@ export function ConstructionTaskDetails({
 									<DropdownMenuContent align="start" className="w-[200px]">
 										<DropdownMenuItem
 											onClick={async () => {
-												if (updateTaskAssignee) {
+												if (updateTaskAssignee && currentUser) {
 													await updateTaskAssignee({
 														id: currentTask._id as Id<"issues">,
 														assigneeId: undefined,
+														userId: currentUser._id,
 													});
 												}
 											}}
@@ -455,10 +456,11 @@ export function ConstructionTaskDetails({
 											<DropdownMenuItem
 												key={user._id}
 												onClick={async () => {
-													if (updateTaskAssignee) {
+													if (updateTaskAssignee && currentUser) {
 														await updateTaskAssignee({
 															id: currentTask._id as Id<"issues">,
 															assigneeId: user._id as Id<"users">,
+															userId: currentUser._id,
 														});
 													}
 												}}
@@ -498,10 +500,11 @@ export function ConstructionTaskDetails({
 											<DropdownMenuItem
 												key={p._id}
 												onClick={async () => {
-													if (updateTaskPriority) {
+													if (updateTaskPriority && currentUser) {
 														await updateTaskPriority({
 															id: currentTask._id as Id<"issues">,
 															priorityId: p._id as Id<"priorities">,
+															userId: currentUser._id,
 														});
 													}
 												}}

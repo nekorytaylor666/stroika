@@ -13,19 +13,14 @@ import {
 
 const accountItems = [
 	{
-		name: "Профиль",
-		url: "/account/profile",
+		name: "Настройки",
+		url: "/settings",
 		icon: User,
 	},
 	{
 		name: "Подписка",
 		url: "/account/billing",
 		icon: CreditCard,
-	},
-	{
-		name: "Уведомления",
-		url: "/account/notifications",
-		icon: Bell,
 	},
 	{
 		name: "Безопасность",

@@ -51,13 +51,7 @@ export function UserProfile() {
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem asChild>
-					<Link to="/lndev-ui/settings/account">
-						<User className="mr-2 h-4 w-4" />
-						<span>Профиль</span>
-					</Link>
-				</DropdownMenuItem>
-				<DropdownMenuItem asChild>
-					<Link to="/lndev-ui/settings/general">
+					<Link to="/settings">
 						<Settings className="mr-2 h-4 w-4" />
 						<span>Настройки</span>
 					</Link>

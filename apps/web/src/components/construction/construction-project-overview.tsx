@@ -83,8 +83,6 @@ const priorityStyles = {
 	Критический: "bg-red-100 text-red-700",
 };
 
-
-
 export function ConstructionProjectOverview({
 	projectId,
 }: ConstructionProjectOverviewProps) {
@@ -105,13 +103,15 @@ export function ConstructionProjectOverview({
 	});
 
 	// Filter out null values and map to UserOption format
-	const users = allUsers?.filter((user): user is NonNullable<typeof user> => user !== null).map(user => ({
-		_id: user._id,
-		name: user.name,
-		email: user.email,
-		avatarUrl: user.avatarUrl,
-		role: user.position,
-	}));
+	const users = allUsers
+		?.filter((user): user is NonNullable<typeof user> => user !== null)
+		.map((user) => ({
+			_id: user._id,
+			name: user.name,
+			email: user.email,
+			avatarUrl: user.avatarUrl,
+			role: user.position,
+		}));
 
 	if (!projectData) {
 		return <ProjectOverviewSkeleton />;
@@ -151,14 +151,18 @@ export function ConstructionProjectOverview({
 								<div
 									className={cn(
 										"flex h-6 w-6 items-center justify-center rounded",
-										statusStyles[projectData.status.name as keyof typeof statusStyles]?.bg,
-										statusStyles[projectData.status.name as keyof typeof statusStyles]?.color,
+										statusStyles[
+											projectData.status.name as keyof typeof statusStyles
+										]?.bg,
+										statusStyles[
+											projectData.status.name as keyof typeof statusStyles
+										]?.color,
 									)}
 								>
 									<StatusIcon className="h-3 w-3" />
 								</div>
 							)}
-							<span className="max-w-40 truncate text-sm font-medium">
+							<span className="max-w-40 truncate font-medium text-sm">
 								{projectData.name}
 							</span>
 						</div>
@@ -180,7 +184,7 @@ export function ConstructionProjectOverview({
 								}}
 								variant="h1"
 								placeholder="Project name"
-								className="text-xl font-semibold"
+								className="font-semibold text-xl"
 							/>
 						</div>
 
@@ -199,9 +203,12 @@ export function ConstructionProjectOverview({
 												label: status.name,
 												className: cn(
 													"border-0",
-													statusStyles[status.name as keyof typeof statusStyles]?.bg,
-													statusStyles[status.name as keyof typeof statusStyles]?.borderColor,
-													statusStyles[status.name as keyof typeof statusStyles]?.color,
+													statusStyles[status.name as keyof typeof statusStyles]
+														?.bg,
+													statusStyles[status.name as keyof typeof statusStyles]
+														?.borderColor,
+													statusStyles[status.name as keyof typeof statusStyles]
+														?.color,
 												),
 											};
 										})}
@@ -233,7 +240,9 @@ export function ConstructionProjectOverview({
 											label: priority.name,
 											className: cn(
 												"border-0",
-												priorityStyles[priority.name as keyof typeof priorityStyles],
+												priorityStyles[
+													priority.name as keyof typeof priorityStyles
+												],
 											),
 										}))}
 										onSave={async (value) => {
@@ -253,7 +262,9 @@ export function ConstructionProjectOverview({
 						{/* Lead Row */}
 						<div className="-mx-4 flex items-center justify-between p-3">
 							<div className="flex items-center gap-3">
-								<span className="text-muted-foreground text-sm">Руководитель</span>
+								<span className="text-muted-foreground text-sm">
+									Руководитель
+								</span>
 							</div>
 							{users && (
 								<EditableUserSelect
@@ -293,7 +304,9 @@ export function ConstructionProjectOverview({
 						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 							<div className="flex items-center gap-3">
 								<MapPin className="h-4 w-4 text-muted-foreground" />
-								<span className="text-muted-foreground text-sm">Местоположение</span>
+								<span className="text-muted-foreground text-sm">
+									Местоположение
+								</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<EditableText
@@ -336,7 +349,9 @@ export function ConstructionProjectOverview({
 						<div className="-mx-4 flex items-center justify-between p-3">
 							<div className="flex items-center gap-3">
 								<Calendar className="h-4 w-4 text-muted-foreground" />
-								<span className="text-muted-foreground text-sm">Дата начала</span>
+								<span className="text-muted-foreground text-sm">
+									Дата начала
+								</span>
 							</div>
 							<EditableDate
 								value={projectData.startDate}
@@ -373,7 +388,9 @@ export function ConstructionProjectOverview({
 						{/* Project Type Row */}
 						<div className="-mx-4 flex cursor-pointer items-center justify-between p-3 hover:bg-muted/50">
 							<div className="flex items-center gap-3">
-								<span className="text-muted-foreground text-sm">Тип проекта</span>
+								<span className="text-muted-foreground text-sm">
+									Тип проекта
+								</span>
 							</div>
 							<div className="flex items-center gap-2">
 								<EditableSelect
@@ -418,14 +435,18 @@ export function ConstructionProjectOverview({
 
 								<Card className="border-yellow-200 bg-yellow-50/50 p-3">
 									<div className="space-y-1">
-										<p className="font-semibold text-lg">{taskStats.inProgress}</p>
+										<p className="font-semibold text-lg">
+											{taskStats.inProgress}
+										</p>
 										<p className="text-muted-foreground text-xs">В работе</p>
 									</div>
 								</Card>
 
 								<Card className="border-green-200 bg-green-50/50 p-3">
 									<div className="space-y-1">
-										<p className="font-semibold text-lg">{taskStats.completed}</p>
+										<p className="font-semibold text-lg">
+											{taskStats.completed}
+										</p>
 										<p className="text-muted-foreground text-xs">Готово</p>
 									</div>
 								</Card>
@@ -435,7 +456,9 @@ export function ConstructionProjectOverview({
 							<div className="space-y-2">
 								<div className="flex items-center justify-between text-sm">
 									<span>Выполнено</span>
-									<span className="font-medium">{Math.round(progressPercentage)}%</span>
+									<span className="font-medium">
+										{Math.round(progressPercentage)}%
+									</span>
 								</div>
 								<div className="h-2 overflow-hidden rounded-full bg-muted">
 									<div
@@ -480,7 +503,7 @@ export function ConstructionProjectOverview({
 											<div className="flex min-w-0 flex-1 items-center gap-3">
 												<div
 													className={cn(
-														"flex h-6 w-6 flex-shrink-0 items-center justify-center rounded text-xs font-medium",
+														"flex h-6 w-6 flex-shrink-0 items-center justify-center rounded font-medium text-xs",
 														task.priority?.name === "Срочный"
 															? "bg-red-100 text-red-700"
 															: task.priority?.name === "Высокий"
@@ -493,10 +516,14 @@ export function ConstructionProjectOverview({
 													{task.identifier}
 												</div>
 												<div className="min-w-0 flex-1">
-													<p className="font-medium text-sm truncate">{task.title}</p>
+													<p className="truncate font-medium text-sm">
+														{task.title}
+													</p>
 													<div className="flex items-center gap-2 text-muted-foreground text-xs">
 														{task.assignee && (
-															<span className="truncate">{task.assignee.name}</span>
+															<span className="truncate">
+																{task.assignee.name}
+															</span>
 														)}
 														{task.dueDate && (
 															<span>
@@ -509,7 +536,10 @@ export function ConstructionProjectOverview({
 													</div>
 												</div>
 											</div>
-											<Badge variant="outline" className="flex-shrink-0 text-xs">
+											<Badge
+												variant="outline"
+												className="flex-shrink-0 text-xs"
+											>
 												{task.status?.name}
 											</Badge>
 										</div>
@@ -633,7 +663,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-											priority.name as keyof typeof priorityStyles
+												priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -740,9 +770,9 @@ export function ConstructionProjectOverview({
 														•{" "}
 														{taskStats.total > 0
 															? Math.round(
-																(taskStats.inProgress / taskStats.total) *
-																100,
-															)
+																	(taskStats.inProgress / taskStats.total) *
+																		100,
+																)
 															: 0}
 														%
 													</span>
@@ -868,7 +898,7 @@ export function ConstructionProjectOverview({
 			</div>
 
 			{/* Sidebar */}
-			<div className="hidden lg:block lg:w-80 space-y-6 border-l bg-muted/10 p-6">
+			<div className="hidden space-y-6 border-l bg-muted/10 p-6 lg:block lg:w-80">
 				<div>
 					<h3 className="mb-4 font-medium text-sm">Свойства</h3>
 					<div className="space-y-4">
@@ -921,7 +951,7 @@ export function ConstructionProjectOverview({
 										className: cn(
 											"border-0",
 											priorityStyles[
-											priority.name as keyof typeof priorityStyles
+												priority.name as keyof typeof priorityStyles
 											],
 										),
 									}))}
@@ -987,8 +1017,8 @@ export function ConstructionProjectOverview({
 								<span>
 									{projectData.targetDate
 										? format(new Date(projectData.targetDate), "d MMM yyyy", {
-											locale: ru,
-										})
+												locale: ru,
+											})
 										: "Не определено"}
 								</span>
 							</div>
@@ -1092,10 +1122,6 @@ export function ConstructionProjectOverview({
 		</div>
 	);
 }
-
-
-
-
 
 // Skeleton loader
 function ProjectOverviewSkeleton() {

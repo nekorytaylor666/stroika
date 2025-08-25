@@ -9,7 +9,12 @@ import {
 } from "@/components/ui/select";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import {
+	Link,
+	useLocation,
+	useNavigate,
+	useParams,
+} from "@tanstack/react-router";
 import {
 	Activity,
 	BarChart3,
@@ -79,7 +84,9 @@ export function ProjectNavigation() {
 		},
 	];
 
-	const currentNavItem = navItems.find((item) => location.pathname === item.href);
+	const currentNavItem = navItems.find(
+		(item) => location.pathname === item.href,
+	);
 
 	const handleNavChange = (href: string) => {
 		navigate({ to: href });

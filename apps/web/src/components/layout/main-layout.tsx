@@ -29,7 +29,7 @@ export default function MainLayout({
 			<MobileNavigation>
 				<div className="flex h-full w-full flex-col items-center justify-start overflow-hidden bg-container">
 					{header}
-					<div className="w-full overflow-auto">{children}</div>
+					<div className="w-full flex-1 overflow-auto">{children}</div>
 				</div>
 			</MobileNavigation>
 		);
