@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { getCurrentUser, requireOrganizationAccess } from "./helpers/getCurrentUser";
 
 // Generate a random invite code
 function generateInviteCode(): string {
@@ -22,33 +23,13 @@ export const createInvite = mutation({
 		expiresInDays: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the user
-		const authUserId = await auth.getUserId(ctx);
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
+		// Get current user and verify organization membership
+		const { user, membership } = await requireOrganizationAccess(
+			ctx,
+			args.organizationId,
+		);
 
 		// Check if user has permission to invite
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
 
 		// Check if user has admin role or invite permission
 		const role = await ctx.db.get(membership.roleId);
@@ -365,32 +346,11 @@ export const listInvites = query({
 		),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Check if user has permission to view invites
-		const authUserId = await auth.getUserId(ctx);
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		// Get current user and verify organization membership
+		const { user, membership } = await requireOrganizationAccess(
+			ctx,
+			args.organizationId,
+		);
 
 		// Get invites
 		let invitesQuery = ctx.db
@@ -448,6 +408,39 @@ export const listInvites = query({
 	},
 });
 
+// Get invite URL by invite ID
+export const getInviteUrl = query({
+	args: { inviteId: v.id("organizationInvites") },
+	handler: async (ctx, args) => {
+		const invite = await ctx.db.get(args.inviteId);
+		if (!invite) {
+			throw new Error("Invite not found");
+		}
+
+		// Get current user and verify organization membership
+		const { user, membership } = await requireOrganizationAccess(
+			ctx,
+			invite.organizationId,
+		);
+
+		// Check if invite is still valid
+		if (invite.status !== "pending") {
+			throw new Error(`Invite is ${invite.status}`);
+		}
+
+		if (invite.expiresAt < Date.now()) {
+			throw new Error("Invite has expired");
+		}
+
+		return {
+			inviteCode: invite.inviteCode,
+			inviteUrl: `/invite/${invite.inviteCode}`,
+			email: invite.email,
+			expiresAt: invite.expiresAt,
+		};
+	},
+});
+
 // Cancel invite
 export const cancelInvite = mutation({
 	args: { inviteId: v.id("organizationInvites") },
@@ -462,27 +455,11 @@ export const cancelInvite = mutation({
 			throw new Error("Invite not found");
 		}
 
-		// Check if user has permission to cancel invite
-		const authUserId = await auth.getUserId(ctx);
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", invite.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		// Get current user and verify organization membership
+		const { user, membership } = await requireOrganizationAccess(
+			ctx,
+			invite.organizationId,
+		);
 
 		// Check if user has admin role
 		const role = await ctx.db.get(membership.roleId);
