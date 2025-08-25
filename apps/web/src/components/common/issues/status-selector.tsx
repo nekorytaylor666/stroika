@@ -73,9 +73,9 @@ export function StatusSelector({ status, issueId }: StatusSelectorProps) {
 					align="start"
 				>
 					<Command>
-						<CommandInput placeholder="Set status..." />
+						<CommandInput placeholder="Установить статус..." />
 						<CommandList>
-							<CommandEmpty>No status found.</CommandEmpty>
+							<CommandEmpty>Статус не найден.</CommandEmpty>
 							<CommandGroup></CommandGroup>
 						</CommandList>
 					</Command>

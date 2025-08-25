@@ -339,7 +339,7 @@ export function DocumentComments({ documentId }: DocumentCommentsProps) {
 					size="sm"
 					onClick={() => setShowResolved(!showResolved)}
 				>
-					{showResolved ? "Hide" : "Show"} resolved
+					{showResolved ? "Скрыть" : "Показать"} решенные
 				</Button>
 			</div>
 
@@ -369,7 +369,7 @@ export function DocumentComments({ documentId }: DocumentCommentsProps) {
 				<div className="relative">
 					<Textarea
 						ref={textareaRef}
-						placeholder="Add a comment... Use @ to mention someone"
+						placeholder="Добавить комментарий... Используйте @ для упоминания"
 						value={newComment}
 						onChange={(e) => {
 							setNewComment(e.target.value);

@@ -91,7 +91,7 @@ export function DocumentViewer({ documentId }: DocumentViewerProps) {
 		return (
 			<div className="py-8 text-center text-gray-500">
 				<FileText className="mx-auto mb-2 h-8 w-8 opacity-50" />
-				<p className="text-sm">No files attached</p>
+				<p className="text-sm">Файлы не прикреплены</p>
 			</div>
 		);
 	}

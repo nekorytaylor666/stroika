@@ -3,6 +3,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+	type GanttFeature,
+	GanttFeatureItem,
+	GanttFeatureList,
+	GanttFeatureListGroup,
+	GanttFeatureRow,
+	GanttHeader,
+	GanttProvider,
+	GanttSidebar,
+	GanttSidebarGroup,
+	GanttSidebarItem,
+	type GanttStatus,
+	GanttTimeline,
+	GanttToday,
+} from "@/components/ui/kibo-ui/gantt";
+import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -14,20 +29,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	type GanttFeature,
-	GanttFeatureItem,
-	GanttFeatureList,
-	GanttFeatureListGroup,
-	GanttHeader,
-	GanttProvider,
-	GanttSidebar,
-	GanttSidebarGroup,
-	GanttSidebarItem,
-	type GanttStatus,
-	GanttTimeline,
-	GanttToday,
-} from "@/components/ui/shadcn-io/gantt";
 import { cn } from "@/lib/utils";
 import { useGanttFilterStore } from "@/store/gantt-filter-store";
 import { api } from "@stroika/backend";
@@ -472,31 +473,62 @@ function ConstructionGanttView() {
 							<GanttFeatureList>
 								<GanttToday />
 								{Array.from(projectGroups.values()).map(
-									({ project, features }) => (
-										<GanttFeatureListGroup key={project._id}>
-											{features.map((feature) => (
-												<GanttFeatureItem
-													key={feature.id}
-													{...feature}
-													className={
-														feature.id === project._id ? "font-medium" : ""
-													}
-												>
-													<div className="flex items-center gap-2">
-														<div
-															className="h-2 w-2 shrink-0 rounded-full"
-															style={{ backgroundColor: feature.status.color }}
-														/>
-														<p className="flex-1 truncate text-xs">
-															{feature.id === project._id
-																? project.name
-																: feature.name}
-														</p>
-													</div>
-												</GanttFeatureItem>
-											))}
-										</GanttFeatureListGroup>
-									),
+									({ project, features }) => {
+										// Separate project feature from task features
+										const projectFeature = features.find(
+											(f) => f.id === project._id,
+										);
+										const taskFeatures = features.filter(
+											(f) => f.id !== project._id,
+										);
+
+										return (
+											<GanttFeatureListGroup key={project._id}>
+												{/* Project row */}
+												{projectFeature && (
+													<GanttFeatureRow
+														features={[projectFeature]}
+														className="font-medium"
+													>
+														{(feature) => (
+															<div className="flex items-center gap-2">
+																<div
+																	className="h-2 w-2 shrink-0 rounded-full"
+																	style={{
+																		backgroundColor: feature.status.color,
+																	}}
+																/>
+																<p className="flex-1 truncate text-xs">
+																	{project.name}
+																</p>
+															</div>
+														)}
+													</GanttFeatureRow>
+												)}
+												{/* Tasks row - all tasks can be on the same row and will be stacked if they overlap */}
+												{taskFeatures.length > 0 && (
+													<GanttFeatureRow
+														features={taskFeatures}
+														className="ml-4"
+													>
+														{(feature) => (
+															<div className="flex items-center gap-2">
+																<div
+																	className="h-2 w-2 shrink-0 rounded-full"
+																	style={{
+																		backgroundColor: feature.status.color,
+																	}}
+																/>
+																<p className="flex-1 truncate text-xs">
+																	{feature.name}
+																</p>
+															</div>
+														)}
+													</GanttFeatureRow>
+												)}
+											</GanttFeatureListGroup>
+										);
+									},
 								)}
 							</GanttFeatureList>
 						</GanttTimeline>

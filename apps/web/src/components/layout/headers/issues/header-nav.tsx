@@ -95,7 +95,7 @@ export default function HeaderNav() {
 							size="icon"
 							onClick={toggleSearch}
 							className="h-8 w-8"
-							aria-label="Search"
+							aria-label="Поиск"
 						>
 							<SearchIcon className="h-4 w-4" />
 						</Button>

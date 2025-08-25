@@ -100,7 +100,7 @@ export function DocumentBoard({ documents }: DocumentBoardProps) {
 										onClick={() => setIsCreateModalOpen(true)}
 									>
 										<Plus className="mr-2 h-4 w-4" />
-										Add document
+										Добавить документ
 									</Button>
 								)}
 							</div>

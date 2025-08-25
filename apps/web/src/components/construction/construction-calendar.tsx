@@ -28,7 +28,7 @@ export function ConstructionCalendar() {
 				const projectEvent: CalendarEvent = {
 					id: `project-${project._id}`,
 					title: `🏗️ ${project.name}`,
-					description: `Project: ${project.name}\nStatus: ${project.status?.name || "Unknown"}\nLead: ${project.lead?.name || "Unknown"}`,
+					description: `Проект: ${project.name}\nСтатус: ${project.status?.name || "Неизвестно"}\nРуководитель: ${project.lead?.name || "Неизвестно"}`,
 					start: new Date(project.startDate),
 					end: project.targetDate
 						? new Date(project.targetDate)
@@ -45,7 +45,7 @@ export function ConstructionCalendar() {
 					const taskEvent: CalendarEvent = {
 						id: `task-${task._id}`,
 						title: task.title,
-						description: `Task: ${task.title}\nProject: ${project.name}\nStatus: ${task.status?.name || "Unknown"}\nAssignee: ${task.assignee?.name || "Unassigned"}`,
+						description: `Задача: ${task.title}\nПроект: ${project.name}\nСтатус: ${task.status?.name || "Неизвестно"}\nИсполнитель: ${task.assignee?.name || "Не назначен"}`,
 						start: new Date(task.startDate),
 						end: new Date(task.dueDate),
 						allDay: true,

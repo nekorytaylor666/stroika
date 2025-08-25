@@ -67,9 +67,9 @@ export function StatusWithPercent({
 			</PopoverTrigger>
 			<PopoverContent className="w-48 border-input p-0" align="start">
 				<Command>
-					<CommandInput placeholder="Set status..." />
+					<CommandInput placeholder="Установить статус..." />
 					<CommandList>
-						<CommandEmpty>No status found.</CommandEmpty>
+						<CommandEmpty>Статус не найден.</CommandEmpty>
 						<CommandGroup>
 							{allStatus.map((item) => {
 								const Icon = item.icon;

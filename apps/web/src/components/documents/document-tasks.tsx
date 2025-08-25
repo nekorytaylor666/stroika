@@ -163,7 +163,7 @@ export function DocumentTasks({ documentId }: DocumentTasksProps) {
 				{!documentTasks || documentTasks.length === 0 ? (
 					<div className="py-8 text-center text-gray-500">
 						<Link2 className="mx-auto mb-2 h-8 w-8 opacity-50" />
-						<p className="text-sm">No linked tasks</p>
+						<p className="text-sm">Нет связанных задач</p>
 						<Button
 							size="sm"
 							variant="outline"

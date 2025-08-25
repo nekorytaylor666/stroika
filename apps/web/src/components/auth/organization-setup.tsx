@@ -100,7 +100,7 @@ export function OrganizationSetup() {
 							<Input
 								id="inviteCode"
 								type="text"
-								placeholder="Enter your invite code"
+								placeholder="Введите код приглашения"
 								value={inviteCode}
 								onChange={(e) => setInviteCode(e.target.value)}
 								disabled={isJoining}

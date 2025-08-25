@@ -8,11 +8,11 @@ export default function HeaderOptions() {
 		<div className="flex h-10 w-full items-center justify-between border-b px-6 py-1.5">
 			<Button size="xs" variant="ghost">
 				<ListFilter className="size-4" />
-				<span className="ml-1 hidden sm:inline">Filter</span>
+				<span className="ml-1 hidden sm:inline">Фильтр</span>
 			</Button>
 			<Button className="relative" size="xs" variant="secondary">
 				<SlidersHorizontal className="size-4" />
-				<span className="ml-1 hidden sm:inline">Display</span>
+				<span className="ml-1 hidden sm:inline">Отображение</span>
 			</Button>
 		</div>
 	);
