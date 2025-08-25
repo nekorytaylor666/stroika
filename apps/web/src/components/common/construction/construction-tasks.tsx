@@ -1,26 +1,41 @@
 "use client";
 
-import { useConstructionData } from "@/hooks/use-construction-data";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
-import { useFilterStore } from "@/store/filter-store";
-import { useSearchStore } from "@/store/search-store";
 import { useViewStore } from "@/store/view-store";
 import { type Id, api } from "@stroika/backend";
 import { useParams } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { type FC, useMemo } from "react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { CreateIssueModalProvider } from "../issues/create-issue-modal-provider";
+import { useMutation, useQuery } from "convex/react";
+import { type FC, useMemo, useState } from "react";
+import {
+	ListProvider,
+	ListGroup,
+	ListItems,
+	ListItem,
+	type DragEndEvent as ListDragEndEvent,
+} from "../../ui/kibo-ui/list";
+import {
+	KanbanProvider,
+	KanbanBoard,
+	KanbanHeader,
+	KanbanCards,
+	KanbanCard,
+	type DragEndEvent as KanbanDragEndEvent,
+} from "../../ui/kibo-ui/kanban";
 import { ConstructionCreateIssueModal } from "./construction-create-issue-modal";
-import { ConstructionGroupIssues } from "./construction-group-issues";
-import { ConstructionCustomDragLayer } from "./construction-issue-grid";
 import { ConstructionTaskDetails } from "./construction-task-details";
-import { LinearKanbanBoard } from "./linear-kanban-board";
 import { MobileTaskListWrapper } from "./mobile/mobile-task-list-wrapper";
-import { SearchConstructionTasks } from "./search-construction-tasks";
+import { ConstructionIssueLine } from "./construction-issue-line";
+import { ConstructionKanbanCard } from "./construction-kanban-card";
+import { Button } from "../../ui/button";
+import { Plus, Calendar, User, Hash, AlertCircle, CheckCircle, Circle, Clock, XCircle } from "lucide-react";
+import { useCreateIssueStore } from "@/store/create-issue-store";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Badge } from "../../ui/badge";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -34,12 +49,13 @@ export interface ConstructionTask {
 	labelIds: string[];
 	createdAt: string;
 	cycleId: string;
-	projectId?: string; // References constructionProjects
+	projectId?: string;
+	constructionProjectId?: string;
 	rank: string;
 	dueDate?: string;
 	isConstructionTask: boolean;
-	parentTaskId?: string; // For subtask hierarchy
-	subtaskCount?: number; // Number of subtasks
+	parentTaskId?: string;
+	subtaskCount?: number;
 	attachments?: Array<{
 		_id: string;
 		issueId: string;
@@ -66,23 +82,114 @@ export interface StatusType {
 }
 
 interface ConstructionTasksProps {
+	tasks: ConstructionTask[];
+	statuses: StatusType[];
 	projectId?: string;
+	onTaskStatusChange?: (taskId: string, newStatusId: string) => Promise<void>;
 }
 
 export default function ConstructionTasks({
+	tasks,
+	statuses,
 	projectId,
-}: ConstructionTasksProps = {}) {
-	const { isSearchOpen, searchQuery } = useSearchStore();
+	onTaskStatusChange,
+}: ConstructionTasksProps) {
 	const { viewType } = useViewStore();
-	const { hasActiveFilters } = useFilterStore();
-	const { isOpen, selectedTask, closeTaskDetails } =
+	const { isOpen, selectedTask, closeTaskDetails, openTaskDetails } =
 		useConstructionTaskDetailsStore();
+	const { openModal } = useCreateIssueStore();
 	const isMobile = useMobile();
 	const params = useParams({ from: "/construction/$orgId" });
+	const currentUser = useCurrentUser();
+	const updateTaskStatus = useMutation(api.constructionTasks.updateStatus);
 
-	const isSearching = isSearchOpen && searchQuery.trim() !== "";
 	const isViewTypeGrid = viewType === "grid";
-	const isFiltering = hasActiveFilters();
+
+	// Group tasks by status
+	const tasksByStatus = useMemo(() => {
+		const result: Record<string, ConstructionTask[]> = {};
+		for (const status of statuses) {
+			result[status._id] = tasks.filter(
+				(task) => task.statusId === status._id,
+			);
+		}
+		return result;
+	}, [tasks, statuses]);
+
+	// Transform tasks for kanban
+	const kanbanData = useMemo(() => {
+		return tasks.map((task) => ({
+			id: task._id,
+			name: task.title,
+			column: task.statusId,
+			task,
+		}));
+	}, [tasks]);
+
+	// Transform statuses for kanban columns
+	const kanbanColumns = useMemo(() => {
+		return statuses.map((status) => ({
+			id: status._id,
+			name: status.name,
+			color: status.color,
+			iconName: status.iconName,
+		}));
+	}, [statuses]);
+
+	// Handle task status change
+	const handleTaskStatusChange = async (taskId: string, newStatusId: string) => {
+		if (onTaskStatusChange) {
+			await onTaskStatusChange(taskId, newStatusId);
+		} else if (currentUser) {
+			try {
+				await updateTaskStatus({
+					id: taskId as Id<"issues">,
+					statusId: newStatusId as Id<"status">,
+					userId: currentUser._id as Id<"users">,
+				});
+			} catch (error) {
+				console.error("Failed to update task status:", error);
+			}
+		}
+	};
+
+	// Handle drag end for list view
+	const handleListDragEnd = async (event: ListDragEndEvent) => {
+		const { active, over } = event;
+		if (!over || !currentUser) return;
+
+		const draggedTaskId = active.id as string;
+		const newStatusId = over.id as string;
+
+		const draggedTask = tasks.find((task) => task._id === draggedTaskId);
+		if (!draggedTask || draggedTask.statusId === newStatusId) return;
+
+		await handleTaskStatusChange(draggedTaskId, newStatusId);
+	};
+
+	// Handle drag end for kanban view
+	const handleKanbanDragEnd = async (event: KanbanDragEndEvent) => {
+		const { active, over } = event;
+		if (!over || !currentUser) return;
+
+		const draggedTaskId = active.id as string;
+		const draggedTask = tasks.find((task) => task._id === draggedTaskId);
+		if (!draggedTask) return;
+
+		// Check if dropped on a column header or card
+		let newStatusId: string;
+		const overTask = tasks.find((task) => task._id === over.id);
+		if (overTask) {
+			newStatusId = overTask.statusId;
+		} else {
+			// Dropped on column header
+			newStatusId = over.id as string;
+		}
+
+		if (draggedTask.statusId !== newStatusId) {
+			await handleTaskStatusChange(draggedTaskId, newStatusId);
+		}
+	};
 
 	// Mobile view
 	if (isMobile) {
@@ -100,32 +207,158 @@ export default function ConstructionTasks({
 		);
 	}
 
-	// Desktop view
+	// Desktop Kanban view
+	if (isViewTypeGrid) {
+		return (
+			<>
+				<ConstructionCreateIssueModal />
+				<div className="h-full w-full overflow-x-auto p-4">
+					<KanbanProvider
+						columns={kanbanColumns}
+						data={kanbanData}
+						onDragEnd={handleKanbanDragEnd}
+						className="h-full"
+					>
+						{(column) => (
+							<KanbanBoard key={column.id} id={column.id}>
+								<KanbanHeader
+									className="flex items-center justify-between px-3"
+									style={{ backgroundColor: `${column.color}10` }}
+								>
+									<div className="flex items-center gap-2">
+										<div
+											className="h-3.5 w-3.5 rounded-full"
+											style={{ backgroundColor: column.color }}
+										/>
+										<span>{column.name}</span>
+										<span className="text-muted-foreground">
+											{tasksByStatus[column.id]?.length || 0}
+										</span>
+									</div>
+									<Button
+										className="h-6 w-6"
+										size="icon"
+										variant="ghost"
+										onClick={(e) => {
+											e.stopPropagation();
+											openModal({
+												status: {
+													id: column.id as Id<"status">,
+													name: column.name,
+													color: column.color,
+													icon: () => null,
+												} as any,
+												projectId: projectId as Id<"constructionProjects">,
+											});
+										}}
+									>
+										<Plus className="h-4 w-4" />
+									</Button>
+								</KanbanHeader>
+								<KanbanCards id={column.id}>
+									{(item) => (
+										<KanbanCard
+											key={item.id}
+											id={item.id}
+											name={item.name}
+											column={item.column}
+											className="p-0 hover:shadow-md transition-shadow"
+										>
+											<div
+												onClick={() => openTaskDetails(item.task)}
+												className="cursor-pointer p-3"
+											>
+												<ConstructionKanbanCard task={item.task} />
+											</div>
+										</KanbanCard>
+									)}
+								</KanbanCards>
+							</KanbanBoard>
+						)}
+					</KanbanProvider>
+				</div>
+				<ConstructionTaskDetails
+					task={selectedTask}
+					open={isOpen}
+					onOpenChange={closeTaskDetails}
+					orgId={params.orgId}
+				/>
+			</>
+		);
+	}
+
+	// Desktop List view
 	return (
-		<DndProvider backend={HTML5Backend}>
+		<>
 			<ConstructionCreateIssueModal />
-			<ConstructionCustomDragLayer />
-			<div
-				className={cn(
-					"h-full w-full",
-					isViewTypeGrid ? "overflow-x-auto" : "overflow-y-auto",
-				)}
-			>
-				{isSearching ? (
-					<div className="px-6 py-4">
-						<SearchConstructionTasks />
-					</div>
-				) : isFiltering ? (
-					<FilteredConstructionTasksView
-						isViewTypeGrid={isViewTypeGrid}
-						projectId={projectId}
-					/>
-				) : (
-					<GroupConstructionTasksListView
-						isViewTypeGrid={isViewTypeGrid}
-						projectId={projectId}
-					/>
-				)}
+			<div className="h-full w-full overflow-y-auto">
+				<ListProvider onDragEnd={handleListDragEnd} className="w-full">
+					{statuses.map((status) => {
+						const statusTasks = tasksByStatus[status._id] || [];
+						if (statusTasks.length === 0) return null;
+
+						return (
+							<ListGroup
+								key={status._id}
+								id={status._id}
+								className="mb-4 w-full bg-container"
+							>
+								<div
+									className="sticky top-0 z-10 h-10 w-full bg-container"
+									style={{ backgroundColor: `${status.color}08` }}
+								>
+									<div className="flex h-full items-center justify-between px-6">
+										<div className="flex items-center gap-2">
+											<div
+												className="h-3.5 w-3.5 rounded-full"
+												style={{ backgroundColor: status.color }}
+											/>
+											<span className="font-medium text-sm">{status.name}</span>
+											<span className="text-muted-foreground text-sm">
+												{statusTasks.length}
+											</span>
+										</div>
+										<Button
+											className="h-6 w-6"
+											size="icon"
+											variant="ghost"
+											onClick={(e) => {
+												e.stopPropagation();
+												openModal({
+													status: {
+														id: status._id as Id<"status">,
+														name: status.name,
+														color: status.color,
+														icon: () => null,
+													} as any,
+													projectId: projectId as Id<"constructionProjects">,
+												});
+											}}
+										>
+											<Plus className="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
+								<ListItems className="space-y-1 px-6 py-2">
+									{statusTasks.map((task, index) => (
+										<ListItem
+											key={task._id}
+											id={task._id}
+											name={task.title}
+											index={index}
+											parent={status._id}
+											className="p-0 hover:bg-accent/50 transition-colors cursor-pointer"
+										>
+											<div onClick={() => openTaskDetails(task)}>
+												<ConstructionIssueLine issue={task} layoutId={true} />
+											</div>
+										</ListItem>
+									))}
+								</ListItems>
+							</ListGroup>
+						);
+					})}
+				</ListProvider>
 			</div>
 			<ConstructionTaskDetails
 				task={selectedTask}
@@ -133,153 +366,16 @@ export default function ConstructionTasks({
 				onOpenChange={closeTaskDetails}
 				orgId={params.orgId}
 			/>
-		</DndProvider>
+		</>
 	);
 }
 
-const FilteredConstructionTasksView: FC<{
-	isViewTypeGrid: boolean;
+// Wrapper component that fetches data and passes it as props
+export function ConstructionTasksContainer({
+	projectId,
+}: {
 	projectId?: string;
-}> = ({ isViewTypeGrid = false, projectId }) => {
-	const { filters } = useFilterStore();
-	const { tasks, statuses } = useConstructionData();
-
-	// Apply filters to get filtered tasks
-	const filteredTasks = useMemo(() => {
-		if (!tasks) return [];
-
-		let result = tasks;
-
-		// Filter by status
-		if (filters.status && filters.status.length > 0) {
-			result = result.filter((task) => filters.status.includes(task.statusId));
-		}
-
-		// Filter by assignee
-		if (filters.assignee && filters.assignee.length > 0) {
-			result = result.filter((task) => {
-				if (filters.assignee.includes("unassigned")) {
-					// If 'unassigned' is selected and the task has no assignee
-					if (!task.assigneeId) {
-						return true;
-					}
-				}
-				// Check if the task's assignee is in the selected assignees
-				return task.assigneeId && filters.assignee.includes(task.assigneeId);
-			});
-		}
-
-		// Filter by priority
-		if (filters.priority && filters.priority.length > 0) {
-			result = result.filter((task) =>
-				filters.priority.includes(task.priorityId),
-			);
-		}
-
-		// Filter by labels
-		if (filters.labels && filters.labels.length > 0) {
-			result = result.filter((task) =>
-				task.labelIds.some((labelId) => filters.labels.includes(labelId)),
-			);
-		}
-
-		// Filter by project from filters
-		if (filters.project && filters.project.length > 0) {
-			result = result.filter(
-				(task) => task.projectId && filters.project.includes(task.projectId),
-			);
-		}
-
-		// Filter by projectId prop (for project-specific views)
-		if (projectId) {
-			result = result.filter(
-				(task) => task.constructionProjectId === projectId,
-			);
-		}
-
-		return result;
-	}, [
-		tasks,
-		filters.status,
-		filters.assignee,
-		filters.priority,
-		filters.labels,
-		filters.project,
-		projectId,
-	]);
-
-	// Group filtered tasks by status
-	const filteredTasksByStatus = useMemo(() => {
-		if (!statuses) return {};
-
-		const result: Record<string, ConstructionTask[]> = {};
-
-		for (const statusItem of statuses) {
-			result[statusItem._id] = filteredTasks.filter(
-				(task) => task.statusId === statusItem._id,
-			);
-		}
-
-		return result;
-	}, [filteredTasks, statuses]);
-
-	// Show loading state
-	if (!statuses) {
-		return (
-			<div
-				className={cn(
-					isViewTypeGrid
-						? "flex h-full min-w-max gap-3 px-2 py-2"
-						: "w-full space-y-4 px-6 py-4",
-				)}
-			>
-				{[...Array(4)].map((_, i) => (
-					<div
-						key={i}
-						className={cn(
-							"animate-pulse",
-							isViewTypeGrid
-								? "h-full w-[348px] flex-shrink-0 rounded-lg bg-muted/50"
-								: "h-32 w-full rounded-lg bg-muted/50",
-						)}
-					/>
-				))}
-			</div>
-		);
-	}
-
-	// Grid view (Linear-style Kanban board)
-	if (isViewTypeGrid) {
-		return <LinearKanbanBoard tasks={filteredTasks} statuses={statuses} />;
-	}
-
-	// List view (Linear-style flat list)
-	return (
-		<div className="w-full">
-			{statuses.map((statusItem) => {
-				const statusIssues = filteredTasksByStatus[statusItem._id] || [];
-				// Only render status groups that have issues in list view
-				if (statusIssues.length === 0) {
-					return null;
-				}
-				return (
-					<ConstructionGroupIssues
-						key={statusItem._id}
-						status={statusItem}
-						issues={statusIssues}
-						count={statusIssues.length}
-					/>
-				);
-			})}
-		</div>
-	);
-};
-
-const GroupConstructionTasksListView: FC<{
-	isViewTypeGrid: boolean;
-	projectId?: string;
-}> = ({ isViewTypeGrid = false, projectId }) => {
-	// Use different queries based on whether we have a projectId
+}) {
 	const tasks = projectId
 		? useQuery(api.constructionTasks.getByProject, {
 				projectId: projectId as Id<"constructionProjects">,
@@ -288,67 +384,19 @@ const GroupConstructionTasksListView: FC<{
 
 	const statuses = useQuery(api.metadata.getAllStatus);
 
-	// Group tasks by status
-	const tasksByStatus = useMemo(() => {
-		if (!tasks || !statuses) return {};
-
-		const result: Record<string, ConstructionTask[]> = {};
-		for (const statusItem of statuses) {
-			result[statusItem._id] = tasks.filter(
-				(task) => task.statusId === statusItem._id,
-			);
-		}
-		return result;
-	}, [tasks, statuses]);
-
-	// Show loading state
-	if (!statuses || !tasks) {
+	if (!tasks || !statuses) {
 		return (
-			<div
-				className={cn(
-					isViewTypeGrid
-						? "flex h-full min-w-max gap-3 px-2 py-2"
-						: "w-full space-y-4 px-6 py-4",
-				)}
-			>
-				{[...Array(4)].map((_, i) => (
-					<div
-						key={i}
-						className={cn(
-							"animate-pulse",
-							isViewTypeGrid
-								? "h-full w-[348px] flex-shrink-0 rounded-lg bg-muted/50"
-								: "h-32 w-full rounded-lg bg-muted/50",
-						)}
-					/>
-				))}
+			<div className="flex h-full items-center justify-center">
+				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
 			</div>
 		);
 	}
 
-	// Grid view (Linear-style Kanban board)
-	if (isViewTypeGrid) {
-		return <LinearKanbanBoard tasks={tasks} statuses={statuses} />;
-	}
-
-	// List view (Linear-style flat list)
 	return (
-		<div className="w-full">
-			{statuses.map((statusItem) => {
-				const statusIssues = tasksByStatus[statusItem._id] || [];
-				// Only render status groups that have issues in list view
-				if (statusIssues.length === 0) {
-					return null;
-				}
-				return (
-					<ConstructionGroupIssues
-						key={statusItem._id}
-						status={statusItem}
-						issues={statusIssues}
-						count={statusIssues.length}
-					/>
-				);
-			})}
-		</div>
+		<ConstructionTasks
+			tasks={tasks}
+			statuses={statuses}
+			projectId={projectId}
+		/>
 	);
-};
+}

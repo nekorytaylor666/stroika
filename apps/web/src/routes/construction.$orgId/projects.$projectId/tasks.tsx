@@ -1,4 +1,4 @@
-import ConstructionTasks from "@/components/common/construction/construction-tasks";
+import { ConstructionTasksContainer } from "@/components/common/construction/construction-tasks";
 import { ConstructionFilter } from "@/components/layout/headers/construction/filter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -119,7 +119,7 @@ function ProjectTasksPage() {
 
 			{/* Tasks content */}
 			<div className="flex-1 overflow-hidden">
-				<ConstructionTasks projectId={projectId} />
+				<ConstructionTasksContainer projectId={projectId} />
 			</div>
 		</div>
 	);

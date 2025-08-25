@@ -15,6 +15,16 @@ export const getLabelById = query({
 	},
 });
 
+export const getLabelsByIds = query({
+	args: { ids: v.array(v.id("labels")) },
+	handler: async (ctx, args) => {
+		const labels = await Promise.all(
+			args.ids.map((id) => ctx.db.get(id))
+		);
+		return labels.filter((label) => label !== null);
+	},
+});
+
 export const createLabel = mutation({
 	args: {
 		name: v.string(),

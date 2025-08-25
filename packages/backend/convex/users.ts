@@ -177,6 +177,14 @@ export const getById = query({
 	},
 });
 
+// Alias for getById for compatibility with frontend
+export const get = query({
+	args: { userId: v.id("users") },
+	handler: async (ctx, args) => {
+		return await ctx.db.get(args.userId);
+	},
+});
+
 export const getByEmail = query({
 	args: { email: v.string() },
 	handler: async (ctx, args) => {
