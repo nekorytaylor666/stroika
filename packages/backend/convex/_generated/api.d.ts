@@ -41,6 +41,7 @@ import type * as http from "../http.js";
 import type * as invites from "../invites.js";
 import type * as issueComments from "../issueComments.js";
 import type * as issueNotifications from "../issueNotifications.js";
+import type * as labels from "../labels.js";
 import type * as metadata from "../metadata.js";
 import type * as migrations_cleanupUsers from "../migrations/cleanupUsers.js";
 import type * as migrations_migrateUsersToRoleId from "../migrations/migrateUsersToRoleId.js";
@@ -100,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   invites: typeof invites;
   issueComments: typeof issueComments;
   issueNotifications: typeof issueNotifications;
+  labels: typeof labels;
   metadata: typeof metadata;
   "migrations/cleanupUsers": typeof migrations_cleanupUsers;
   "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;

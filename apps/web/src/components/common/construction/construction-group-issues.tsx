@@ -24,6 +24,14 @@ import { IssueDragType } from "../issues/issue-grid";
 import { ConstructionIssueGrid } from "./construction-issue-grid";
 import { ConstructionIssueLine } from "./construction-issue-line";
 import type { ConstructionTask, StatusType } from "./construction-tasks";
+import {
+	ListProvider,
+	ListGroup,
+	ListHeader,
+	ListItems,
+	ListItem,
+	type DragEndEvent,
+} from "../../ui/kibo-ui/list";
 
 // Sort construction tasks by priority
 function sortConstructionTasksByPriority(
@@ -90,7 +98,8 @@ export function ConstructionGroupIssues({
 		| undefined;
 
 	return (
-		<div
+		<ListGroup
+			id={status._id}
 			className={cn(
 				"bg-container",
 				isViewTypeGrid
@@ -148,19 +157,27 @@ export function ConstructionGroupIssues({
 			</div>
 
 			{viewType === "list" ? (
-				<div className="space-y-1 px-6 py-2">
-					{sortedIssues.map((issue) => (
-						<ConstructionIssueLine
+				<ListItems className="space-y-1 px-6 py-2">
+					{sortedIssues.map((issue, index) => (
+						<ListItem
 							key={issue._id}
-							issue={issue}
-							layoutId={true}
-						/>
+							id={issue._id}
+							name={issue.title}
+							index={index}
+							parent={status._id}
+							className="p-0"
+						>
+							<ConstructionIssueLine
+								issue={issue}
+								layoutId={true}
+							/>
+						</ListItem>
 					))}
-				</div>
+				</ListItems>
 			) : (
 				<ConstructionIssueGridList issues={issues} status={status} />
 			)}
-		</div>
+		</ListGroup>
 	);
 }
 

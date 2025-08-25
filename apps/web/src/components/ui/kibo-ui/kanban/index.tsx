@@ -213,8 +213,18 @@ export const KanbanProvider = <
 	const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
 	const sensors = useSensors(
-		useSensor(MouseSensor),
-		useSensor(TouchSensor),
+		useSensor(MouseSensor, {
+			activationConstraint: {
+				delay: 100,
+				tolerance: 5,
+			},
+		}),
+		useSensor(TouchSensor, {
+			activationConstraint: {
+				delay: 100,
+				tolerance: 5,
+			},
+		}),
 		useSensor(KeyboardSensor),
 	);
 
