@@ -7,15 +7,20 @@ import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Clock, Plus, UserCheck, Users } from "lucide-react";
+import { Clock, Link2, Plus, UserCheck, Users } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../../../../../packages/backend/convex/_generated/api";
 import InviteMemberModal from "./invite-member-modal";
+import InviteUrlModal from "./invite-url-modal";
 import MemberLine from "./member-line";
 
 export default function Members() {
 	const params = useParams({ from: "/construction/$orgId/members" });
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
+	const [selectedInviteId, setSelectedInviteId] = useState<Id<"organizationInvites"> | null>(null);
+	const [selectedInviteEmail, setSelectedInviteEmail] = useState<string>("");
 	const [activeTab, setActiveTab] = useState("members");
 
 	// Fetch organization members
@@ -35,9 +40,17 @@ export default function Members() {
 	const handleCancelInvite = async (inviteId: Id<"organizationInvites">) => {
 		try {
 			await cancelInvite({ inviteId });
-		} catch (error) {
+			toast.success("Invite cancelled successfully");
+		} catch (error: any) {
 			console.error("Failed to cancel invite:", error);
+			toast.error(error.message || "Failed to cancel invite");
 		}
+	};
+
+	const handleShowInviteUrl = (inviteId: Id<"organizationInvites">, email: string) => {
+		setSelectedInviteId(inviteId);
+		setSelectedInviteEmail(email);
+		setIsUrlModalOpen(true);
 	};
 
 	return (
@@ -122,9 +135,14 @@ export default function Members() {
 							{invites?.map((invite) => (
 								<div
 									key={invite._id}
-									className="flex w-full items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50"
+									className="group flex w-full items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50 cursor-pointer"
+									onClick={() => handleShowInviteUrl(invite._id, invite.email)}
+									title="Click to view invite link"
 								>
-									<div className="w-[40%] font-medium">{invite.email}</div>
+									<div className="w-[40%] font-medium group-hover:text-primary flex items-center gap-2">
+										<Link2 className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+										{invite.email}
+									</div>
 									<div className="w-[20%] text-muted-foreground">
 										{invite.role?.displayName || invite.role?.name || "Member"}
 									</div>
@@ -140,7 +158,10 @@ export default function Members() {
 										<Button
 											variant="ghost"
 											size="sm"
-											onClick={() => handleCancelInvite(invite._id)}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleCancelInvite(invite._id);
+											}}
 											className="text-muted-foreground hover:text-destructive"
 										>
 											Cancel
@@ -157,6 +178,13 @@ export default function Members() {
 				open={isInviteModalOpen}
 				onOpenChange={setIsInviteModalOpen}
 				organizationId={params.orgId as Id<"organizations">}
+			/>
+
+			<InviteUrlModal
+				open={isUrlModalOpen}
+				onOpenChange={setIsUrlModalOpen}
+				inviteId={selectedInviteId}
+				inviteEmail={selectedInviteEmail}
 			/>
 		</div>
 	);

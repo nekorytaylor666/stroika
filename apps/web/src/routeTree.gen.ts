@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteCodeRouteImport } from './routes/invite.$code'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
+import { Route as AuthOrganizationSetupRouteImport } from './routes/auth/organization-setup'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as ConstructionOrgIdRouteRouteImport } from './routes/construction.$orgId/route'
 import { Route as ConstructionOrgIdIndexRouteImport } from './routes/construction.$orgId/index'
@@ -66,6 +67,11 @@ const InviteCodeRoute = InviteCodeRouteImport.update({
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthOrganizationSetupRoute = AuthOrganizationSetupRouteImport.update({
+  id: '/organization-setup',
+  path: '/organization-setup',
   getParentRoute: () => AuthRoute,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/organization-setup': typeof AuthOrganizationSetupRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/settings': typeof SettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/organization-setup': typeof AuthOrganizationSetupRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/organization-setup': typeof AuthOrganizationSetupRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$code': typeof InviteCodeRoute
   '/construction/$orgId/admin': typeof ConstructionOrgIdAdminRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/construction/$orgId'
     | '/auth/forgot-password'
+    | '/auth/organization-setup'
     | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/settings'
     | '/auth/forgot-password'
+    | '/auth/organization-setup'
     | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/construction/$orgId'
     | '/auth/forgot-password'
+    | '/auth/organization-setup'
     | '/auth/reset-password'
     | '/invite/$code'
     | '/construction/$orgId/admin'
@@ -486,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/auth/reset-password'
       preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/organization-setup': {
+      id: '/auth/organization-setup'
+      path: '/organization-setup'
+      fullPath: '/auth/organization-setup'
+      preLoaderRoute: typeof AuthOrganizationSetupRouteImport
       parentRoute: typeof AuthRoute
     }
     '/auth/forgot-password': {
@@ -689,11 +708,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthOrganizationSetupRoute: typeof AuthOrganizationSetupRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthOrganizationSetupRoute: AuthOrganizationSetupRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
 }
 

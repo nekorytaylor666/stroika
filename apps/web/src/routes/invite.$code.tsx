@@ -41,12 +41,28 @@ function InvitePage() {
 
 		try {
 			const result = await acceptInvite({ inviteCode: code });
-			// Redirect to the organization
+			// Redirect to the organization using the organization ID
 			navigate({
-				to: `/construction/${invite?.organization?.slug || result.organizationId}`,
+				to: `/construction/${result.organizationId}/issues`,
 			});
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to accept invite");
+		} catch (err: any) {
+			console.error("Failed to accept invite:", err);
+
+			// Provide more user-friendly error messages
+			let errorMessage = "Failed to accept invite";
+			if (err.message?.includes("already a member")) {
+				errorMessage = "You are already a member of this organization";
+			} else if (err.message?.includes("expired")) {
+				errorMessage = "This invite has expired. Please request a new one.";
+			} else if (err.message?.includes("already been used")) {
+				errorMessage = "This invite has already been used";
+			} else if (err.message?.includes("different email")) {
+				errorMessage = err.message; // This message is already user-friendly
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+
+			setError(errorMessage);
 			setIsAccepting(false);
 		}
 	};

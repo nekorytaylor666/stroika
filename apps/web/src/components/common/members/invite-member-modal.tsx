@@ -55,12 +55,19 @@ export default function InviteMemberModal({
 			return;
 		}
 
+		// Validate email format
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(email)) {
+			toast.error("Please enter a valid email address");
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
 			const result = await createInvite({
 				organizationId,
-				email,
+				email: email.toLowerCase().trim(),
 				roleId,
 				expiresInDays: 7,
 			});
@@ -72,7 +79,22 @@ export default function InviteMemberModal({
 			toast.success("Приглашение успешно создано!");
 		} catch (error: any) {
 			console.error("Failed to create invite:", error);
-			toast.error(error.message || "Failed to create invite");
+
+			// Provide more specific error messages
+			let errorMessage = "Failed to create invite";
+			if (error.message?.includes("already exists")) {
+				errorMessage = "An invite already exists for this email address";
+			} else if (error.message?.includes("already a member")) {
+				errorMessage = "This user is already a member of your organization";
+			} else if (error.message?.includes("Invites are disabled")) {
+				errorMessage = "Invites are currently disabled for this organization";
+			} else if (error.message?.includes("Insufficient permissions")) {
+				errorMessage = "You don't have permission to invite users";
+			} else if (error.message) {
+				errorMessage = error.message;
+			}
+
+			toast.error(errorMessage);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -132,6 +154,7 @@ export default function InviteMemberModal({
 									onChange={(e) => setEmail(e.target.value)}
 									className="pl-10"
 									required
+									autoComplete="email"
 								/>
 							</div>
 						</div>
