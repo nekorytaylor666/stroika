@@ -100,14 +100,14 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 	const isLoading = !statuses || !priorities || !users || !labels || !projects;
 
-	if (isLoading) return <div>Loading...</div>;
+	if (isLoading) return <div>Загрузка...</div>;
 
 	return (
 		<ContextMenuContent className="w-64">
 			<ContextMenuGroup>
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<CircleCheck className="mr-2 size-4" /> Status
+						<CircleCheck className="mr-2 size-4" /> Статус
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
 						{statuses.map((s) => {
@@ -126,11 +126,11 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<User className="mr-2 size-4" /> Assignee
+						<User className="mr-2 size-4" /> Ответственный
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
 						<ContextMenuItem onClick={() => handleAssigneeChange(null)}>
-							<User className="size-4" /> Unassigned
+							<User className="size-4" /> Не назначен
 						</ContextMenuItem>
 						{users
 							.filter((user) => user.teamIds.includes("CORE"))
@@ -151,7 +151,7 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<BarChart3 className="mr-2 size-4" /> Priority
+						<BarChart3 className="mr-2 size-4" /> Приоритет
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
 						{priorities.map((priority) => (
@@ -167,7 +167,7 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<Tag className="mr-2 size-4" /> Labels
+						<Tag className="mr-2 size-4" /> Метки
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
 						{labels.map((label) => (
@@ -188,11 +188,11 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<Folder className="mr-2 size-4" /> Project
+						<Folder className="mr-2 size-4" /> Проект
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-64">
 						<ContextMenuItem onClick={() => handleProjectChange(null)}>
-							<Folder className="size-4" /> No Project
+							<Folder className="size-4" /> Нет проекта
 						</ContextMenuItem>
 						{projects.slice(0, 5).map((project) => (
 							<ContextMenuItem
@@ -206,93 +206,93 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 				</ContextMenuSub>
 
 				<ContextMenuItem onClick={handleSetDueDate}>
-					<CalendarClock className="size-4" /> Set due date...
+					<CalendarClock className="size-4" /> Установить срок...
 					<ContextMenuShortcut>D</ContextMenuShortcut>
 				</ContextMenuItem>
 
 				<ContextMenuItem>
-					<Pencil className="size-4" /> Rename...
+					<Pencil className="size-4" /> Переименовать...
 					<ContextMenuShortcut>R</ContextMenuShortcut>
 				</ContextMenuItem>
 
 				<ContextMenuSeparator />
 
 				<ContextMenuItem onClick={handleAddLink}>
-					<LinkIcon className="size-4" /> Add link...
+					<LinkIcon className="size-4" /> Добавить ссылку...
 					<ContextMenuShortcut>Ctrl L</ContextMenuShortcut>
 				</ContextMenuItem>
 
 				<ContextMenuSub>
 					<ContextMenuSubTrigger>
-						<Repeat2 className="mr-2 size-4" /> Convert into
+						<Repeat2 className="mr-2 size-4" /> Преобразовать в
 					</ContextMenuSubTrigger>
 					<ContextMenuSubContent className="w-48">
 						<ContextMenuItem>
-							<FileText className="size-4" /> Document
+							<FileText className="size-4" /> Документ
 						</ContextMenuItem>
 						<ContextMenuItem>
-							<MessageSquare className="size-4" /> Comment
+							<MessageSquare className="size-4" /> Комментарий
 						</ContextMenuItem>
 					</ContextMenuSubContent>
 				</ContextMenuSub>
 
 				<ContextMenuItem onClick={handleMakeCopy}>
-					<CopyIcon className="size-4" /> Make a copy...
+					<CopyIcon className="size-4" /> Создать копию...
 				</ContextMenuItem>
 			</ContextMenuGroup>
 
 			<ContextMenuSeparator />
 
 			<ContextMenuItem onClick={handleCreateRelated}>
-				<PlusSquare className="size-4" /> Create related
+				<PlusSquare className="size-4" /> Создать связанную
 			</ContextMenuItem>
 
 			<ContextMenuSub>
 				<ContextMenuSubTrigger>
-					<Flag className="mr-2 size-4" /> Mark as
+					<Flag className="mr-2 size-4" /> Отметить как
 				</ContextMenuSubTrigger>
 				<ContextMenuSubContent className="w-48">
 					<ContextMenuItem onClick={() => handleMarkAs("Completed")}>
-						<CheckCircle2 className="size-4" /> Completed
+						<CheckCircle2 className="size-4" /> Завершено
 					</ContextMenuItem>
 					<ContextMenuItem onClick={() => handleMarkAs("Duplicate")}>
-						<CopyIcon className="size-4" /> Duplicate
+						<CopyIcon className="size-4" /> Дубликат
 					</ContextMenuItem>
 					<ContextMenuItem onClick={() => handleMarkAs("Won't Fix")}>
-						<Clock className="size-4" /> Won&apos;t Fix
+						<Clock className="size-4" /> Не будет исправлено
 					</ContextMenuItem>
 				</ContextMenuSubContent>
 			</ContextMenuSub>
 
 			<ContextMenuItem onClick={handleMove}>
-				<ArrowRightLeft className="size-4" /> Move
+				<ArrowRightLeft className="size-4" /> Переместить
 			</ContextMenuItem>
 
 			<ContextMenuSeparator />
 
 			<ContextMenuItem onClick={handleSubscribe}>
-				<Bell className="size-4" /> {isSubscribed ? "Unsubscribe" : "Subscribe"}
+				<Bell className="size-4" /> {isSubscribed ? "Отписаться" : "Подписаться"}
 				<ContextMenuShortcut>S</ContextMenuShortcut>
 			</ContextMenuItem>
 
 			<ContextMenuItem onClick={handleFavorite}>
-				<Star className="size-4" /> {isFavorite ? "Unfavorite" : "Favorite"}
+				<Star className="size-4" /> {isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
 				<ContextMenuShortcut>F</ContextMenuShortcut>
 			</ContextMenuItem>
 
 			<ContextMenuItem onClick={handleCopy}>
-				<Clipboard className="size-4" /> Copy
+				<Clipboard className="size-4" /> Копировать
 			</ContextMenuItem>
 
 			<ContextMenuItem onClick={handleRemindMe}>
-				<AlarmClock className="size-4" /> Remind me
+				<AlarmClock className="size-4" /> Напомнить
 				<ContextMenuShortcut>H</ContextMenuShortcut>
 			</ContextMenuItem>
 
 			<ContextMenuSeparator />
 
 			<ContextMenuItem variant="destructive">
-				<Trash2 className="size-4" /> Delete...
+				<Trash2 className="size-4" /> Удалить...
 				<ContextMenuShortcut>⌘⌫</ContextMenuShortcut>
 			</ContextMenuItem>
 		</ContextMenuContent>

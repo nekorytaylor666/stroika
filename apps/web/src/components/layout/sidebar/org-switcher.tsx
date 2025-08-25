@@ -209,7 +209,7 @@ export function OrgSwitcher() {
 							<Label htmlFor="org-name">Organization Name</Label>
 							<Input
 								id="org-name"
-								placeholder="Acme Inc"
+								placeholder="Компания ООО"
 								value={newOrgName}
 								onChange={(e) => setNewOrgName(e.target.value)}
 								className="mt-1"
@@ -219,7 +219,7 @@ export function OrgSwitcher() {
 							<Label htmlFor="org-description">Description (optional)</Label>
 							<Input
 								id="org-description"
-								placeholder="What does your organization do?"
+								placeholder="Чем занимается ваша организация?"
 								value={newOrgDescription}
 								onChange={(e) => setNewOrgDescription(e.target.value)}
 								className="mt-1"

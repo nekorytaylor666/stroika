@@ -820,7 +820,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
 									<h2 className="font-medium text-base">Milestones</h2>
 									<Button variant="ghost" size="sm" className="h-8">
 										<Plus className="mr-1 h-3.5 w-3.5" />
-										Add milestone
+										Добавить этап
 									</Button>
 								</div>
 

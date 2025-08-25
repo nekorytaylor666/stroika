@@ -62,7 +62,7 @@ export function DocumentsHeader() {
 				<div className="relative max-w-md flex-1">
 					<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-gray-400" />
 					<Input
-						placeholder="Search documents..."
+						placeholder="Поиск документов..."
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						className="pl-10"

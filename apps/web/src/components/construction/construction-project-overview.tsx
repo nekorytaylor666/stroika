@@ -183,7 +183,7 @@ export function ConstructionProjectOverview({
 									await updateProject({ id: projectId, name: value });
 								}}
 								variant="h1"
-								placeholder="Project name"
+								placeholder="Название проекта"
 								className="font-semibold text-xl"
 							/>
 						</div>
@@ -218,7 +218,7 @@ export function ConstructionProjectOverview({
 												statusId: value as Id<"status">,
 											});
 										}}
-										placeholder="Select status"
+										placeholder="Выберите статус"
 										searchable={false}
 									/>
 								)}
@@ -251,7 +251,7 @@ export function ConstructionProjectOverview({
 												priorityId: value as Id<"priorities">,
 											});
 										}}
-										placeholder="Select priority"
+										placeholder="Выберите приоритет"
 										searchable={false}
 									/>
 								)}
@@ -275,7 +275,7 @@ export function ConstructionProjectOverview({
 											await updateProject({ id: projectId, leadId: value });
 										}
 									}}
-									placeholder="Select lead"
+									placeholder="Выберите руководителя"
 									multiple={false}
 								/>
 							)}
@@ -293,7 +293,7 @@ export function ConstructionProjectOverview({
 									onSave={async (value) => {
 										await updateProject({ id: projectId, client: value });
 									}}
-									placeholder="Client name"
+									placeholder="Имя клиента"
 									className="text-sm"
 								/>
 								<ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -314,7 +314,7 @@ export function ConstructionProjectOverview({
 									onSave={async (value) => {
 										await updateProject({ id: projectId, location: value });
 									}}
-									placeholder="Location"
+									placeholder="Местоположение"
 									className="text-sm"
 								/>
 								<ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -361,7 +361,7 @@ export function ConstructionProjectOverview({
 										startDate: value || new Date().toISOString(),
 									});
 								}}
-								placeholder="Start date"
+								placeholder="Дата начала"
 								allowClear={false}
 							/>
 						</div>
@@ -380,7 +380,7 @@ export function ConstructionProjectOverview({
 										targetDate: value || undefined,
 									});
 								}}
-								placeholder="Target date"
+								placeholder="Целевая дата"
 								minDate={new Date(projectData.startDate)}
 							/>
 						</div>
@@ -411,7 +411,7 @@ export function ConstructionProjectOverview({
 												| "infrastructure",
 										});
 									}}
-									placeholder="Select type"
+									placeholder="Выберите тип"
 									searchable={false}
 								/>
 								<ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -573,7 +573,7 @@ export function ConstructionProjectOverview({
 										await updateProject({ id: projectId, name: value });
 									}}
 									variant="h1"
-									placeholder="Project name"
+									placeholder="Название проекта"
 								/>
 								<div className="flex items-center gap-4 text-muted-foreground text-sm">
 									<div className="flex items-center gap-1">
@@ -583,7 +583,7 @@ export function ConstructionProjectOverview({
 											onSave={async (value) => {
 												await updateProject({ id: projectId, client: value });
 											}}
-											placeholder="Client name"
+											placeholder="Имя клиента"
 											className="text-sm"
 										/>
 									</div>
@@ -594,7 +594,7 @@ export function ConstructionProjectOverview({
 											onSave={async (value) => {
 												await updateProject({ id: projectId, location: value });
 											}}
-											placeholder="Location"
+											placeholder="Местоположение"
 											className="text-sm"
 										/>
 									</div>
@@ -649,7 +649,7 @@ export function ConstructionProjectOverview({
 											statusId: value as Id<"status">,
 										});
 									}}
-									placeholder="Select status"
+									placeholder="Выберите статус"
 									searchable={false}
 								/>
 							)}
@@ -673,7 +673,7 @@ export function ConstructionProjectOverview({
 											priorityId: value as Id<"priorities">,
 										});
 									}}
-									placeholder="Select priority"
+									placeholder="Выберите приоритет"
 									searchable={false}
 								/>
 							)}
@@ -687,7 +687,7 @@ export function ConstructionProjectOverview({
 											await updateProject({ id: projectId, leadId: value });
 										}
 									}}
-									placeholder="Select lead"
+									placeholder="Выберите руководителя"
 									multiple={false}
 								/>
 							)}
@@ -702,7 +702,7 @@ export function ConstructionProjectOverview({
 											startDate: value || new Date().toISOString(),
 										});
 									}}
-									placeholder="Start date"
+									placeholder="Дата начала"
 									allowClear={false}
 								/>
 								<span className="text-muted-foreground">→</span>
@@ -714,7 +714,7 @@ export function ConstructionProjectOverview({
 											targetDate: value || undefined,
 										});
 									}}
-									placeholder="Target date"
+									placeholder="Целевая дата"
 									minDate={new Date(projectData.startDate)}
 								/>
 							</div>
@@ -933,7 +933,7 @@ export function ConstructionProjectOverview({
 											statusId: value as Id<"status">,
 										});
 									}}
-									placeholder="Select status"
+									placeholder="Выберите статус"
 									searchable={false}
 								/>
 							</div>
@@ -961,7 +961,7 @@ export function ConstructionProjectOverview({
 											priorityId: value as Id<"priorities">,
 										});
 									}}
-									placeholder="Select priority"
+									placeholder="Выберите приоритет"
 									searchable={false}
 								/>
 							</div>
@@ -979,7 +979,7 @@ export function ConstructionProjectOverview({
 											await updateProject({ id: projectId, leadId: value });
 										}
 									}}
-									placeholder="Select lead"
+									placeholder="Выберите руководителя"
 									multiple={false}
 								/>
 							</div>
@@ -1045,7 +1045,7 @@ export function ConstructionProjectOverview({
 											| "infrastructure",
 									});
 								}}
-								placeholder="Select type"
+								placeholder="Выберите тип"
 								searchable={false}
 							/>
 						</div>

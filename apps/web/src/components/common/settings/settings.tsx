@@ -53,38 +53,38 @@ interface Guide {
 const features: Feature[] = [
 	{
 		icon: <LifeBuoy className="" size={20} />,
-		title: "Customer requests",
+		title: "Запросы клиентов",
 		description:
-			"Track and manage customer requests alongside your team's work",
-		actionLabel: "Try Customer requests",
+			"Отслеживайте и управляйте запросами клиентов вместе с работой вашей команды",
+		actionLabel: "Попробовать запросы клиентов",
 	},
 	{
 		icon: <SiTablecheck className="" size={20} />,
-		title: "Initiatives",
-		description: "Plan strategic product work and monitor progress at scale",
-		actionLabel: "Learn more",
+		title: "Инициативы",
+		description: "Планируйте стратегическую работу над продуктом и отслеживайте прогресс в масштабе",
+		actionLabel: "Узнать больше",
 		activated: true,
 	},
 	{
 		icon: <Package className="" size={20} />,
-		title: "Cycles",
-		description: "Track your team's workload and velocity with Cycles",
-		actionLabel: "Learn more",
+		title: "Циклы",
+		description: "Отслеживайте рабочую нагрузку и скорость команды с помощью циклов",
+		actionLabel: "Узнать больше",
 		teamsActivated: 6,
 	},
 	{
 		icon: <BarChart3 className="" size={20} />,
-		title: "Views",
+		title: "Представления",
 		description:
-			"Create filtered views that you can save and share with others",
-		actionLabel: "Open views",
+			"Создавайте фильтрованные представления, которые можно сохранять и делиться с другими",
+		actionLabel: "Открыть представления",
 	},
 	{
 		icon: <Layers className="" size={20} />,
-		title: "Triage",
+		title: "Сортировка",
 		description:
-			"Prioritize issues created from multiple your team and customer support integrations",
-		actionLabel: "Learn more",
+			"Расставляйте приоритеты для задач, созданных из множественных интеграций вашей команды и службы поддержки клиентов",
+		actionLabel: "Узнать больше",
 		teamsActivated: 4,
 	},
 ];
@@ -94,29 +94,29 @@ const guides: Guide[] = [
 		icon: <BookOpen size={20} />,
 		iconBg: "bg-blue-50",
 		iconColor: "text-blue-600",
-		title: "Start guide",
-		description: "Quick tips for beginners",
+		title: "Начальное руководство",
+		description: "Быстрые советы для новичков",
 	},
 	{
 		icon: <FileText size={20} />,
 		iconBg: "bg-indigo-50",
 		iconColor: "text-indigo-600",
-		title: "Feature guide",
-		description: "How Linear works",
+		title: "Руководство по функциям",
+		description: "Как работает система",
 	},
 	{
 		icon: <GraduationCap size={20} />,
 		iconBg: "bg-purple-50",
 		iconColor: "text-purple-600",
-		title: "Linear method",
-		description: "Best practices for building",
+		title: "Методология разработки",
+		description: "Лучшие практики для разработки",
 	},
 	{
 		icon: <SiSlack size={20} />,
 		iconBg: "bg-blue-50",
 		iconColor: "text-blue-600",
-		title: "Join our Slack community",
-		description: "Ask questions and meet others",
+		title: "Присоединитесь к Slack сообществу",
+		description: "Задавайте вопросы и знакомьтесь с другими",
 	},
 ];
 
@@ -124,54 +124,54 @@ const integrations: Integration[] = [
 	{
 		icon: <SiGithub size={24} />,
 		title: "GitHub",
-		description: "Link pull requests, commits and automate workflows",
+		description: "Связывайте pull request'ы, коммиты и автоматизируйте рабочие процессы",
 		enabled: true,
-		actionLabel: "Enabled",
+		actionLabel: "Включено",
 	},
 	{
 		icon: <SiGitlab size={24} />,
 		title: "GitLab",
-		description: "Link merge requests and automate workflows",
-		actionLabel: "Open",
+		description: "Связывайте merge request'ы и автоматизируйте рабочие процессы",
+		actionLabel: "Открыть",
 	},
 	{
 		icon: <SiSlack size={24} />,
 		title: "Slack",
 		description:
-			"Send notifications to channels and create issues from messages",
+			"Отправляйте уведомления в каналы и создавайте задачи из сообщений",
 		enabled: true,
-		actionLabel: "Enabled",
+		actionLabel: "Включено",
 	},
 	{
 		icon: <SiFigma size={24} />,
 		title: "Figma",
-		description: "Embed file previews in issues",
+		description: "Встраивайте превью файлов в задачи",
 		enabled: true,
-		actionLabel: "Enabled",
+		actionLabel: "Включено",
 	},
 	{
 		icon: <SiSentry size={24} />,
 		title: "Sentry",
-		description: "Link exceptions to issues",
-		actionLabel: "Open",
+		description: "Связывайте исключения с задачами",
+		actionLabel: "Открыть",
 	},
 	{
 		icon: <SiZapier size={20} />,
 		title: "Zapier",
-		description: "Build custom automations and integrations with other apps",
-		actionLabel: "Open",
+		description: "Создавайте пользовательские автоматизации и интеграции с другими приложениями",
+		actionLabel: "Открыть",
 	},
 	{
 		icon: <SiZendesk size={20} />,
 		title: "Zendesk",
-		description: "Link and automate Zendesk tickets with Linear",
-		actionLabel: "Open",
+		description: "Связывайте и автоматизируйте тикеты Zendesk",
+		actionLabel: "Открыть",
 	},
 	{
 		icon: <SiGooglesheets size={20} />,
 		title: "Google Sheets",
-		description: "Export issues and build custom analytics",
-		actionLabel: "Open",
+		description: "Экспортируйте задачи и создавайте пользовательскую аналитику",
+		actionLabel: "Открыть",
 	},
 ];
 
@@ -191,13 +191,13 @@ const FeatureCard = ({ feature }: { feature: Feature }) => {
 				{feature.activated && (
 					<div className="flex items-center gap-1 text-muted-foreground text-xs">
 						<div className="h-2 w-2 rounded-full bg-green-500"></div>
-						<span>Activated</span>
+						<span>Активировано</span>
 					</div>
 				)}
 				{feature.teamsActivated && (
 					<div className="flex items-center gap-1 text-muted-foreground text-xs">
 						<CheckCircle2 size={14} />
-						<span>{feature.teamsActivated} teams activated</span>
+						<span>Активировано {feature.teamsActivated} команд</span>
 					</div>
 				)}
 			</div>
@@ -249,16 +249,16 @@ export default function Settings() {
 	return (
 		<div className="mx-auto w-full max-w-7xl px-8 py-8">
 			<div className="mb-10">
-				<h1 className="mb-1 font-semibold text-2xl">Workspace</h1>
+				<h1 className="mb-1 font-semibold text-2xl">Рабочая область</h1>
 				<p className="text-muted-foreground">
-					Manage your workspace settings. Your workspace is in the{" "}
-					<span className="font-medium">United States</span> region
+					Управляйте настройками рабочей области. Ваша рабочая область находится в регионе{" "}
+					<span className="font-medium">Россия</span>
 				</p>
 			</div>
 
 			<div className="mb-10">
 				<div className="mb-6 flex items-center justify-between">
-					<h2 className="font-semibold text-xl">Explore features</h2>
+					<h2 className="font-semibold text-xl">Исследовать возможности</h2>
 				</div>
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{features.map((feature, index) => (
@@ -269,9 +269,9 @@ export default function Settings() {
 
 			<div className="mb-10">
 				<div className="mb-6 flex items-center justify-between">
-					<h2 className="font-semibold text-xl">Integrations</h2>
+					<h2 className="font-semibold text-xl">Интеграции</h2>
 					<Button variant="outline" size="sm" className="text-sm">
-						Browse all
+						Просмотреть все
 					</Button>
 				</div>
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -283,7 +283,7 @@ export default function Settings() {
 
 			<div className="mb-10">
 				<div className="mb-6 flex items-center justify-between">
-					<h2 className="font-semibold text-xl">Go further</h2>
+					<h2 className="font-semibold text-xl">Дополнительно</h2>
 				</div>
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{guides.map((guide, index) => (

@@ -63,9 +63,9 @@ export function PrioritySelector({
 				</PopoverTrigger>
 				<PopoverContent className="w-48 border-input p-0" align="start">
 					<Command>
-						<CommandInput placeholder="Set priority..." />
+						<CommandInput placeholder="Установить приоритет..." />
 						<CommandList>
-							<CommandEmpty>No priority found.</CommandEmpty>
+							<CommandEmpty>Приоритет не найден.</CommandEmpty>
 							<CommandGroup>
 								{priorities.map((item) => (
 									<CommandItem

@@ -19,7 +19,7 @@ export default function HeaderNav() {
 			<div className="flex items-center gap-2">
 				<Button className="relative" size="xs" variant="secondary">
 					<Plus className="size-4" />
-					Add team
+					Добавить команду
 				</Button>
 			</div>
 		</div>

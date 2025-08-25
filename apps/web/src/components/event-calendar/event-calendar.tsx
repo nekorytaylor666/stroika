@@ -291,7 +291,7 @@ export function EventCalendar({
 							variant="ghost"
 							size="icon"
 							onClick={handlePrevious}
-							aria-label="Previous"
+							aria-label="Предыдущий"
 						>
 							<ChevronLeftIcon size={16} aria-hidden="true" />
 						</Button>
@@ -299,7 +299,7 @@ export function EventCalendar({
 							variant="ghost"
 							size="icon"
 							onClick={handleNext}
-							aria-label="Next"
+							aria-label="Следующий"
 						>
 							<ChevronRightIcon size={16} aria-hidden="true" />
 						</Button>
