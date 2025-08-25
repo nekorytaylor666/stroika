@@ -62,8 +62,12 @@ export const createInvite = mutation({
 			throw new Error("Organization not found");
 		}
 
-		if (!organization.settings?.allowInvites) {
-			throw new Error("Invites are disabled for this organization");
+		// Default to allowing invites if settings not configured
+		const allowInvites = organization.settings?.allowInvites !== false;
+		if (!allowInvites) {
+			throw new Error(
+				"Invites are disabled for this organization. Please contact your organization owner to enable invites.",
+			);
 		}
 
 		// Check if email already has a pending invite
@@ -195,12 +199,7 @@ export const getInviteByCode = query({
 export const acceptInvite = mutation({
 	args: { inviteCode: v.string() },
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the invite
+		// Get the invite first to validate it exists
 		const invite = await ctx.db
 			.query("organizationInvites")
 			.withIndex("by_code", (q) => q.eq("inviteCode", args.inviteCode))
@@ -220,64 +219,67 @@ export const acceptInvite = mutation({
 			throw new Error("Invite has already been used");
 		}
 
-		// Extract email from identity object safely
-		const identityEmail =
-			(typeof identity.email === "string" ? identity.email : null) ||
-			(typeof identity.preferredUsername === "string"
-				? identity.preferredUsername
-				: null) ||
-			(typeof identity.emailVerified === "string"
-				? identity.emailVerified
-				: null);
+		// Try to get authenticated user ID first
+		const authUserId = await auth.getUserId(ctx);
+		let user = null;
 
-		if (!identityEmail) {
-			throw new Error("No email found in authentication identity");
+		if (authUserId) {
+			// User exists in auth system, get from users table
+			user = await ctx.db.get(authUserId);
 		}
 
-		// Get or create user
-		let user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identityEmail))
-			.first();
-
+		// If not found by auth ID, try by identity email
 		if (!user) {
-			// Extract other identity properties safely
-			const identityName =
-				typeof identity.name === "string" ? identity.name : null;
-			const identityPicture =
-				typeof identity.pictureUrl === "string" ? identity.pictureUrl : null;
-			const identitySubject =
-				typeof identity.subject === "string" ? identity.subject : null;
-			const identityTokenId =
-				typeof identity.tokenIdentifier === "string"
-					? identity.tokenIdentifier
-					: null;
+			const identity = await ctx.auth.getUserIdentity();
+			if (!identity) {
+				throw new Error("Not authenticated");
+			}
 
-			// Create new user
-			const userId = await ctx.db.insert("users", {
-				name: identityName || identityEmail.split("@")[0],
-				email: identityEmail,
-				avatarUrl:
-					identityPicture ||
-					`https://api.dicebear.com/7.x/avataaars/svg?seed=${identityEmail}`,
-				status: "online",
-				joinedDate: new Date().toISOString(),
-				teamIds: [],
-				authId: identitySubject || undefined,
-				tokenIdentifier: identityTokenId || undefined,
-				isActive: true,
-				lastLogin: new Date().toISOString(),
-			});
-			user = await ctx.db.get(userId);
+			// Convex Auth provides email directly
+			const userEmail = identity.email;
+			if (!userEmail) {
+				throw new Error("No email found in authentication identity");
+			}
+
+			// Try to find user by email
+			user = await ctx.db
+				.query("users")
+				.withIndex("by_email", (q) => q.eq("email", userEmail))
+				.first();
+
+			if (!user) {
+				// Create new user
+				const userId = await ctx.db.insert("users", {
+					name: identity.name || userEmail.split("@")[0],
+					email: userEmail,
+					avatarUrl:
+						identity.pictureUrl ||
+						`https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(identity.name || userEmail)}`,
+					status: "online",
+					joinedDate: new Date().toISOString(),
+					teamIds: [],
+					authId: identity.subject || undefined,
+					tokenIdentifier: identity.tokenIdentifier || undefined,
+					isActive: true,
+					lastLogin: new Date().toISOString(),
+				});
+				user = await ctx.db.get(userId);
+			}
 		}
 
 		if (!user) {
-			throw new Error("Failed to create user");
+			throw new Error("Failed to get or create user");
 		}
 
 		// Check if email matches (if invite was for specific email)
-		if (invite.email && invite.email !== user.email) {
-			throw new Error("This invite is for a different email address");
+		// Only check if invite has a specific email requirement
+		if (
+			invite.email &&
+			invite.email.toLowerCase() !== user.email.toLowerCase()
+		) {
+			throw new Error(
+				`This invite is for ${invite.email}. Please sign in with that email address.`,
+			);
 		}
 
 		// Check if user is already a member
@@ -289,7 +291,33 @@ export const acceptInvite = mutation({
 			.first();
 
 		if (existingMembership) {
-			throw new Error("You are already a member of this organization");
+			// If already a member but inactive, reactivate
+			if (!existingMembership.isActive) {
+				await ctx.db.patch(existingMembership._id, {
+					isActive: true,
+					joinedAt: Date.now(),
+				});
+
+				// Update invite status
+				await ctx.db.patch(invite._id, {
+					status: "accepted",
+					acceptedAt: Date.now(),
+					acceptedBy: user._id,
+				});
+
+				// Set as current organization if user doesn't have one
+				if (!user.currentOrganizationId) {
+					await ctx.db.patch(user._id, {
+						currentOrganizationId: invite.organizationId,
+					});
+				}
+
+				return {
+					organizationId: invite.organizationId,
+					success: true,
+				};
+			}
+			throw new Error("You are already an active member of this organization");
 		}
 
 		// Add user to organization

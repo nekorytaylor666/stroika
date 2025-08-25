@@ -323,6 +323,32 @@ export const update = mutation({
 	},
 });
 
+// Ensure organization has default settings
+export const ensureSettings = mutation({
+	args: {
+		organizationId: v.id("organizations"),
+	},
+	handler: async (ctx, args) => {
+		const organization = await ctx.db.get(args.organizationId);
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
+		// If settings don't exist or are incomplete, set defaults
+		if (!organization.settings) {
+			await ctx.db.patch(args.organizationId, {
+				settings: {
+					allowInvites: true,
+					requireEmailVerification: false,
+					defaultRoleId: undefined,
+				},
+			});
+		}
+
+		return { success: true };
+	},
+});
+
 // Switch current organization
 export const switchOrganization = mutation({
 	args: {

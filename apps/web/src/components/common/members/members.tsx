@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Clock, Plus, UserCheck, Users } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { api } from "../../../../../../packages/backend/convex/_generated/api";
 import InviteMemberModal from "./invite-member-modal";
 import MemberLine from "./member-line";
@@ -35,8 +36,10 @@ export default function Members() {
 	const handleCancelInvite = async (inviteId: Id<"organizationInvites">) => {
 		try {
 			await cancelInvite({ inviteId });
-		} catch (error) {
+			toast.success("Invite cancelled successfully");
+		} catch (error: any) {
 			console.error("Failed to cancel invite:", error);
+			toast.error(error.message || "Failed to cancel invite");
 		}
 	};
 
