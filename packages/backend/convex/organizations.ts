@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { getCurrentUser } from "./helpers/getCurrentUser";
 
 // Create a new organization
 export const create = mutation({
@@ -190,47 +191,11 @@ export const getBySlug = query({
 // Get user's organizations
 export const getUserOrganizations = query({
 	handler: async (ctx) => {
-		// Try to get user by auth ID first
-		const authUserId = await auth.getUserId(ctx);
-		let user = null;
-
-		if (authUserId) {
-			// Try to get user by auth ID
-			const userById = await ctx.db.get(authUserId);
-			if (userById && "email" in userById) {
-				user = userById as any;
-			}
-		}
-
+		// Safely get the user using the helper
+		const user = await getCurrentUser(ctx).catch(() => null);
 		if (!user) {
-			// Fall back to identity lookup
-			const identity = await ctx.auth.getUserIdentity();
-			if (!identity) {
-				throw new Error("Not authenticated");
-			}
-
-			// Extract email from identity
-			const email =
-				(typeof identity.email === "string" ? identity.email : null) ||
-				(typeof identity.preferredUsername === "string"
-					? identity.preferredUsername
-					: null) ||
-				(typeof identity.emailVerified === "string"
-					? identity.emailVerified
-					: null) ||
-				(typeof identity.subject === "string" ? identity.subject : null);
-
-			if (email) {
-				user = await ctx.db
-					.query("users")
-					.withIndex("by_email", (q) => q.eq("email", email))
-					.first();
-			}
-		}
-
-		if (!user) {
-			// If user doesn't exist, return empty organizations
-			// They need to be invited to an organization first
+			// If user doesn't exist or not authenticated, return empty organizations
+			// They need to be invited to an organization first or complete setup
 			return [];
 		}
 
@@ -318,6 +283,32 @@ export const update = mutation({
 			...updateData,
 			updatedAt: Date.now(),
 		});
+
+		return { success: true };
+	},
+});
+
+// Ensure organization has default settings
+export const ensureSettings = mutation({
+	args: {
+		organizationId: v.id("organizations"),
+	},
+	handler: async (ctx, args) => {
+		const organization = await ctx.db.get(args.organizationId);
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
+		// If settings don't exist or are incomplete, set defaults
+		if (!organization.settings) {
+			await ctx.db.patch(args.organizationId, {
+				settings: {
+					allowInvites: true,
+					requireEmailVerification: false,
+					defaultRoleId: undefined,
+				},
+			});
+		}
 
 		return { success: true };
 	},
