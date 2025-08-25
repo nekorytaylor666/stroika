@@ -646,8 +646,8 @@ export const GanttColumn: FC<GanttColumnProps> = ({
 
 	const top = useThrottle(
 		mousePosition.y -
-			(mouseRef.current?.getBoundingClientRect().y ?? 0) -
-			(windowScroll.y ?? 0),
+		(mouseRef.current?.getBoundingClientRect().y ?? 0) -
+		(windowScroll.y ?? 0),
 		10,
 	);
 
@@ -713,8 +713,8 @@ export const GanttCreateMarkerTrigger: FC<GanttCreateMarkerTriggerProps> = ({
 	const [windowScroll] = useWindowScroll();
 	const x = useThrottle(
 		mousePosition.x -
-			(mouseRef.current?.getBoundingClientRect().x ?? 0) -
-			(windowScroll.x ?? 0),
+		(mouseRef.current?.getBoundingClientRect().x ?? 0) -
+		(windowScroll.x ?? 0),
 		10,
 	);
 
@@ -1426,7 +1426,7 @@ export type GanttTodayProps = {
 };
 
 export const GanttToday: FC<GanttTodayProps> = ({ className }) => {
-	const label = "Today";
+	const label = "Сегодня";
 	const date = useMemo(() => new Date(), []);
 	const gantt = useContext(GanttContext);
 	const differenceIn = useMemo(

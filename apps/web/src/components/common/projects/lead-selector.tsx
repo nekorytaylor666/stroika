@@ -75,9 +75,9 @@ export function LeadSelector({ lead, onLeadChange }: LeadSelectorProps) {
 				</PopoverTrigger>
 				<PopoverContent className="w-48 border-input p-0" align="start">
 					<Command>
-						<CommandInput placeholder="Set lead..." />
+						<CommandInput placeholder="Назначить руководителя..." />
 						<CommandList>
-							<CommandEmpty>No user found.</CommandEmpty>
+							<CommandEmpty>Пользователь не найден.</CommandEmpty>
 							<CommandGroup>
 								{users.map((user) => (
 									<CommandItem

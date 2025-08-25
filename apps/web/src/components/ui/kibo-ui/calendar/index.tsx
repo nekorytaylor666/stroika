@@ -250,7 +250,7 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
 	for (let i = 0; i < firstDay; i++) {
 		const day =
 			prevMonthData.prevMonthDaysArray[
-				prevMonthData.prevMonthDays - firstDay + i
+			prevMonthData.prevMonthDays - firstDay + i
 			];
 
 		if (day) {
@@ -342,9 +342,9 @@ export const CalendarMonthPicker = ({
 			className={className}
 			data={monthData}
 			labels={{
-				button: "Select month",
-				empty: "No month found",
-				search: "Search month",
+				button: "Выберите месяц",
+				empty: "Месяц не найден",
+				search: "Поиск месяца",
 			}}
 			setValue={(value) =>
 				setMonth(Number.parseInt(value) as CalendarState["month"])
@@ -375,9 +375,9 @@ export const CalendarYearPicker = ({
 				label: (start + i).toString(),
 			}))}
 			labels={{
-				button: "Select year",
-				empty: "No year found",
-				search: "Search year",
+				button: "Выберите год",
+				empty: "Год не найден",
+				search: "Поиск года",
 			}}
 			setValue={(value) => setYear(Number.parseInt(value))}
 			value={year.toString()}

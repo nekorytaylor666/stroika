@@ -72,7 +72,7 @@ export default function Members() {
 
 					<TabsContent value="members" className="mt-4">
 						<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
-							<div className="w-[70%] md:w-[60%] lg:w-[55%]">Name</div>
+							<div className="w-[70%] md:w-[60%] lg:w-[55%]">Имя</div>
 							<div className="w-[30%] md:w-[20%] lg:w-[15%]">Role</div>
 							<div className="hidden w-[15%] lg:block">Joined</div>
 							<div className="hidden w-[30%] md:block md:w-[20%] lg:w-[15%]">
@@ -108,7 +108,7 @@ export default function Members() {
 
 					<TabsContent value="invites" className="mt-4">
 						<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
-							<div className="w-[40%]">Email</div>
+							<div className="w-[40%]">Электронная почта</div>
 							<div className="w-[20%]">Role</div>
 							<div className="w-[20%]">Invited By</div>
 							<div className="w-[15%]">Expires</div>

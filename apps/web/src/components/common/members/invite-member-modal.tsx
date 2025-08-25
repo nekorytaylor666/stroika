@@ -51,7 +51,7 @@ export default function InviteMemberModal({
 		e.preventDefault();
 
 		if (!email || !roleId) {
-			toast.error("Please fill in all fields");
+			toast.error("Пожалуйста, заполните все поля");
 			return;
 		}
 
@@ -76,7 +76,7 @@ export default function InviteMemberModal({
 			const fullInviteLink = `${baseUrl}${result.inviteUrl}`;
 			setInviteLink(fullInviteLink);
 
-			toast.success("Invite created successfully!");
+			toast.success("Приглашение успешно создано!");
 		} catch (error: any) {
 			console.error("Failed to create invite:", error);
 
@@ -106,10 +106,10 @@ export default function InviteMemberModal({
 		try {
 			await navigator.clipboard.writeText(inviteLink);
 			setCopied(true);
-			toast.success("Invite link copied to clipboard!");
+			toast.success("Ссылка-приглашение скопирована в буфер обмена!");
 			setTimeout(() => setCopied(false), 2000);
 		} catch (error) {
-			toast.error("Failed to copy link");
+			toast.error("Не удалось скопировать ссылку");
 		}
 	};
 
@@ -166,7 +166,7 @@ export default function InviteMemberModal({
 								onValueChange={(value) => setRoleId(value as Id<"roles">)}
 							>
 								<SelectTrigger id="role">
-									<SelectValue placeholder="Select a role" />
+									<SelectValue placeholder="Выберите роль" />
 								</SelectTrigger>
 								<SelectContent>
 									{availableRoles.map((role) => (

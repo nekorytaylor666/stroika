@@ -324,10 +324,10 @@ export function EventDialog({
 
 						{!allDay && (
 							<div className="min-w-28 *:not-first:mt-1.5">
-								<Label htmlFor="start-time">Start Time</Label>
+								<Label htmlFor="start-time">Время начала</Label>
 								<Select value={startTime} onValueChange={setStartTime}>
 									<SelectTrigger id="start-time">
-										<SelectValue placeholder="Select time" />
+										<SelectValue placeholder="Выберите время" />
 									</SelectTrigger>
 									<SelectContent>
 										{timeOptions.map((option) => (
@@ -389,10 +389,10 @@ export function EventDialog({
 
 						{!allDay && (
 							<div className="min-w-28 *:not-first:mt-1.5">
-								<Label htmlFor="end-time">End Time</Label>
+								<Label htmlFor="end-time">Время окончания</Label>
 								<Select value={endTime} onValueChange={setEndTime}>
 									<SelectTrigger id="end-time">
-										<SelectValue placeholder="Select time" />
+										<SelectValue placeholder="Выберите время" />
 									</SelectTrigger>
 									<SelectContent>
 										{timeOptions.map((option) => (
@@ -462,9 +462,9 @@ export function EventDialog({
 					)}
 					<div className="flex flex-1 justify-end gap-2">
 						<Button variant="outline" onClick={onClose}>
-							Cancel
+							Отмена
 						</Button>
-						<Button onClick={handleSave}>Save</Button>
+						<Button onClick={handleSave}>Сохранить</Button>
 					</div>
 				</DialogFooter>
 			</DialogContent>

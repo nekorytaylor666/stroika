@@ -94,7 +94,7 @@ export function CreateDocumentModal() {
 							<div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900">
 								<FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
 							</div>
-							<h2 className="font-semibold text-xl">New Document</h2>
+							<h2 className="font-semibold text-xl">Новый документ</h2>
 						</div>
 						<button
 							onClick={() => setIsCreateModalOpen(false)}
@@ -107,11 +107,11 @@ export function CreateDocumentModal() {
 					<div className="space-y-4">
 						<div>
 							<Label htmlFor="title" className="mb-2">
-								Title
+								Название
 							</Label>
 							<Input
 								id="title"
-								placeholder="Document title..."
+								placeholder="Название документа..."
 								value={title}
 								onChange={(e) => setTitle(e.target.value)}
 								autoFocus
@@ -121,11 +121,11 @@ export function CreateDocumentModal() {
 						<div className="grid grid-cols-2 gap-4">
 							<div>
 								<Label htmlFor="assignee" className="mb-2">
-									Assign to
+									Назначить
 								</Label>
 								<Select value={assignedTo} onValueChange={setAssignedTo}>
 									<SelectTrigger>
-										<SelectValue placeholder="Select assignee" />
+										<SelectValue placeholder="Выберите ответственного" />
 									</SelectTrigger>
 									<SelectContent>
 										{users?.map((user) => (
@@ -139,7 +139,7 @@ export function CreateDocumentModal() {
 
 							<div>
 								<Label htmlFor="dueDate" className="mb-2">
-									Due date
+									Срок выполнения
 								</Label>
 								<Popover>
 									<PopoverTrigger asChild>
@@ -150,7 +150,7 @@ export function CreateDocumentModal() {
 											<CalendarIcon className="mr-2 h-4 w-4" />
 											{dueDate
 												? format(dueDate, "PPP", { locale: ru })
-												: "Select date"}
+												: "Выберите дату"}
 										</Button>
 									</PopoverTrigger>
 									<PopoverContent className="w-auto p-0">
@@ -167,12 +167,12 @@ export function CreateDocumentModal() {
 
 						<div>
 							<Label htmlFor="tags" className="mb-2">
-								Tags
+								Теги
 							</Label>
 							<div className="mb-2 flex gap-2">
 								<Input
 									id="tags"
-									placeholder="Add a tag..."
+									placeholder="Добавить тег..."
 									value={tagInput}
 									onChange={(e) => setTagInput(e.target.value)}
 									onKeyDown={(e) => {
