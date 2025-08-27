@@ -501,14 +501,17 @@ export default defineSchema({
 
 	// Issue attachments
 	issueAttachments: defineTable({
-		issueId: v.id("issues"),
+		issueId: v.optional(v.id("issues")), // Optional for project-level attachments
+		projectId: v.optional(v.id("constructionProjects")), // For direct project attachments
 		fileName: v.string(),
 		fileUrl: v.string(),
 		fileSize: v.number(),
 		mimeType: v.string(),
 		uploadedBy: v.id("users"),
 		uploadedAt: v.number(),
-	}).index("by_issue", ["issueId"]),
+	})
+		.index("by_issue", ["issueId"])
+		.index("by_project", ["projectId"]),
 
 	// Issue comments
 	issueComments: defineTable({

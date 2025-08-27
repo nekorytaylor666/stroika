@@ -126,6 +126,7 @@ export const attachToIssue = mutation({
 
 		await ctx.db.insert("issueAttachments", {
 			issueId: args.issueId,
+			projectId: undefined, // Issue-specific attachment, not directly to project
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
@@ -176,7 +177,7 @@ export const removeIssueAttachment = mutation({
 	},
 });
 
-// Upload file without linking to specific issue (for general attachments page)
+// Upload file directly to project without creating an issue
 export const uploadToProject = mutation({
 	args: {
 		storageId: v.id("_storage"),
@@ -188,50 +189,10 @@ export const uploadToProject = mutation({
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Get default status and priority
-		const defaultStatus = await ctx.db.query("status").first();
-		const defaultPriority = await ctx.db.query("priorities").first();
-
-		if (!defaultStatus || !defaultPriority) {
-			throw new Error("No default status or priority found");
-		}
-
-		// Create a placeholder issue for project file attachments
-		const projectFileIssue = await ctx.db
-			.query("issues")
-			.filter((q) =>
-				q.and(
-					q.eq(q.field("title"), "[Project Files]"),
-					q.eq(q.field("projectId"), args.projectId),
-				),
-			)
-			.first();
-
-		let issueId = projectFileIssue?._id;
-
-		if (!issueId) {
-			// Create a project files issue if it doesn't exist
-			issueId = await ctx.db.insert("issues", {
-				organizationId: organization._id,
-				title: "[Project Files]",
-				description: "Container for project file attachments",
-				identifier: `PROJECT-FILES-${Date.now()}`,
-				projectId: args.projectId,
-				statusId: defaultStatus._id,
-				priorityId: defaultPriority._id,
-				assigneeId: undefined,
-				labelIds: [],
-				createdAt: new Date().toISOString(),
-				cycleId: "default",
-				rank: "0",
-				dueDate: undefined,
-				isConstructionTask: true,
-				parentTaskId: undefined,
-			});
-		}
-
+		// Directly attach to project without creating a placeholder issue
 		await ctx.db.insert("issueAttachments", {
-			issueId,
+			issueId: undefined,
+			projectId: args.projectId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
@@ -239,6 +200,32 @@ export const uploadToProject = mutation({
 			uploadedBy: user._id,
 			uploadedAt: Date.now(),
 		});
+	},
+});
+
+export const getProjectAttachments = query({
+	args: { projectId: v.id("constructionProjects") },
+	handler: async (ctx, args) => {
+		const attachments = await ctx.db
+			.query("issueAttachments")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+
+		const attachmentsWithUsers = await Promise.all(
+			attachments.map(async (attachment) => {
+				const [uploader, fileUrl] = await Promise.all([
+					ctx.db.get(attachment.uploadedBy),
+					ctx.storage.getUrl(attachment.fileUrl as any),
+				]);
+				return {
+					...attachment,
+					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+					uploader,
+				};
+			}),
+		);
+
+		return attachmentsWithUsers;
 	},
 });
 
@@ -252,46 +239,10 @@ export const uploadToGeneral = mutation({
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Create a placeholder issue for general attachments
-		// This could be improved in the future by having a separate attachments table
-		const generalIssue = await ctx.db
-			.query("issues")
-			.filter((q) => q.eq(q.field("title"), "[General Attachments]"))
-			.first();
-
-		let issueId = generalIssue?._id;
-
-		if (!issueId) {
-			// Get default status and priority
-			const defaultStatus = await ctx.db.query("status").first();
-			const defaultPriority = await ctx.db.query("priorities").first();
-
-			if (!defaultStatus || !defaultPriority) {
-				throw new Error("No default status or priority found");
-			}
-
-			// Create a general attachments issue if it doesn't exist
-			issueId = await ctx.db.insert("issues", {
-				organizationId: organization._id,
-				title: "[General Attachments]",
-				description: "Container for general file attachments",
-				identifier: "GENERAL-001",
-				projectId: undefined,
-				statusId: defaultStatus._id,
-				priorityId: defaultPriority._id,
-				assigneeId: undefined,
-				labelIds: [],
-				createdAt: new Date().toISOString(),
-				cycleId: "default",
-				rank: "0",
-				dueDate: undefined,
-				isConstructionTask: true,
-				parentTaskId: undefined,
-			});
-		}
-
+		// General attachments without issue or project association
 		await ctx.db.insert("issueAttachments", {
-			issueId,
+			issueId: undefined,
+			projectId: undefined,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
