@@ -231,23 +231,34 @@ export default defineSchema({
 	// Roles table
 	roles: defineTable({
 		organizationId: v.optional(v.id("organizations")), // null for system roles
-		name: v.string(), // e.g., "admin", "manager", "engineer", "viewer"
-		displayName: v.string(), // e.g., "Administrator", "Project Manager", etc.
+		name: v.string(), // e.g., "owner", "director", "admin", "project_manager", "team_lead", "member", "viewer"
+		displayName: v.string(), // e.g., "Owner", "Director", "Administrator", etc.
 		description: v.optional(v.string()),
 		isSystem: v.boolean(), // System roles cannot be deleted
+		isDirector: v.boolean(), // Directors have full access to all projects
+		priority: v.number(), // Higher priority = higher in hierarchy (owner: 100, director: 90, etc.)
 		createdAt: v.string(),
 		updatedAt: v.string(),
 	})
 		.index("by_name", ["name"])
-		.index("by_organization", ["organizationId"]),
+		.index("by_organization", ["organizationId"])
+		.index("by_priority", ["priority"]),
 
 	// Permissions table
 	permissions: defineTable({
-		resource: v.string(), // e.g., "projects", "users", "teams"
+		resource: v.string(), // e.g., "projects", "users", "teams", "documents"
 		action: v.string(), // e.g., "create", "read", "update", "delete", "manage"
+		scope: v.union(
+			v.literal("global"), // System-wide permission
+			v.literal("organization"), // Organization-level permission
+			v.literal("project"), // Project-specific permission
+			v.literal("team"), // Team-based permission
+			v.literal("resource"), // Individual resource permission
+		),
 		description: v.optional(v.string()),
 		createdAt: v.string(),
-	}).index("by_resource_action", ["resource", "action"]),
+	}).index("by_resource_action", ["resource", "action"])
+	  .index("by_scope", ["scope"]),
 
 	// Role-Permission mapping table
 	rolePermissions: defineTable({
@@ -642,4 +653,96 @@ export default defineSchema({
 		generatedAt: v.number(),
 		changedAt: v.optional(v.number()),
 	}).index("by_user", ["userId"]),
+
+	// Project Access Control - defines who has access to specific projects
+	projectAccess: defineTable({
+		projectId: v.id("constructionProjects"),
+		userId: v.optional(v.id("users")), // Either user or team, not both
+		teamId: v.optional(v.id("constructionTeams")), // Either team or user, not both
+		accessLevel: v.union(
+			v.literal("owner"), // Full control
+			v.literal("admin"), // Can manage project settings and members
+			v.literal("write"), // Can create/edit tasks and documents
+			v.literal("read"), // View-only access
+		),
+		grantedBy: v.id("users"),
+		grantedAt: v.number(),
+		expiresAt: v.optional(v.number()), // Optional expiration date
+	})
+		.index("by_project", ["projectId"])
+		.index("by_user", ["userId"])
+		.index("by_team", ["teamId"])
+		.index("by_project_user", ["projectId", "userId"])
+		.index("by_project_team", ["projectId", "teamId"]),
+
+	// Resource-level permissions for fine-grained access control
+	resourcePermissions: defineTable({
+		resourceType: v.union(
+			v.literal("project"),
+			v.literal("document"),
+			v.literal("issue"),
+			v.literal("team"),
+		),
+		resourceId: v.string(), // ID of the specific resource
+		userId: v.optional(v.id("users")),
+		teamId: v.optional(v.id("teams")),
+		permissions: v.array(v.string()), // Array of permission strings like "read", "write", "delete"
+		grantedBy: v.id("users"),
+		grantedAt: v.number(),
+		expiresAt: v.optional(v.number()),
+	})
+		.index("by_resource", ["resourceType", "resourceId"])
+		.index("by_user", ["userId"])
+		.index("by_team", ["teamId"])
+		.index("by_resource_user", ["resourceType", "resourceId", "userId"]),
+
+	// Permission groups for bundling related permissions
+	permissionGroups: defineTable({
+		name: v.string(), // e.g., "project_manager_permissions"
+		displayName: v.string(),
+		description: v.string(),
+		permissionIds: v.array(v.id("permissions")),
+		isSystem: v.boolean(),
+		createdAt: v.string(),
+		updatedAt: v.string(),
+	})
+		.index("by_name", ["name"]),
+
+	// Team project access for bulk team assignments
+	teamProjectAccess: defineTable({
+		teamId: v.id("constructionTeams"),
+		projectId: v.id("constructionProjects"),
+		accessLevel: v.union(
+			v.literal("admin"),
+			v.literal("write"),
+			v.literal("read"),
+		),
+		inheritToMembers: v.boolean(), // Whether team members inherit this access
+		grantedBy: v.id("users"),
+		grantedAt: v.number(),
+	})
+		.index("by_team", ["teamId"])
+		.index("by_project", ["projectId"])
+		.index("by_team_project", ["teamId", "projectId"]),
+
+	// Document access control
+	documentAccess: defineTable({
+		documentId: v.id("documents"),
+		userId: v.optional(v.id("users")),
+		teamId: v.optional(v.id("teams")),
+		accessLevel: v.union(
+			v.literal("owner"),
+			v.literal("editor"),
+			v.literal("commenter"),
+			v.literal("viewer"),
+		),
+		canShare: v.boolean(), // Can share with others
+		grantedBy: v.id("users"),
+		grantedAt: v.number(),
+		expiresAt: v.optional(v.number()),
+	})
+		.index("by_document", ["documentId"])
+		.index("by_user", ["userId"])
+		.index("by_team", ["teamId"])
+		.index("by_document_user", ["documentId", "userId"]),
 });
