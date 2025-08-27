@@ -101,7 +101,7 @@ export const getPaginated = query({
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
@@ -227,7 +227,7 @@ export const getAllForProject = query({
 		const enrichedItems = await Promise.all(
 			paginatedItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);

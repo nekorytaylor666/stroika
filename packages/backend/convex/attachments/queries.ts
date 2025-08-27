@@ -93,18 +93,19 @@ export const getAllAttachments = query({
 		// Fetch related data for each attachment
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
-				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+				const [issue, uploader, fileUrl, project] = await Promise.all([
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
+					attachment.projectId ? ctx.db.get(attachment.projectId) : null,
 				]);
 
 				// Check if it's a construction task
 				const isConstructionTask = issue?.isConstructionTask || false;
-				let constructionProject = null;
+				let constructionProject = project; // Use directly attached project if available
 
-				// For construction tasks, try to find the related project
-				if (isConstructionTask && issue?.projectId) {
+				// For construction tasks, try to find the related project if not directly attached
+				if (!constructionProject && isConstructionTask && issue?.projectId) {
 					// Construction tasks might have a projectId that references a construction project
 					constructionProject = await ctx.db.get(issue.projectId);
 				}
@@ -320,10 +321,11 @@ export const getProjectAttachments = query({
 		const project = await ctx.db.get(args.projectId);
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
-				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+				const [issue, uploader, fileUrl, project] = await Promise.all([
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
+					attachment.projectId ? ctx.db.get(attachment.projectId) : null,
 				]);
 
 				return {
@@ -375,7 +377,7 @@ export const getAttachmentById = query({
 		}
 
 		const [issue, uploader, fileUrl] = await Promise.all([
-			ctx.db.get(attachment.issueId),
+			attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 			ctx.db.get(attachment.uploadedBy),
 			ctx.storage.getUrl(attachment.fileUrl as any),
 		]);
