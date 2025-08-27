@@ -271,12 +271,14 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 			<ContextMenuSeparator />
 
 			<ContextMenuItem onClick={handleSubscribe}>
-				<Bell className="size-4" /> {isSubscribed ? "Отписаться" : "Подписаться"}
+				<Bell className="size-4" />{" "}
+				{isSubscribed ? "Отписаться" : "Подписаться"}
 				<ContextMenuShortcut>S</ContextMenuShortcut>
 			</ContextMenuItem>
 
 			<ContextMenuItem onClick={handleFavorite}>
-				<Star className="size-4" /> {isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+				<Star className="size-4" />{" "}
+				{isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
 				<ContextMenuShortcut>F</ContextMenuShortcut>
 			</ContextMenuItem>
 

@@ -48,7 +48,7 @@ export function AuthForm() {
 				const organizations = await convex.query(
 					api.organizations.getUserOrganizations,
 				);
-				
+
 				if (organizations && organizations.length > 0) {
 					// Navigate to the first organization
 					navigate({
