@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
@@ -35,9 +36,15 @@ import {
 	Target,
 	User,
 	Users,
+	Wallet,
+	FileText,
+	TrendingUp,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
+
+// Lazy load finance component
+const ProjectFinanceTab = lazy(() => import("../project-finance/finance-overview").then(m => ({ default: m.ProjectFinanceTab })));
 import {
 	Area,
 	AreaChart,
@@ -593,9 +600,29 @@ export function ConstructionProjectOverview({
 
 	// Desktop view
 	return (
-		<div className="flex h-full">
-			{/* Main Content */}
-			<div className="flex-1 overflow-auto">
+		<div className="h-full overflow-auto">
+			<Tabs defaultValue="overview" className="h-full">
+				<div className="border-b px-6 pt-4">
+					<TabsList className="grid w-full max-w-md grid-cols-3">
+						<TabsTrigger value="overview" className="flex items-center gap-2">
+							<TrendingUp className="h-4 w-4" />
+							Обзор
+						</TabsTrigger>
+						<TabsTrigger value="finance" className="flex items-center gap-2">
+							<Wallet className="h-4 w-4" />
+							Финансы
+						</TabsTrigger>
+						<TabsTrigger value="documents" className="flex items-center gap-2">
+							<FileText className="h-4 w-4" />
+							Документы
+						</TabsTrigger>
+					</TabsList>
+				</div>
+
+				<TabsContent value="overview" className="h-full mt-0">
+					<div className="flex h-full">
+						{/* Main Content */}
+						<div className="flex-1 overflow-auto">
 				<div className="space-y-6 p-6">
 					{/* Header */}
 					<motion.div
@@ -977,12 +1004,12 @@ export function ConstructionProjectOverview({
 								</Card>
 							</div>
 						)}
-					</motion.div>
-				</div>
-			</div>
+							</motion.div>
+						</div>
+					</div>
 
-			{/* Sidebar */}
-			<div className="w-80 space-y-6 border-l bg-muted/10 p-6">
+					{/* Sidebar */}
+					<div className="w-80 space-y-6 border-l bg-muted/10 p-6">
 				<div>
 					<h3 className="mb-4 font-medium text-sm">Свойства проекта</h3>
 					<div className="space-y-4">
@@ -1145,10 +1172,28 @@ export function ConstructionProjectOverview({
 									{project.healthDescription}
 								</p>
 							)}
+								</div>
+							</div>
 						</div>
 					</div>
-				</div>
-			</div>
+				</TabsContent>
+
+				<TabsContent value="finance" className="h-full mt-0">
+					<Suspense fallback={<ProjectSkeleton />}>
+						<ProjectFinanceTab projectId={projectId} />
+					</Suspense>
+				</TabsContent>
+
+				<TabsContent value="documents" className="h-full mt-0">
+					<div className="flex h-full items-center justify-center">
+						<div className="text-center">
+							<FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+							<h3 className="font-medium text-lg">Документы проекта</h3>
+							<p className="text-muted-foreground text-sm mt-2">Раздел документов в разработке</p>
+						</div>
+					</div>
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }

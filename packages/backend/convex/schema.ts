@@ -642,4 +642,206 @@ export default defineSchema({
 		generatedAt: v.number(),
 		changedAt: v.optional(v.number()),
 	}).index("by_user", ["userId"]),
+
+	// ============== FINANCE TRACKING TABLES ==============
+
+	// Chart of Accounts (План счетов)
+	accounts: defineTable({
+		organizationId: v.id("organizations"),
+		code: v.string(), // Account code (e.g., "51" for bank accounts)
+		name: v.string(), // Russian name (e.g., "Расчетные счета")
+		type: v.union(
+			v.literal("asset"), // Активы
+			v.literal("liability"), // Пассивы  
+			v.literal("equity"), // Капитал
+			v.literal("revenue"), // Доходы
+			v.literal("expense"), // Расходы
+		),
+		category: v.optional(v.string()), // Sub-category
+		parentAccountId: v.optional(v.id("accounts")), // For hierarchical accounts
+		isActive: v.boolean(),
+		description: v.optional(v.string()),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_code", ["organizationId", "code"])
+		.index("by_type", ["organizationId", "type"])
+		.index("by_parent", ["parentAccountId"]),
+
+	// Journal Entries (Журнал проводок)
+	journalEntries: defineTable({
+		organizationId: v.id("organizations"),
+		projectId: v.optional(v.id("constructionProjects")),
+		entryNumber: v.string(), // Unique entry number
+		date: v.string(), // Transaction date
+		description: v.string(), // Entry description
+		type: v.union(
+			v.literal("payment"), // Платеж
+			v.literal("expense"), // Расход
+			v.literal("revenue"), // Доход
+			v.literal("transfer"), // Перевод
+			v.literal("adjustment"), // Корректировка
+		),
+		status: v.union(
+			v.literal("draft"), // Черновик
+			v.literal("posted"), // Проведено
+			v.literal("cancelled"), // Отменено
+		),
+		relatedPaymentId: v.optional(v.id("payments")),
+		createdBy: v.id("users"),
+		approvedBy: v.optional(v.id("users")),
+		createdAt: v.number(),
+		postedAt: v.optional(v.number()),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_project", ["projectId"])
+		.index("by_date", ["date"])
+		.index("by_payment", ["relatedPaymentId"])
+		.index("by_status", ["status"]),
+
+	// Journal Lines (Строки проводок)
+	journalLines: defineTable({
+		journalEntryId: v.id("journalEntries"),
+		accountId: v.id("accounts"),
+		debit: v.number(), // Дебет
+		credit: v.number(), // Кредит
+		description: v.optional(v.string()),
+		analyticsCode: v.optional(v.string()), // For analytical accounting
+		taxAmount: v.optional(v.number()), // НДС
+		createdAt: v.number(),
+	})
+		.index("by_entry", ["journalEntryId"])
+		.index("by_account", ["accountId"]),
+
+	// Payments (Платежи)
+	payments: defineTable({
+		organizationId: v.id("organizations"),
+		projectId: v.id("constructionProjects"),
+		paymentNumber: v.string(), // Unique payment number
+		type: v.union(
+			v.literal("incoming"), // Входящий платеж
+			v.literal("outgoing"), // Исходящий платеж
+		),
+		amount: v.number(),
+		currency: v.string(), // RUB, USD, etc.
+		paymentDate: v.string(),
+		dueDate: v.optional(v.string()),
+		counterparty: v.string(), // Контрагент
+		counterpartyInn: v.optional(v.string()), // ИНН контрагента
+		purpose: v.string(), // Назначение платежа
+		status: v.union(
+			v.literal("pending"), // Ожидается
+			v.literal("confirmed"), // Подтверждено
+			v.literal("rejected"), // Отклонено
+			v.literal("cancelled"), // Отменено
+		),
+		bankAccount: v.optional(v.string()), // Bank account number
+		paymentMethod: v.union(
+			v.literal("bank_transfer"), // Банковский перевод
+			v.literal("cash"), // Наличные
+			v.literal("card"), // Карта
+			v.literal("other"), // Другое
+		),
+		notes: v.optional(v.string()),
+		createdBy: v.id("users"),
+		confirmedBy: v.optional(v.id("users")),
+		createdAt: v.number(),
+		confirmedAt: v.optional(v.number()),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_project", ["projectId"])
+		.index("by_date", ["paymentDate"])
+		.index("by_status", ["status"])
+		.index("by_type", ["type"])
+		.index("by_counterparty", ["counterparty"]),
+
+	// Payment Documents (Документы платежей)
+	paymentDocuments: defineTable({
+		paymentId: v.id("payments"),
+		documentType: v.union(
+			v.literal("invoice"), // Счет
+			v.literal("act"), // Акт
+			v.literal("contract"), // Договор
+			v.literal("receipt"), // Квитанция
+			v.literal("bank_statement"), // Банковская выписка
+			v.literal("other"), // Другое
+		),
+		fileName: v.string(),
+		fileUrl: v.string(), // Storage ID
+		fileSize: v.number(),
+		mimeType: v.string(),
+		uploadedBy: v.id("users"),
+		uploadedAt: v.number(),
+	})
+		.index("by_payment", ["paymentId"])
+		.index("by_type", ["documentType"]),
+
+	// Project Budgets (Бюджеты проектов)
+	projectBudgets: defineTable({
+		projectId: v.id("constructionProjects"),
+		name: v.string(), // Budget name/version
+		totalBudget: v.number(), // Total budget amount
+		status: v.union(
+			v.literal("draft"), // Черновик
+			v.literal("approved"), // Утвержден
+			v.literal("revised"), // Пересмотрен
+		),
+		effectiveDate: v.string(),
+		notes: v.optional(v.string()),
+		createdBy: v.id("users"),
+		approvedBy: v.optional(v.id("users")),
+		createdAt: v.number(),
+		approvedAt: v.optional(v.number()),
+	})
+		.index("by_project", ["projectId"])
+		.index("by_status", ["status"])
+		.index("by_date", ["effectiveDate"]),
+
+	// Budget Lines (Статьи бюджета)
+	budgetLines: defineTable({
+		budgetId: v.id("projectBudgets"),
+		accountId: v.id("accounts"), // Link to expense account
+		category: v.string(), // Budget category
+		description: v.string(),
+		plannedAmount: v.number(), // Planned amount
+		allocatedAmount: v.number(), // Actually allocated
+		spentAmount: v.number(), // Actually spent (calculated)
+		notes: v.optional(v.string()),
+		createdAt: v.number(),
+	})
+		.index("by_budget", ["budgetId"])
+		.index("by_account", ["accountId"]),
+
+	// Budget Revisions (Изменения бюджета)
+	budgetRevisions: defineTable({
+		projectId: v.id("constructionProjects"),
+		originalBudgetId: v.id("projectBudgets"),
+		newBudgetId: v.id("projectBudgets"),
+		reason: v.string(), // Reason for revision
+		changeAmount: v.number(), // Positive for increase, negative for decrease
+		revisedBy: v.id("users"),
+		approvedBy: v.optional(v.id("users")),
+		createdAt: v.number(),
+		approvedAt: v.optional(v.number()),
+	})
+		.index("by_project", ["projectId"])
+		.index("by_original", ["originalBudgetId"])
+		.index("by_new", ["newBudgetId"]),
+
+	// Account Balances (for performance - cached balances)
+	accountBalances: defineTable({
+		accountId: v.id("accounts"),
+		projectId: v.optional(v.id("constructionProjects")),
+		period: v.string(), // YYYY-MM format
+		openingBalance: v.number(),
+		totalDebits: v.number(),
+		totalCredits: v.number(),
+		closingBalance: v.number(),
+		lastUpdated: v.number(),
+	})
+		.index("by_account", ["accountId"])
+		.index("by_project", ["projectId"])
+		.index("by_period", ["period"])
+		.index("by_account_period", ["accountId", "period"]),
 });
