@@ -1,8 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import { canAccessProject, canCreateProject, getUserProjectAccessLevel } from "./permissions/checks";
+import { getAccessibleProjects } from "./permissions/projectAccess";
 
-// Queries
+// Queries - Get all projects the current user has access to
 export const getAll = query({
 	handler: async (ctx) => {
 		// Check if user is authenticated
@@ -11,77 +13,60 @@ export const getAll = query({
 			throw new Error("Not authenticated");
 		}
 
-		// Check if user exists in database
-		const user = await getCurrentUserWithOrganization(ctx);
-		if (!user || !user.organization) {
-			// Return empty array if user doesn't exist or has no organization
-			// They need to be invited to an organization first
+		// Get projects accessible to the user using the permission system
+		try {
+			const accessibleProjects = await getAccessibleProjects(ctx);
+			
+			// Populate related data
+			const populatedProjects = await Promise.all(
+				accessibleProjects.map(async (project) => {
+					if (!project) return null;
+					
+					const [status, lead, priority, monthlyRevenue] = await Promise.all([
+						ctx.db.get(project.statusId),
+						ctx.db.get(project.leadId),
+						ctx.db.get(project.priorityId),
+						ctx.db
+							.query("monthlyRevenue")
+							.withIndex("by_project", (q) =>
+								q.eq("constructionProjectId", project._id),
+							)
+							.collect(),
+					]);
+
+					return {
+						...project,
+						status,
+						lead,
+						priority,
+						monthlyRevenue,
+					};
+				}),
+			);
+
+			return populatedProjects.filter(Boolean);
+		} catch (error) {
+			// Return empty array if user doesn't have organization
 			return [];
 		}
-
-		// Now safe to get organization data
-		const organization = await ctx.db.get(user.organization._id);
-		if (!organization) {
-			return [];
-		}
-
-		// Check membership
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q
-					.eq("organizationId", user.organization._id)
-					.eq("userId", user.user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			return [];
-		}
-
-		const projects = await ctx.db
-			.query("constructionProjects")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
-			)
-			.collect();
-
-		// Populate related data
-		const populatedProjects = await Promise.all(
-			projects.map(async (project) => {
-				const [status, lead, priority, monthlyRevenue] = await Promise.all([
-					ctx.db.get(project.statusId),
-					ctx.db.get(project.leadId),
-					ctx.db.get(project.priorityId),
-					ctx.db
-						.query("monthlyRevenue")
-						.withIndex("by_project", (q) =>
-							q.eq("constructionProjectId", project._id),
-						)
-						.collect(),
-				]);
-
-				return {
-					...project,
-					status,
-					lead,
-					priority,
-					monthlyRevenue,
-				};
-			}),
-		);
-
-		return populatedProjects;
 	},
 });
 
 export const getById = query({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		
+		// Check if user has access to this project
+		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
+		if (!hasAccess) {
+			throw new Error("Insufficient permissions to view this project");
+		}
+
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
 
-		const [status, lead, priority, monthlyRevenue] = await Promise.all([
+		const [status, lead, priority, monthlyRevenue, accessLevel] = await Promise.all([
 			ctx.db.get(project.statusId),
 			ctx.db.get(project.leadId),
 			ctx.db.get(project.priorityId),
@@ -91,6 +76,7 @@ export const getById = query({
 					q.eq("constructionProjectId", project._id),
 				)
 				.collect(),
+			getUserProjectAccessLevel(ctx, user._id, args.id),
 		]);
 
 		return {
@@ -99,6 +85,7 @@ export const getById = query({
 			lead,
 			priority,
 			monthlyRevenue,
+			accessLevel,
 		};
 	},
 });
@@ -106,6 +93,14 @@ export const getById = query({
 export const getProjectWithTasks = query({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		
+		// Check if user has access to this project
+		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
+		if (!hasAccess) {
+			throw new Error("Insufficient permissions to view this project");
+		}
+
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
 
@@ -320,14 +315,59 @@ export const create = mutation({
 		teamMemberIds: v.array(v.id("users")),
 	},
 	handler: async (ctx, args) => {
-		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		const project = await ctx.db.insert("constructionProjects", {
+		// Check if user can create projects
+		const canCreate = await canCreateProject(ctx, user._id, organization._id);
+		if (!canCreate) {
+			throw new Error("Insufficient permissions to create projects");
+		}
+
+		const projectId = await ctx.db.insert("constructionProjects", {
 			...args,
 			organizationId: organization._id,
 		});
 
-		return project;
+		// Grant the creator admin access to the project
+		await ctx.db.insert("projectAccess", {
+			projectId,
+			userId: user._id,
+			teamId: undefined,
+			accessLevel: "admin",
+			grantedBy: user._id,
+			grantedAt: Date.now(),
+			expiresAt: undefined,
+		});
+
+		// Grant the project lead admin access
+		if (args.leadId !== user._id) {
+			await ctx.db.insert("projectAccess", {
+				projectId,
+				userId: args.leadId,
+				teamId: undefined,
+				accessLevel: "admin",
+				grantedBy: user._id,
+				grantedAt: Date.now(),
+				expiresAt: undefined,
+			});
+		}
+
+		// Grant team members write access
+		for (const memberId of args.teamMemberIds) {
+			if (memberId !== user._id && memberId !== args.leadId) {
+				await ctx.db.insert("projectAccess", {
+					projectId,
+					userId: memberId,
+					teamId: undefined,
+					accessLevel: "write",
+					grantedBy: user._id,
+					grantedAt: Date.now(),
+					expiresAt: undefined,
+				});
+			}
+		}
+
+		return projectId;
 	},
 });
 
@@ -361,7 +401,68 @@ export const update = mutation({
 		teamMemberIds: v.optional(v.array(v.id("users"))),
 	},
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		
+		// Check if user has write access to this project
+		const hasAccess = await canAccessProject(ctx, user._id, args.id, "write");
+		if (!hasAccess) {
+			throw new Error("Insufficient permissions to update this project");
+		}
+
 		const { id, ...updates } = args;
+		
+		// If lead is changed, grant them admin access
+		if (updates.leadId) {
+			const existingAccess = await ctx.db
+				.query("projectAccess")
+				.withIndex("by_project_user", (q) =>
+					q.eq("projectId", id).eq("userId", updates.leadId)
+				)
+				.first();
+
+			if (!existingAccess) {
+				await ctx.db.insert("projectAccess", {
+					projectId: id,
+					userId: updates.leadId,
+					teamId: undefined,
+					accessLevel: "admin",
+					grantedBy: user._id,
+					grantedAt: Date.now(),
+					expiresAt: undefined,
+				});
+			} else if (existingAccess.accessLevel !== "admin" && existingAccess.accessLevel !== "owner") {
+				await ctx.db.patch(existingAccess._id, {
+					accessLevel: "admin",
+					grantedBy: user._id,
+					grantedAt: Date.now(),
+				});
+			}
+		}
+
+		// If team members are updated, grant them write access
+		if (updates.teamMemberIds) {
+			for (const memberId of updates.teamMemberIds) {
+				const existingAccess = await ctx.db
+					.query("projectAccess")
+					.withIndex("by_project_user", (q) =>
+						q.eq("projectId", id).eq("userId", memberId)
+					)
+					.first();
+
+				if (!existingAccess) {
+					await ctx.db.insert("projectAccess", {
+						projectId: id,
+						userId: memberId,
+						teamId: undefined,
+						accessLevel: "write",
+						grantedBy: user._id,
+						grantedAt: Date.now(),
+						expiresAt: undefined,
+					});
+				}
+			}
+		}
+
 		await ctx.db.patch(id, updates);
 		return { success: true };
 	},
@@ -422,6 +523,34 @@ export const addMonthlyRevenue = mutation({
 export const deleteProject = mutation({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		
+		// Check if user has admin access to delete this project
+		const hasAccess = await canAccessProject(ctx, user._id, args.id, "admin");
+		if (!hasAccess) {
+			throw new Error("Insufficient permissions to delete this project");
+		}
+
+		// Delete all project access entries
+		const projectAccesses = await ctx.db
+			.query("projectAccess")
+			.withIndex("by_project", (q) => q.eq("projectId", args.id))
+			.collect();
+
+		for (const access of projectAccesses) {
+			await ctx.db.delete(access._id);
+		}
+
+		// Delete team project access entries
+		const teamAccesses = await ctx.db
+			.query("teamProjectAccess")
+			.withIndex("by_project", (q) => q.eq("projectId", args.id))
+			.collect();
+
+		for (const access of teamAccesses) {
+			await ctx.db.delete(access._id);
+		}
+
 		// Delete related monthly revenue entries
 		const monthlyRevenues = await ctx.db
 			.query("monthlyRevenue")

@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import { canAccessDocument, canAccessProject } from "./permissions/checks";
 
 export const list = query({
 	args: {
@@ -10,7 +11,15 @@ export const list = query({
 		search: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+
+		// If filtering by project, check project access
+		if (args.projectId) {
+			const hasProjectAccess = await canAccessProject(ctx, user._id, args.projectId, "read");
+			if (!hasProjectAccess) {
+				return []; // Return empty if no access to project
+			}
+		}
 
 		let documents = await ctx.db
 			.query("documents")
@@ -24,13 +33,25 @@ export const list = query({
 			documents = documents.filter((doc) => doc.projectId === args.projectId);
 		}
 
+		// Filter documents user has access to
+		const accessibleDocuments = [];
+		for (const doc of documents) {
+			// Check document access
+			const hasAccess = await canAccessDocument(ctx, user._id, doc._id, "viewer");
+			if (hasAccess) {
+				accessibleDocuments.push(doc);
+			}
+		}
+
 		if (args.search) {
 			const searchLower = args.search.toLowerCase();
-			documents = documents.filter(
+			documents = accessibleDocuments.filter(
 				(doc) =>
 					doc.title.toLowerCase().includes(searchLower) ||
 					doc.content?.toLowerCase().includes(searchLower),
 			);
+		} else {
+			documents = accessibleDocuments;
 		}
 
 		const documentsWithDetails = await Promise.all(
@@ -66,9 +87,13 @@ export const list = query({
 export const get = query({
 	args: { id: v.id("documents") },
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		
+		// Check if user has access to this document
+		const hasAccess = await canAccessDocument(ctx, user._id, args.id, "viewer");
+		if (!hasAccess) {
+			throw new Error("Insufficient permissions to view this document");
+		}
 
 		const document = await ctx.db.get(args.id);
 		if (!document) return null;
@@ -112,9 +137,35 @@ export const create = mutation({
 		assignedTo: v.optional(v.id("users")),
 		dueDate: v.optional(v.string()),
 		tags: v.optional(v.array(v.string())),
+		grantAccessTo: v.optional(v.array(v.object({
+			userId: v.optional(v.id("users")),
+			teamId: v.optional(v.id("teams")),
+			accessLevel: v.union(
+				v.literal("owner"),
+				v.literal("editor"),
+				v.literal("commenter"),
+				v.literal("viewer")
+			),
+		}))),
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+
+		// If creating under a project, check project access
+		if (args.projectId) {
+			const hasProjectAccess = await canAccessProject(ctx, user._id, args.projectId, "write");
+			if (!hasProjectAccess) {
+				throw new Error("Insufficient permissions to create documents in this project");
+			}
+		}
+
+		// If creating under a parent document, check parent access
+		if (args.parentId) {
+			const hasParentAccess = await canAccessDocument(ctx, user._id, args.parentId, "editor");
+			if (!hasParentAccess) {
+				throw new Error("Insufficient permissions to create child documents");
+			}
+		}
 
 		const documentId = await ctx.db.insert("documents", {
 			organizationId: organization._id,
@@ -131,6 +182,59 @@ export const create = mutation({
 			lastEditedBy: user._id,
 			lastEditedAt: Date.now(),
 		});
+
+		// Grant owner access to the creator
+		await ctx.db.insert("documentAccess", {
+			documentId,
+			userId: user._id,
+			teamId: undefined,
+			accessLevel: "owner",
+			canShare: true,
+			grantedBy: user._id,
+			grantedAt: Date.now(),
+			expiresAt: undefined,
+		});
+
+		// Grant access to specified users/teams
+		if (args.grantAccessTo) {
+			for (const access of args.grantAccessTo) {
+				if (!access.userId && !access.teamId) continue;
+				
+				await ctx.db.insert("documentAccess", {
+					documentId,
+					userId: access.userId,
+					teamId: access.teamId,
+					accessLevel: access.accessLevel,
+					canShare: access.accessLevel === "owner" || access.accessLevel === "editor",
+					grantedBy: user._id,
+					grantedAt: Date.now(),
+					expiresAt: undefined,
+				});
+			}
+		}
+
+		// If assigned to someone, grant them editor access
+		if (args.assignedTo && args.assignedTo !== user._id) {
+			const existingAccess = await ctx.db
+				.query("documentAccess")
+				.withIndex("by_document_user", (q) =>
+					q.eq("documentId", documentId).eq("userId", args.assignedTo!)
+				)
+				.first();
+
+			if (!existingAccess) {
+				await ctx.db.insert("documentAccess", {
+					documentId,
+					userId: args.assignedTo,
+					teamId: undefined,
+					accessLevel: "editor",
+					canShare: true,
+					grantedBy: user._id,
+					grantedAt: Date.now(),
+					expiresAt: undefined,
+				});
+			}
+		}
 
 		return documentId;
 	},
