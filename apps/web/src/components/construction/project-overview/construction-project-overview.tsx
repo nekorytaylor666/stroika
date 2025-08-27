@@ -52,6 +52,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
+import { LegalDocumentsSection } from "../legal-documents/legal-documents-section";
 
 interface ConstructionProjectOverviewProps {
 	projectId: Id<"constructionProjects">;
@@ -105,6 +106,7 @@ export function ConstructionProjectOverview({
 	const [expandedSections, setExpandedSections] = useState({
 		charts: true,
 		tasks: true,
+		legalDocuments: false,
 	});
 	const project = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
@@ -579,6 +581,19 @@ export function ConstructionProjectOverview({
 						</div>
 					)}
 
+					{/* Legal Documents - Mobile */}
+					<LegalDocumentsSection
+						projectId={projectId}
+						compact={true}
+						expanded={expandedSections.legalDocuments}
+						onToggle={(expanded) =>
+							setExpandedSections({
+								...expandedSections,
+								legalDocuments: expanded,
+							})
+						}
+					/>
+
 					{/* Notes - Mobile */}
 					{project.notes && (
 						<Card className="p-4">
@@ -977,6 +992,19 @@ export function ConstructionProjectOverview({
 								</Card>
 							</div>
 						)}
+
+						{/* Legal Documents */}
+						<LegalDocumentsSection
+							projectId={projectId}
+							compact={true}
+							expanded={expandedSections.legalDocuments}
+							onToggle={(expanded) =>
+								setExpandedSections({
+									...expandedSections,
+									legalDocuments: expanded,
+								})
+							}
+						/>
 					</motion.div>
 				</div>
 			</div>

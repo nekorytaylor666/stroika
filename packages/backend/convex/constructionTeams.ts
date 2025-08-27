@@ -967,7 +967,7 @@ export const getTeamFiles = query({
 			teamAttachments.map(async (attachment) => {
 				const [uploader, issue] = await Promise.all([
 					attachment.uploadedBy ? ctx.db.get(attachment.uploadedBy) : null,
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 				]);
 
 				// Get project from issue

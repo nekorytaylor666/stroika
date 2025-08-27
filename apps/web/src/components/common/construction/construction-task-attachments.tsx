@@ -24,7 +24,8 @@ import { toast } from "sonner";
 import type { ConstructionTask } from "./construction-tasks";
 
 interface ConstructionTaskAttachmentsProps {
-	task: ConstructionTask;
+	task?: ConstructionTask; // Optional - when provided, attachments are linked to the task
+	projectId: Id<"constructionProjects">; // Always required - for project-level attachments
 	onAttachmentsUpdate?: () => void;
 }
 
@@ -46,6 +47,7 @@ function getFileIcon(mimeType: string) {
 
 export function ConstructionTaskAttachments({
 	task,
+	projectId,
 	onAttachmentsUpdate,
 }: ConstructionTaskAttachmentsProps) {
 	const [uploadingFiles, setUploadingFiles] = useState<
@@ -55,13 +57,17 @@ export function ConstructionTaskAttachments({
 
 	const generateUploadUrl = useMutation(api.files.generateUploadUrl);
 	const attachToIssue = useMutation(api.files.attachToIssue);
+	const uploadToProject = useMutation(api.files.uploadToProject);
 	const removeAttachment = useMutation(api.files.removeIssueAttachment);
-	const getUrl = useQuery(
-		api.files.getUrl,
-		task.attachments?.length
-			? { storageId: task.attachments[0].fileUrl as Id<"_storage"> }
-			: "skip",
+
+	// Get attachments based on whether we have a task or just project
+	const attachments = task?.attachments || [];
+	const projectAttachments = useQuery(
+		api.files.getProjectAttachments,
+		!task ? { projectId } : "skip",
 	);
+
+	const displayAttachments = task ? attachments : projectAttachments || [];
 
 	const handleFiles = async (files: FileList) => {
 		const filesArray = Array.from(files);
@@ -105,14 +111,27 @@ export function ConstructionTaskAttachments({
 						return newMap;
 					});
 
-					// Attach to issue
-					await attachToIssue({
-						issueId: task._id as Id<"issues">,
-						storageId: storageId as Id<"_storage">,
-						fileName: file.name,
-						fileSize: file.size,
-						mimeType: file.type || "application/octet-stream",
-					});
+					// Attach to issue or project
+					if (task) {
+						// If we have a task, attach to it
+						await attachToIssue({
+							issueId: task._id as Id<"issues">,
+							projectId: projectId,
+							storageId: storageId as Id<"_storage">,
+							fileName: file.name,
+							fileSize: file.size,
+							mimeType: file.type || "application/octet-stream",
+						});
+					} else {
+						// Otherwise, attach directly to project
+						await uploadToProject({
+							projectId: projectId,
+							storageId: storageId as Id<"_storage">,
+							fileName: file.name,
+							fileSize: file.size,
+							mimeType: file.type || "application/octet-stream",
+						});
+					}
 
 					toast.success(`Файл ${file.name} прикреплен`);
 					onAttachmentsUpdate?.();
@@ -183,9 +202,9 @@ export function ConstructionTaskAttachments({
 	return (
 		<div className="space-y-3">
 			{/* Attachments list */}
-			{task.attachments && task.attachments.length > 0 && (
+			{displayAttachments && displayAttachments.length > 0 && (
 				<div className="space-y-2">
-					{task.attachments.map((attachment) => {
+					{displayAttachments.map((attachment) => {
 						const FileIcon = getFileIcon(attachment.mimeType);
 						return (
 							<div
