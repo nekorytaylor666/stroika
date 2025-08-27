@@ -14,9 +14,7 @@ export function ConstructionSimpleDraggable({
 	className,
 }: SimpleDraggableProps) {
 	const [startTime, setStartTime] = useState<number | null>(null);
-	const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
-		null,
-	);
+	const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
 	const dragThreshold = 5; // pixels
 	const timeThreshold = 200; // milliseconds
 
@@ -33,7 +31,8 @@ export function ConstructionSimpleDraggable({
 		const endTime = Date.now();
 		const timeDiff = endTime - startTime;
 		const distance = Math.sqrt(
-			Math.pow(e.clientX - startPos.x, 2) + Math.pow(e.clientY - startPos.y, 2),
+			Math.pow(e.clientX - startPos.x, 2) + 
+			Math.pow(e.clientY - startPos.y, 2)
 		);
 
 		// Only trigger click if:

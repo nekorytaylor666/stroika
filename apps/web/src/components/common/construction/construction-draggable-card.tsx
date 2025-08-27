@@ -1,8 +1,8 @@
 "use client";
 
+import { type ReactNode, useRef, useState, useCallback } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { type ReactNode, useCallback, useRef, useState } from "react";
 
 interface DraggableCardProps {
 	id: string;
@@ -41,44 +41,38 @@ export function ConstructionDraggableCard({
 	};
 
 	// Handle pointer/mouse down - start timer for drag
-	const handlePointerDown = useCallback(
-		(e: React.PointerEvent | React.MouseEvent) => {
-			isDraggingRef.current = false;
-
-			// Start timer to enable drag after delay
-			longPressTimer.current = setTimeout(() => {
-				setDragEnabled(true);
-				isDraggingRef.current = true;
-			}, dragDelay);
-
-			// Pass event to drag listeners if enabled
-			if (dragEnabled && listeners?.onPointerDown) {
-				(listeners.onPointerDown as any)(e);
-			}
-		},
-		[dragDelay, dragEnabled, listeners],
-	);
+	const handlePointerDown = useCallback((e: React.PointerEvent | React.MouseEvent) => {
+		isDraggingRef.current = false;
+		
+		// Start timer to enable drag after delay
+		longPressTimer.current = setTimeout(() => {
+			setDragEnabled(true);
+			isDraggingRef.current = true;
+		}, dragDelay);
+		
+		// Pass event to drag listeners if enabled
+		if (dragEnabled && listeners?.onPointerDown) {
+			(listeners.onPointerDown as any)(e);
+		}
+	}, [dragDelay, dragEnabled, listeners]);
 
 	// Handle pointer/mouse up - clear timer and handle click
-	const handlePointerUp = useCallback(
-		(e: React.PointerEvent | React.MouseEvent) => {
-			// Clear the timer if still running
-			if (longPressTimer.current) {
-				clearTimeout(longPressTimer.current);
-				longPressTimer.current = null;
-			}
+	const handlePointerUp = useCallback((e: React.PointerEvent | React.MouseEvent) => {
+		// Clear the timer if still running
+		if (longPressTimer.current) {
+			clearTimeout(longPressTimer.current);
+			longPressTimer.current = null;
+		}
 
-			// If drag was never enabled, treat as click
-			if (!isDraggingRef.current && !isDragging) {
-				onClick();
-			}
+		// If drag was never enabled, treat as click
+		if (!isDraggingRef.current && !isDragging) {
+			onClick();
+		}
 
-			// Reset drag enabled state
-			setDragEnabled(false);
-			isDraggingRef.current = false;
-		},
-		[isDragging, onClick],
-	);
+		// Reset drag enabled state
+		setDragEnabled(false);
+		isDraggingRef.current = false;
+	}, [isDragging, onClick]);
 
 	// Handle pointer leave - cleanup
 	const handlePointerLeave = useCallback(() => {

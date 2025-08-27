@@ -58,7 +58,6 @@ import type * as permissions_queries from "../permissions/queries.js";
 import type * as permissions_roles from "../permissions/roles.js";
 import type * as permissions_types from "../permissions/types.js";
 import type * as permissions_utils from "../permissions/utils.js";
-import type * as projectLegalDocuments from "../projectLegalDocuments.js";
 import type * as quickSetup from "../quickSetup.js";
 import type * as roles from "../roles.js";
 import type * as seedDatabase from "../seedDatabase.js";
@@ -120,7 +119,6 @@ declare const fullApi: ApiFromModules<{
   "permissions/roles": typeof permissions_roles;
   "permissions/types": typeof permissions_types;
   "permissions/utils": typeof permissions_utils;
-  projectLegalDocuments: typeof projectLegalDocuments;
   quickSetup: typeof quickSetup;
   roles: typeof roles;
   seedDatabase: typeof seedDatabase;

@@ -1,17 +1,11 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { type ReactNode, useRef, useState, useCallback, useContext } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-	type ReactNode,
-	useCallback,
-	useContext,
-	useRef,
-	useState,
-} from "react";
-import tunnel from "tunnel-rat";
 import { Card } from "../../ui/card";
+import { cn } from "@/lib/utils";
+import tunnel from 'tunnel-rat';
 
 const t = tunnel();
 
@@ -56,43 +50,40 @@ export function ConstructionKanbanCardWrapper({
 		transition,
 	};
 
-	const handlePointerDown = useCallback(
-		(e: React.PointerEvent) => {
-			// Store initial position
-			startPosRef.current = { x: e.clientX, y: e.clientY };
-			wasClickRef.current = true;
+	const handlePointerDown = useCallback((e: React.PointerEvent) => {
+		// Store initial position
+		startPosRef.current = { x: e.clientX, y: e.clientY };
+		wasClickRef.current = true;
 
-			// Clear any existing timers
-			if (dragTimerRef.current) {
-				clearTimeout(dragTimerRef.current);
-			}
-			if (clickTimerRef.current) {
-				clearTimeout(clickTimerRef.current);
-			}
+		// Clear any existing timers
+		if (dragTimerRef.current) {
+			clearTimeout(dragTimerRef.current);
+		}
+		if (clickTimerRef.current) {
+			clearTimeout(clickTimerRef.current);
+		}
 
-			// Start timer to enable drag after delay
-			dragTimerRef.current = setTimeout(() => {
-				setIsDragAllowed(true);
-				wasClickRef.current = false;
-				// Programmatically trigger drag
-				const event = new PointerEvent("pointerdown", {
-					clientX: e.clientX,
-					clientY: e.clientY,
-					bubbles: true,
-				});
-				e.currentTarget.dispatchEvent(event);
-			}, dragDelay);
-		},
-		[dragDelay],
-	);
+		// Start timer to enable drag after delay
+		dragTimerRef.current = setTimeout(() => {
+			setIsDragAllowed(true);
+			wasClickRef.current = false;
+			// Programmatically trigger drag
+			const event = new PointerEvent('pointerdown', {
+				clientX: e.clientX,
+				clientY: e.clientY,
+				bubbles: true,
+			});
+			e.currentTarget.dispatchEvent(event);
+		}, dragDelay);
+	}, [dragDelay]);
 
 	const handlePointerMove = useCallback((e: React.PointerEvent) => {
 		if (!startPosRef.current) return;
-
+		
 		// Calculate distance moved
 		const deltaX = Math.abs(e.clientX - startPosRef.current.x);
 		const deltaY = Math.abs(e.clientY - startPosRef.current.y);
-
+		
 		// If moved more than 5px, consider it a drag attempt
 		if (deltaX > 5 || deltaY > 5) {
 			wasClickRef.current = false;
@@ -100,29 +91,26 @@ export function ConstructionKanbanCardWrapper({
 		}
 	}, []);
 
-	const handlePointerUp = useCallback(
-		(e: React.PointerEvent) => {
-			// Clear drag timer
-			if (dragTimerRef.current) {
-				clearTimeout(dragTimerRef.current);
-				dragTimerRef.current = null;
-			}
+	const handlePointerUp = useCallback((e: React.PointerEvent) => {
+		// Clear drag timer
+		if (dragTimerRef.current) {
+			clearTimeout(dragTimerRef.current);
+			dragTimerRef.current = null;
+		}
 
-			// If it was a click (not enough time for drag)
-			if (wasClickRef.current && !isDragging && !isDragAllowed) {
-				// Small delay to ensure it's not interfering with drag
-				clickTimerRef.current = setTimeout(() => {
-					onClick();
-				}, 50);
-			}
+		// If it was a click (not enough time for drag)
+		if (wasClickRef.current && !isDragging && !isDragAllowed) {
+			// Small delay to ensure it's not interfering with drag
+			clickTimerRef.current = setTimeout(() => {
+				onClick();
+			}, 50);
+		}
 
-			// Reset states
-			setIsDragAllowed(false);
-			startPosRef.current = null;
-			wasClickRef.current = true;
-		},
-		[isDragging, isDragAllowed, onClick],
-	);
+		// Reset states
+		setIsDragAllowed(false);
+		startPosRef.current = null;
+		wasClickRef.current = true;
+	}, [isDragging, isDragAllowed, onClick]);
 
 	const handlePointerCancel = useCallback(() => {
 		// Clear timers
@@ -143,8 +131,8 @@ export function ConstructionKanbanCardWrapper({
 
 	return (
 		<>
-			<div
-				ref={setNodeRef}
+			<div 
+				ref={setNodeRef} 
 				style={style}
 				onPointerDown={handlePointerDown}
 				onPointerMove={handlePointerMove}
@@ -158,7 +146,7 @@ export function ConstructionKanbanCardWrapper({
 					className={cn(
 						"cursor-pointer gap-4 rounded-md shadow-sm transition-shadow hover:shadow-md",
 						isDragging && "pointer-events-none cursor-grabbing opacity-30",
-						className,
+						className
 					)}
 				>
 					{children}
@@ -170,7 +158,7 @@ export function ConstructionKanbanCardWrapper({
 						className={cn(
 							"cursor-grab gap-4 rounded-md shadow-sm ring-2 ring-primary",
 							"cursor-grabbing",
-							className,
+							className
 						)}
 					>
 						{children}

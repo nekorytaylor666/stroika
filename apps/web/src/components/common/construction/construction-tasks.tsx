@@ -1,51 +1,41 @@
 "use client";
 
-import { useCurrentUser } from "@/hooks/use-current-user";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
-import { useCreateIssueStore } from "@/store/create-issue-store";
 import { useViewStore } from "@/store/view-store";
 import { type Id, api } from "@stroika/backend";
 import { useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import {
-	AlertCircle,
-	Calendar,
-	CheckCircle,
-	Circle,
-	Clock,
-	Hash,
-	Plus,
-	User,
-	XCircle,
-} from "lucide-react";
 import { type FC, useMemo, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
 import {
-	KanbanBoard,
-	KanbanCard,
-	KanbanCards,
-	type DragEndEvent as KanbanDragEndEvent,
-	KanbanHeader,
-	KanbanProvider,
-} from "../../ui/kibo-ui/kanban";
-import {
-	type DragEndEvent as ListDragEndEvent,
-	ListGroup,
-	ListItem,
-	ListItems,
 	ListProvider,
+	ListGroup,
+	ListItems,
+	ListItem,
+	type DragEndEvent as ListDragEndEvent,
 } from "../../ui/kibo-ui/list";
+import {
+	KanbanProvider,
+	KanbanBoard,
+	KanbanHeader,
+	KanbanCards,
+	KanbanCard,
+	type DragEndEvent as KanbanDragEndEvent,
+} from "../../ui/kibo-ui/kanban";
 import { ConstructionCreateIssueModal } from "./construction-create-issue-modal";
-import { ConstructionIssueLine } from "./construction-issue-line";
-import { ConstructionKanbanCard } from "./construction-kanban-card";
 import { ConstructionTaskDetails } from "./construction-task-details";
 import { MobileTaskListWrapper } from "./mobile/mobile-task-list-wrapper";
+import { ConstructionIssueLine } from "./construction-issue-line";
+import { ConstructionKanbanCard } from "./construction-kanban-card";
+import { Button } from "../../ui/button";
+import { Plus, Calendar, User, Hash, AlertCircle, CheckCircle, Circle, Clock, XCircle } from "lucide-react";
+import { useCreateIssueStore } from "@/store/create-issue-store";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Badge } from "../../ui/badge";
 
 // Types for construction tasks
 export interface ConstructionTask {
@@ -119,7 +109,9 @@ export default function ConstructionTasks({
 	const tasksByStatus = useMemo(() => {
 		const result: Record<string, ConstructionTask[]> = {};
 		for (const status of statuses) {
-			result[status._id] = tasks.filter((task) => task.statusId === status._id);
+			result[status._id] = tasks.filter(
+				(task) => task.statusId === status._id,
+			);
 		}
 		return result;
 	}, [tasks, statuses]);
@@ -145,10 +137,7 @@ export default function ConstructionTasks({
 	}, [statuses]);
 
 	// Handle task status change
-	const handleTaskStatusChange = async (
-		taskId: string,
-		newStatusId: string,
-	) => {
+	const handleTaskStatusChange = async (taskId: string, newStatusId: string) => {
 		if (onTaskStatusChange) {
 			await onTaskStatusChange(taskId, newStatusId);
 		} else if (currentUser) {
@@ -273,7 +262,7 @@ export default function ConstructionTasks({
 											id={item.id}
 											name={item.name}
 											column={item.column}
-											className="p-0 transition-shadow hover:shadow-md"
+											className="p-0 hover:shadow-md transition-shadow"
 										>
 											<div
 												onClick={() => openTaskDetails(item.task)}
@@ -358,7 +347,7 @@ export default function ConstructionTasks({
 											name={task.title}
 											index={index}
 											parent={status._id}
-											className="cursor-pointer p-0 transition-colors hover:bg-accent/50"
+											className="p-0 hover:bg-accent/50 transition-colors cursor-pointer"
 										>
 											<div onClick={() => openTaskDetails(task)}>
 												<ConstructionIssueLine issue={task} layoutId={true} />

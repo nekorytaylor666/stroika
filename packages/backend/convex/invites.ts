@@ -2,10 +2,7 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
-import {
-	getCurrentUser,
-	requireOrganizationAccess,
-} from "./helpers/getCurrentUser";
+import { getCurrentUser, requireOrganizationAccess } from "./helpers/getCurrentUser";
 
 // Generate a random invite code
 function generateInviteCode(): string {

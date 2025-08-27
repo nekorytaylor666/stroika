@@ -61,16 +61,14 @@ const features: Feature[] = [
 	{
 		icon: <SiTablecheck className="" size={20} />,
 		title: "Инициативы",
-		description:
-			"Планируйте стратегическую работу над продуктом и отслеживайте прогресс в масштабе",
+		description: "Планируйте стратегическую работу над продуктом и отслеживайте прогресс в масштабе",
 		actionLabel: "Узнать больше",
 		activated: true,
 	},
 	{
 		icon: <Package className="" size={20} />,
 		title: "Циклы",
-		description:
-			"Отслеживайте рабочую нагрузку и скорость команды с помощью циклов",
+		description: "Отслеживайте рабочую нагрузку и скорость команды с помощью циклов",
 		actionLabel: "Узнать больше",
 		teamsActivated: 6,
 	},
@@ -126,16 +124,14 @@ const integrations: Integration[] = [
 	{
 		icon: <SiGithub size={24} />,
 		title: "GitHub",
-		description:
-			"Связывайте pull request'ы, коммиты и автоматизируйте рабочие процессы",
+		description: "Связывайте pull request'ы, коммиты и автоматизируйте рабочие процессы",
 		enabled: true,
 		actionLabel: "Включено",
 	},
 	{
 		icon: <SiGitlab size={24} />,
 		title: "GitLab",
-		description:
-			"Связывайте merge request'ы и автоматизируйте рабочие процессы",
+		description: "Связывайте merge request'ы и автоматизируйте рабочие процессы",
 		actionLabel: "Открыть",
 	},
 	{
@@ -162,8 +158,7 @@ const integrations: Integration[] = [
 	{
 		icon: <SiZapier size={20} />,
 		title: "Zapier",
-		description:
-			"Создавайте пользовательские автоматизации и интеграции с другими приложениями",
+		description: "Создавайте пользовательские автоматизации и интеграции с другими приложениями",
 		actionLabel: "Открыть",
 	},
 	{
@@ -256,8 +251,8 @@ export default function Settings() {
 			<div className="mb-10">
 				<h1 className="mb-1 font-semibold text-2xl">Рабочая область</h1>
 				<p className="text-muted-foreground">
-					Управляйте настройками рабочей области. Ваша рабочая область находится
-					в регионе <span className="font-medium">Россия</span>
+					Управляйте настройками рабочей области. Ваша рабочая область находится в регионе{" "}
+					<span className="font-medium">Россия</span>
 				</p>
 			</div>
 

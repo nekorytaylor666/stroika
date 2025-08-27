@@ -112,11 +112,10 @@ export const removeAttachment = mutation({
 	},
 });
 
-// Issue/Project attachment functions
+// Issue attachment functions
 export const attachToIssue = mutation({
 	args: {
-		issueId: v.optional(v.id("issues")), // Now optional
-		projectId: v.optional(v.id("constructionProjects")), // For direct project attachments
+		issueId: v.id("issues"),
 		storageId: v.id("_storage"),
 		fileName: v.string(),
 		fileSize: v.number(),
@@ -125,14 +124,8 @@ export const attachToIssue = mutation({
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Ensure at least one of issueId or projectId is provided
-		if (!args.issueId && !args.projectId) {
-			throw new Error("Either issueId or projectId must be provided");
-		}
-
 		await ctx.db.insert("issueAttachments", {
 			issueId: args.issueId,
-			projectId: args.projectId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
@@ -169,34 +162,6 @@ export const getIssueAttachments = query({
 	},
 });
 
-// Get attachments for a project (not tied to specific issues)
-export const getProjectAttachments = query({
-	args: { projectId: v.id("constructionProjects") },
-	handler: async (ctx, args) => {
-		const attachments = await ctx.db
-			.query("issueAttachments")
-			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-			.filter((q) => q.eq(q.field("issueId"), undefined)) // Only get project-level attachments
-			.collect();
-
-		const attachmentsWithUsers = await Promise.all(
-			attachments.map(async (attachment) => {
-				const [uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.uploadedBy),
-					ctx.storage.getUrl(attachment.fileUrl as any),
-				]);
-				return {
-					...attachment,
-					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-					uploader,
-				};
-			}),
-		);
-
-		return attachmentsWithUsers;
-	},
-});
-
 export const removeIssueAttachment = mutation({
 	args: { attachmentId: v.id("issueAttachments") },
 	handler: async (ctx, args) => {
@@ -211,7 +176,7 @@ export const removeIssueAttachment = mutation({
 	},
 });
 
-// Upload file to project (with optional issue linking)
+// Upload file without linking to specific issue (for general attachments page)
 export const uploadToProject = mutation({
 	args: {
 		storageId: v.id("_storage"),
@@ -219,15 +184,54 @@ export const uploadToProject = mutation({
 		fileSize: v.number(),
 		mimeType: v.string(),
 		projectId: v.id("constructionProjects"),
-		issueId: v.optional(v.id("issues")), // Optional - attach to specific issue if provided
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Directly attach to project (and optionally to issue)
+		// Get default status and priority
+		const defaultStatus = await ctx.db.query("status").first();
+		const defaultPriority = await ctx.db.query("priorities").first();
+
+		if (!defaultStatus || !defaultPriority) {
+			throw new Error("No default status or priority found");
+		}
+
+		// Create a placeholder issue for project file attachments
+		const projectFileIssue = await ctx.db
+			.query("issues")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("title"), "[Project Files]"),
+					q.eq(q.field("projectId"), args.projectId),
+				),
+			)
+			.first();
+
+		let issueId = projectFileIssue?._id;
+
+		if (!issueId) {
+			// Create a project files issue if it doesn't exist
+			issueId = await ctx.db.insert("issues", {
+				organizationId: organization._id,
+				title: "[Project Files]",
+				description: "Container for project file attachments",
+				identifier: `PROJECT-FILES-${Date.now()}`,
+				projectId: args.projectId,
+				statusId: defaultStatus._id,
+				priorityId: defaultPriority._id,
+				assigneeId: undefined,
+				labelIds: [],
+				createdAt: new Date().toISOString(),
+				cycleId: "default",
+				rank: "0",
+				dueDate: undefined,
+				isConstructionTask: true,
+				parentTaskId: undefined,
+			});
+		}
+
 		await ctx.db.insert("issueAttachments", {
-			issueId: args.issueId || undefined, // Optional issue attachment
-			projectId: args.projectId, // Always attach to project
+			issueId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,

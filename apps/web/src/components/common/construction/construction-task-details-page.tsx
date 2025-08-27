@@ -463,7 +463,6 @@ export function ConstructionTaskDetailsPage({
 							</div>
 							<ConstructionTaskAttachmentsGrid
 								task={task}
-								projectId={task.projectId as Id<"constructionProjects">}
 								onAttachmentsUpdate={() => {}}
 							/>
 						</div>
@@ -766,7 +765,6 @@ export function ConstructionTaskDetailsPage({
 							</div>
 							<ConstructionTaskAttachmentsGrid
 								task={task}
-								projectId={task.projectId as Id<"constructionProjects">}
 								onAttachmentsUpdate={() => {}}
 							/>
 						</div>

@@ -1,14 +1,14 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { api } from "@stroika/backend";
-import { useQuery } from "convex/react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { Calendar, Hash, Paperclip, User } from "lucide-react";
+import { type ConstructionTask } from "./construction-tasks";
 import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { Badge } from "../../ui/badge";
-import type { ConstructionTask } from "./construction-tasks";
+import { Calendar, User, Hash, Paperclip } from "lucide-react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { useQuery } from "convex/react";
+import { api } from "@stroika/backend";
 
 // Priority color mapping
 const priorityColors = {
@@ -40,12 +40,12 @@ export function ConstructionKanbanCard({ task }: ConstructionKanbanCardProps) {
 		<div className="flex flex-col gap-2">
 			{/* Task Identifier and Title */}
 			<div className="flex items-start gap-2">
-				<span className="font-medium text-muted-foreground text-xs">
+				<span className="text-muted-foreground text-xs font-medium">
 					<Hash className="inline h-3 w-3" />
 					{task.identifier}
 				</span>
 			</div>
-			<h4 className="line-clamp-2 font-medium text-sm">{task.title}</h4>
+			<h4 className="font-medium text-sm line-clamp-2">{task.title}</h4>
 
 			{/* Labels */}
 			{labels && labels.length > 0 && (
@@ -73,16 +73,15 @@ export function ConstructionKanbanCard({ task }: ConstructionKanbanCardProps) {
 			)}
 
 			{/* Footer with metadata */}
-			<div className="flex items-center justify-between text-muted-foreground text-xs">
+			<div className="flex items-center justify-between text-xs text-muted-foreground">
 				<div className="flex items-center gap-3">
 					{/* Priority */}
 					{priority && (
 						<div
 							className={cn(
-								"flex items-center gap-0.5 rounded px-1.5 py-0.5",
-								priorityColors[
-									priority.name.toLowerCase() as keyof typeof priorityColors
-								] || "bg-gray-50 text-gray-500",
+								"flex items-center gap-0.5 px-1.5 py-0.5 rounded",
+								priorityColors[priority.name.toLowerCase() as keyof typeof priorityColors] ||
+									"text-gray-500 bg-gray-50",
 							)}
 						>
 							<span className="font-medium capitalize">{priority.name}</span>
@@ -125,7 +124,7 @@ export function ConstructionKanbanCard({ task }: ConstructionKanbanCardProps) {
 
 			{/* Subtasks indicator */}
 			{task.subtaskCount && task.subtaskCount > 0 && (
-				<div className="flex items-center gap-1 text-muted-foreground text-xs">
+				<div className="flex items-center gap-1 text-xs text-muted-foreground">
 					<div className="h-1 w-full rounded-full bg-muted">
 						<div
 							className="h-1 rounded-full bg-primary"

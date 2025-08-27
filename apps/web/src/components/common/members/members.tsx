@@ -12,18 +12,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { api } from "../../../../../../packages/backend/convex/_generated/api";
 import InviteMemberModal from "./invite-member-modal";
-import InviteUrlModalSimple from "./invite-url-modal-simple";
+import InviteUrlModal from "./invite-url-modal";
 import MemberLine from "./member-line";
 
 export default function Members() {
 	const params = useParams({ from: "/construction/$orgId/members" });
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
-	const [selectedInvite, setSelectedInvite] = useState<{
-		code: string | null;
-		email: string;
-		expiresAt: number;
-	}>({ code: null, email: "", expiresAt: 0 });
+	const [selectedInviteId, setSelectedInviteId] = useState<Id<"organizationInvites"> | null>(null);
+	const [selectedInviteEmail, setSelectedInviteEmail] = useState<string>("");
 	const [activeTab, setActiveTab] = useState("members");
 
 	// Fetch organization members
@@ -50,12 +47,9 @@ export default function Members() {
 		}
 	};
 
-	const handleShowInviteUrl = (invite: any) => {
-		setSelectedInvite({
-			code: invite.inviteCode || null,
-			email: invite.email,
-			expiresAt: invite.expiresAt,
-		});
+	const handleShowInviteUrl = (inviteId: Id<"organizationInvites">, email: string) => {
+		setSelectedInviteId(inviteId);
+		setSelectedInviteEmail(email);
 		setIsUrlModalOpen(true);
 	};
 
@@ -141,12 +135,12 @@ export default function Members() {
 							{invites?.map((invite) => (
 								<div
 									key={invite._id}
-									className="group flex w-full cursor-pointer items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50"
-									onClick={() => handleShowInviteUrl(invite)}
+									className="group flex w-full items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50 cursor-pointer"
+									onClick={() => handleShowInviteUrl(invite._id, invite.email)}
 									title="Click to view invite link"
 								>
-									<div className="flex w-[40%] items-center gap-2 font-medium group-hover:text-primary">
-										<Link2 className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+									<div className="w-[40%] font-medium group-hover:text-primary flex items-center gap-2">
+										<Link2 className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
 										{invite.email}
 									</div>
 									<div className="w-[20%] text-muted-foreground">
@@ -186,12 +180,11 @@ export default function Members() {
 				organizationId={params.orgId as Id<"organizations">}
 			/>
 
-			<InviteUrlModalSimple
+			<InviteUrlModal
 				open={isUrlModalOpen}
 				onOpenChange={setIsUrlModalOpen}
-				inviteCode={selectedInvite.code}
-				inviteEmail={selectedInvite.email}
-				expiresAt={selectedInvite.expiresAt}
+				inviteId={selectedInviteId}
+				inviteEmail={selectedInviteEmail}
 			/>
 		</div>
 	);
