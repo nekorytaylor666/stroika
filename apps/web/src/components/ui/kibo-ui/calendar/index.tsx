@@ -250,7 +250,7 @@ export const CalendarBody = ({ features, children }: CalendarBodyProps) => {
 	for (let i = 0; i < firstDay; i++) {
 		const day =
 			prevMonthData.prevMonthDaysArray[
-			prevMonthData.prevMonthDays - firstDay + i
+				prevMonthData.prevMonthDays - firstDay + i
 			];
 
 		if (day) {

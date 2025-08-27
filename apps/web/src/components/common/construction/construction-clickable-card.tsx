@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useRef, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 interface ClickableCardProps {
 	onClick: () => void;
@@ -26,7 +26,7 @@ export function ConstructionClickableCard({
 		const handleDragStart = () => {
 			globalIsDragging = true;
 			setLocalIsDragging(true);
-			
+
 			// Clear any existing timeout
 			if (dragEndTimeout) {
 				clearTimeout(dragEndTimeout);
@@ -44,19 +44,21 @@ export function ConstructionClickableCard({
 		};
 
 		// Listen to drag events on the document
-		document.addEventListener('dragstart', handleDragStart, true);
-		document.addEventListener('dragend', handleDragEnd, true);
-		
+		document.addEventListener("dragstart", handleDragStart, true);
+		document.addEventListener("dragend", handleDragEnd, true);
+
 		// Also listen for dnd-kit specific events
 		const handlePointerDown = (e: PointerEvent) => {
 			const target = e.target as HTMLElement;
 			// Check if this is part of a draggable element
-			if (target.closest('[data-dnd-draggable="true"]') || 
-			    target.closest('[role="button"][tabindex="0"]')) {
+			if (
+				target.closest('[data-dnd-draggable="true"]') ||
+				target.closest('[role="button"][tabindex="0"]')
+			) {
 				setLocalIsDragging(true);
 			}
 		};
-		
+
 		const handlePointerUp = () => {
 			// Reset drag state after pointer up with delay
 			clickTimeoutRef.current = setTimeout(() => {
@@ -64,15 +66,15 @@ export function ConstructionClickableCard({
 			}, 200);
 		};
 
-		document.addEventListener('pointerdown', handlePointerDown, true);
-		document.addEventListener('pointerup', handlePointerUp, true);
+		document.addEventListener("pointerdown", handlePointerDown, true);
+		document.addEventListener("pointerup", handlePointerUp, true);
 
 		return () => {
-			document.removeEventListener('dragstart', handleDragStart, true);
-			document.removeEventListener('dragend', handleDragEnd, true);
-			document.removeEventListener('pointerdown', handlePointerDown, true);
-			document.removeEventListener('pointerup', handlePointerUp, true);
-			
+			document.removeEventListener("dragstart", handleDragStart, true);
+			document.removeEventListener("dragend", handleDragEnd, true);
+			document.removeEventListener("pointerdown", handlePointerDown, true);
+			document.removeEventListener("pointerup", handlePointerUp, true);
+
 			if (dragEndTimeout) {
 				clearTimeout(dragEndTimeout);
 			}
@@ -89,7 +91,7 @@ export function ConstructionClickableCard({
 			e.stopPropagation();
 			return;
 		}
-		
+
 		// Check if the clicked element is the drag handle
 		const target = e.target as HTMLElement;
 		if (target.closest('[data-dnd-drag-handle="true"]')) {
@@ -97,7 +99,7 @@ export function ConstructionClickableCard({
 			e.stopPropagation();
 			return;
 		}
-		
+
 		// Small delay to ensure this isn't part of a drag operation
 		setTimeout(() => {
 			if (!globalIsDragging && !localIsDragging) {

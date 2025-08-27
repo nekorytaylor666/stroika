@@ -119,7 +119,7 @@ export default function InviteUrlModalSimple({
 
 					<div className="space-y-2">
 						<Label>Invite Details</Label>
-						<div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+						<div className="space-y-1 rounded-lg border bg-muted/30 p-3">
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-muted-foreground">Email:</span>
 								<span className="font-medium">{inviteEmail}</span>

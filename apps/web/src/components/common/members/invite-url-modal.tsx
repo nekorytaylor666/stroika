@@ -70,7 +70,9 @@ export default function InviteUrlModal({
 			`You've been invited to join our organization.\n\nPlease click the following link to accept the invitation:\n${fullUrl}\n\nThis invitation will expire on ${format(new Date(inviteDetails.expiresAt), "dd MMMM yyyy", { locale: ru })}.`,
 		);
 
-		window.open(`mailto:${inviteDetails.email}?subject=${subject}&body=${body}`);
+		window.open(
+			`mailto:${inviteDetails.email}?subject=${subject}&body=${body}`,
+		);
 	};
 
 	const handleClose = () => {
@@ -129,7 +131,7 @@ export default function InviteUrlModal({
 
 						<div className="space-y-2">
 							<Label>Invite Details</Label>
-							<div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+							<div className="space-y-1 rounded-lg border bg-muted/30 p-3">
 								<div className="flex items-center justify-between text-sm">
 									<span className="text-muted-foreground">Email:</span>
 									<span className="font-medium">{inviteDetails.email}</span>

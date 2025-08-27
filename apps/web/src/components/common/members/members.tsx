@@ -141,12 +141,12 @@ export default function Members() {
 							{invites?.map((invite) => (
 								<div
 									key={invite._id}
-									className="group flex w-full items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50 cursor-pointer"
+									className="group flex w-full cursor-pointer items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50"
 									onClick={() => handleShowInviteUrl(invite)}
 									title="Click to view invite link"
 								>
-									<div className="w-[40%] font-medium group-hover:text-primary flex items-center gap-2">
-										<Link2 className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+									<div className="flex w-[40%] items-center gap-2 font-medium group-hover:text-primary">
+										<Link2 className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
 										{invite.email}
 									</div>
 									<div className="w-[20%] text-muted-foreground">
