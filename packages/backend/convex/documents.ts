@@ -15,7 +15,12 @@ export const list = query({
 
 		// If filtering by project, check project access
 		if (args.projectId) {
-			const hasProjectAccess = await canAccessProject(ctx, user._id, args.projectId, "read");
+			const hasProjectAccess = await canAccessProject(
+				ctx,
+				user._id,
+				args.projectId,
+				"read",
+			);
 			if (!hasProjectAccess) {
 				return []; // Return empty if no access to project
 			}
@@ -37,7 +42,12 @@ export const list = query({
 		const accessibleDocuments = [];
 		for (const doc of documents) {
 			// Check document access
-			const hasAccess = await canAccessDocument(ctx, user._id, doc._id, "viewer");
+			const hasAccess = await canAccessDocument(
+				ctx,
+				user._id,
+				doc._id,
+				"viewer",
+			);
 			if (hasAccess) {
 				accessibleDocuments.push(doc);
 			}
@@ -88,7 +98,7 @@ export const get = query({
 	args: { id: v.id("documents") },
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-		
+
 		// Check if user has access to this document
 		const hasAccess = await canAccessDocument(ctx, user._id, args.id, "viewer");
 		if (!hasAccess) {
@@ -137,31 +147,47 @@ export const create = mutation({
 		assignedTo: v.optional(v.id("users")),
 		dueDate: v.optional(v.string()),
 		tags: v.optional(v.array(v.string())),
-		grantAccessTo: v.optional(v.array(v.object({
-			userId: v.optional(v.id("users")),
-			teamId: v.optional(v.id("teams")),
-			accessLevel: v.union(
-				v.literal("owner"),
-				v.literal("editor"),
-				v.literal("commenter"),
-				v.literal("viewer")
+		grantAccessTo: v.optional(
+			v.array(
+				v.object({
+					userId: v.optional(v.id("users")),
+					teamId: v.optional(v.id("teams")),
+					accessLevel: v.union(
+						v.literal("owner"),
+						v.literal("editor"),
+						v.literal("commenter"),
+						v.literal("viewer"),
+					),
+				}),
 			),
-		}))),
+		),
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
 		// If creating under a project, check project access
 		if (args.projectId) {
-			const hasProjectAccess = await canAccessProject(ctx, user._id, args.projectId, "write");
+			const hasProjectAccess = await canAccessProject(
+				ctx,
+				user._id,
+				args.projectId,
+				"write",
+			);
 			if (!hasProjectAccess) {
-				throw new Error("Insufficient permissions to create documents in this project");
+				throw new Error(
+					"Insufficient permissions to create documents in this project",
+				);
 			}
 		}
 
 		// If creating under a parent document, check parent access
 		if (args.parentId) {
-			const hasParentAccess = await canAccessDocument(ctx, user._id, args.parentId, "editor");
+			const hasParentAccess = await canAccessDocument(
+				ctx,
+				user._id,
+				args.parentId,
+				"editor",
+			);
 			if (!hasParentAccess) {
 				throw new Error("Insufficient permissions to create child documents");
 			}
@@ -199,13 +225,14 @@ export const create = mutation({
 		if (args.grantAccessTo) {
 			for (const access of args.grantAccessTo) {
 				if (!access.userId && !access.teamId) continue;
-				
+
 				await ctx.db.insert("documentAccess", {
 					documentId,
 					userId: access.userId,
 					teamId: access.teamId,
 					accessLevel: access.accessLevel,
-					canShare: access.accessLevel === "owner" || access.accessLevel === "editor",
+					canShare:
+						access.accessLevel === "owner" || access.accessLevel === "editor",
 					grantedBy: user._id,
 					grantedAt: Date.now(),
 					expiresAt: undefined,
@@ -218,7 +245,7 @@ export const create = mutation({
 			const existingAccess = await ctx.db
 				.query("documentAccess")
 				.withIndex("by_document_user", (q) =>
-					q.eq("documentId", documentId).eq("userId", args.assignedTo!)
+					q.eq("documentId", documentId).eq("userId", args.assignedTo!),
 				)
 				.first();
 

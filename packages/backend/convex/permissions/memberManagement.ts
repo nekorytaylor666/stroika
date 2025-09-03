@@ -1,8 +1,13 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
-import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
-import { canManageMembers, isAdmin, isDirector, isOrganizationOwner } from "./checks";
 import { auth } from "../auth";
+import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
+import {
+	canManageMembers,
+	isAdmin,
+	isDirector,
+	isOrganizationOwner,
+} from "./checks";
 
 // Add a new member to the organization
 export const inviteMember = mutation({
@@ -30,9 +35,15 @@ export const inviteMember = mutation({
 		}
 
 		if (role.isDirector) {
-			const isOwner = await isOrganizationOwner(ctx, user._id, organization._id);
+			const isOwner = await isOrganizationOwner(
+				ctx,
+				user._id,
+				organization._id,
+			);
 			if (!isOwner) {
-				throw new Error("Only the organization owner can assign director roles");
+				throw new Error(
+					"Only the organization owner can assign director roles",
+				);
 			}
 		}
 
@@ -66,7 +77,7 @@ export const inviteMember = mutation({
 		const existingMembership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", targetUser._id)
+				q.eq("organizationId", organization._id).eq("userId", targetUser._id),
 			)
 			.first();
 
@@ -102,7 +113,7 @@ export const inviteMember = mutation({
 				const existingTeamMember = await ctx.db
 					.query("teamMembers")
 					.withIndex("by_team_user", (q) =>
-						q.eq("teamId", teamId).eq("userId", targetUser._id)
+						q.eq("teamId", teamId).eq("userId", targetUser._id),
 					)
 					.first();
 
@@ -126,7 +137,7 @@ export const inviteMember = mutation({
 				const existingAccess = await ctx.db
 					.query("projectAccess")
 					.withIndex("by_project_user", (q) =>
-						q.eq("projectId", projectId).eq("userId", targetUser._id)
+						q.eq("projectId", projectId).eq("userId", targetUser._id),
 					)
 					.first();
 
@@ -176,8 +187,8 @@ export const inviteMember = mutation({
 			createdAt: new Date().toISOString(),
 		});
 
-		return { 
-			success: true, 
+		return {
+			success: true,
 			userId: targetUser._id,
 			isNewUser: !existingMembership,
 		};
@@ -189,11 +200,15 @@ export const updateMemberPermissions = mutation({
 	args: {
 		userId: v.id("users"),
 		roleId: v.optional(v.id("roles")),
-		customPermissions: v.optional(v.array(v.object({
-			permissionId: v.id("permissions"),
-			granted: v.boolean(),
-			expiresAt: v.optional(v.string()),
-		}))),
+		customPermissions: v.optional(
+			v.array(
+				v.object({
+					permissionId: v.id("permissions"),
+					granted: v.boolean(),
+					expiresAt: v.optional(v.string()),
+				}),
+			),
+		),
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
@@ -208,7 +223,7 @@ export const updateMemberPermissions = mutation({
 		const membership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", args.userId)
+				q.eq("organizationId", organization._id).eq("userId", args.userId),
 			)
 			.first();
 
@@ -225,9 +240,15 @@ export const updateMemberPermissions = mutation({
 
 			// Check if assigning director role
 			if (newRole.isDirector) {
-				const isOwner = await isOrganizationOwner(ctx, user._id, organization._id);
+				const isOwner = await isOrganizationOwner(
+					ctx,
+					user._id,
+					organization._id,
+				);
 				if (!isOwner) {
-					throw new Error("Only the organization owner can assign director roles");
+					throw new Error(
+						"Only the organization owner can assign director roles",
+					);
 				}
 			}
 
@@ -243,7 +264,7 @@ export const updateMemberPermissions = mutation({
 				const existingPerm = await ctx.db
 					.query("userPermissions")
 					.withIndex("by_user_permission", (q) =>
-						q.eq("userId", args.userId).eq("permissionId", perm.permissionId)
+						q.eq("userId", args.userId).eq("permissionId", perm.permissionId),
 					)
 					.first();
 
@@ -313,7 +334,7 @@ export const removeMember = mutation({
 		const membership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", args.userId)
+				q.eq("organizationId", organization._id).eq("userId", args.userId),
 			)
 			.first();
 
@@ -324,7 +345,11 @@ export const removeMember = mutation({
 		// Check if removing a director (only owner can do this)
 		const memberRole = await ctx.db.get(membership.roleId);
 		if (memberRole && memberRole.isDirector) {
-			const isOwner = await isOrganizationOwner(ctx, user._id, organization._id);
+			const isOwner = await isOrganizationOwner(
+				ctx,
+				user._id,
+				organization._id,
+			);
 			if (!isOwner) {
 				throw new Error("Only the organization owner can remove directors");
 			}
@@ -414,14 +439,20 @@ export const getMembersWithPermissions = query({
 		// Get members
 		let membersQuery = ctx.db
 			.query("organizationMembers")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id));
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			);
 
 		if (!args.includeInactive) {
-			membersQuery = membersQuery.filter((q) => q.eq(q.field("isActive"), true));
+			membersQuery = membersQuery.filter((q) =>
+				q.eq(q.field("isActive"), true),
+			);
 		}
 
 		if (args.roleId) {
-			membersQuery = membersQuery.filter((q) => q.eq(q.field("roleId"), args.roleId));
+			membersQuery = membersQuery.filter((q) =>
+				q.eq(q.field("roleId"), args.roleId),
+			);
 		}
 
 		const members = await membersQuery.collect();
@@ -433,8 +464,8 @@ export const getMembersWithPermissions = query({
 				.query("teamMembers")
 				.withIndex("by_team", (q) => q.eq("teamId", args.teamId))
 				.collect();
-			const teamMemberIds = new Set(teamMembers.map(tm => tm.userId));
-			filteredMembers = members.filter(m => teamMemberIds.has(m.userId));
+			const teamMemberIds = new Set(teamMembers.map((tm) => tm.userId));
+			filteredMembers = members.filter((m) => teamMemberIds.has(m.userId));
 		}
 
 		// Filter by project access if specified
@@ -443,8 +474,12 @@ export const getMembersWithPermissions = query({
 				.query("projectAccess")
 				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
 				.collect();
-			const projectUserIds = new Set(projectAccesses.filter(pa => pa.userId).map(pa => pa.userId!));
-			filteredMembers = filteredMembers.filter(m => projectUserIds.has(m.userId));
+			const projectUserIds = new Set(
+				projectAccesses.filter((pa) => pa.userId).map((pa) => pa.userId!),
+			);
+			filteredMembers = filteredMembers.filter((m) =>
+				projectUserIds.has(m.userId),
+			);
 		}
 
 		// Enrich member data
@@ -459,13 +494,15 @@ export const getMembersWithPermissions = query({
 				if (!memberUser) return null;
 
 				// Get role permissions
-				const rolePermissions = role ? await ctx.db
-					.query("rolePermissions")
-					.withIndex("by_role", (q) => q.eq("roleId", role._id))
-					.collect() : [];
+				const rolePermissions = role
+					? await ctx.db
+							.query("rolePermissions")
+							.withIndex("by_role", (q) => q.eq("roleId", role._id))
+							.collect()
+					: [];
 
 				const permissions = await Promise.all(
-					rolePermissions.map(async (rp) => ctx.db.get(rp.permissionId))
+					rolePermissions.map(async (rp) => ctx.db.get(rp.permissionId)),
 				);
 
 				// Get custom permissions
@@ -481,7 +518,7 @@ export const getMembersWithPermissions = query({
 							...cp,
 							permission,
 						};
-					})
+					}),
 				);
 
 				// Get teams
@@ -501,7 +538,7 @@ export const getMembersWithPermissions = query({
 							};
 						}
 						return null;
-					})
+					}),
 				);
 
 				// Get project access
@@ -521,13 +558,13 @@ export const getMembersWithPermissions = query({
 							};
 						}
 						return null;
-					})
+					}),
 				);
 
 				// Check special permissions
 				const isOwner = organization.ownerId === member.userId;
 				const isDirectorRole = role ? role.isDirector : false;
-				const canManage = isOwner || isDirectorRole || (role?.name === "admin");
+				const canManage = isOwner || isDirectorRole || role?.name === "admin";
 
 				return {
 					_id: member._id,
@@ -540,13 +577,15 @@ export const getMembersWithPermissions = query({
 						position: memberUser.position,
 						lastLogin: memberUser.lastLogin,
 					},
-					role: role ? {
-						_id: role._id,
-						name: role.name,
-						displayName: role.displayName,
-						isDirector: role.isDirector,
-						priority: role.priority,
-					} : null,
+					role: role
+						? {
+								_id: role._id,
+								name: role.name,
+								displayName: role.displayName,
+								isDirector: role.isDirector,
+								priority: role.priority,
+							}
+						: null,
 					permissions: {
 						inherited: permissions.filter(Boolean),
 						custom: customPerms,
@@ -554,11 +593,13 @@ export const getMembersWithPermissions = query({
 					teams: teams.filter(Boolean),
 					projects: projects.filter(Boolean),
 					joinedAt: member.joinedAt,
-					invitedBy: invitedBy ? {
-						_id: invitedBy._id,
-						name: invitedBy.name,
-						email: invitedBy.email,
-					} : null,
+					invitedBy: invitedBy
+						? {
+								_id: invitedBy._id,
+								name: invitedBy.name,
+								email: invitedBy.email,
+							}
+						: null,
 					isActive: member.isActive,
 					specialPermissions: {
 						isOwner,
@@ -567,7 +608,7 @@ export const getMembersWithPermissions = query({
 						canCreateProjects: isOwner || isDirectorRole,
 					},
 				};
-			})
+			}),
 		);
 
 		return enrichedMembers.filter(Boolean);
@@ -577,10 +618,12 @@ export const getMembersWithPermissions = query({
 // Bulk update member roles
 export const bulkUpdateRoles = mutation({
 	args: {
-		updates: v.array(v.object({
-			userId: v.id("users"),
-			roleId: v.id("roles"),
-		})),
+		updates: v.array(
+			v.object({
+				userId: v.id("users"),
+				roleId: v.id("roles"),
+			}),
+		),
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
@@ -592,35 +635,47 @@ export const bulkUpdateRoles = mutation({
 		}
 
 		const results = [];
-		
+
 		for (const update of args.updates) {
 			// Get membership
 			const membership = await ctx.db
 				.query("organizationMembers")
 				.withIndex("by_org_user", (q) =>
-					q.eq("organizationId", organization._id).eq("userId", update.userId)
+					q.eq("organizationId", organization._id).eq("userId", update.userId),
 				)
 				.first();
 
 			if (!membership || !membership.isActive) {
-				results.push({ userId: update.userId, success: false, error: "Member not found" });
+				results.push({
+					userId: update.userId,
+					success: false,
+					error: "Member not found",
+				});
 				continue;
 			}
 
 			// Check if assigning director role
 			const newRole = await ctx.db.get(update.roleId);
 			if (!newRole) {
-				results.push({ userId: update.userId, success: false, error: "Role not found" });
+				results.push({
+					userId: update.userId,
+					success: false,
+					error: "Role not found",
+				});
 				continue;
 			}
 
 			if (newRole.isDirector) {
-				const isOwner = await isOrganizationOwner(ctx, user._id, organization._id);
+				const isOwner = await isOrganizationOwner(
+					ctx,
+					user._id,
+					organization._id,
+				);
 				if (!isOwner) {
-					results.push({ 
-						userId: update.userId, 
-						success: false, 
-						error: "Only owner can assign director role" 
+					results.push({
+						userId: update.userId,
+						success: false,
+						error: "Only owner can assign director role",
 					});
 					continue;
 				}
@@ -628,10 +683,10 @@ export const bulkUpdateRoles = mutation({
 
 			// Cannot change owner's role
 			if (organization.ownerId === update.userId) {
-				results.push({ 
-					userId: update.userId, 
-					success: false, 
-					error: "Cannot change owner's role" 
+				results.push({
+					userId: update.userId,
+					success: false,
+					error: "Cannot change owner's role",
 				});
 				continue;
 			}
@@ -652,7 +707,7 @@ export const bulkUpdateRoles = mutation({
 			action: "bulk_role_update",
 			details: JSON.stringify({
 				totalUpdates: args.updates.length,
-				successful: results.filter(r => r.success).length,
+				successful: results.filter((r) => r.success).length,
 			}),
 			createdAt: new Date().toISOString(),
 		});

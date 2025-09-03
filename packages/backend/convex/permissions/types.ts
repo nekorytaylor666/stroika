@@ -1,4 +1,4 @@
-import { type Doc, Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 
 export type Permission = Doc<"permissions">;
 export type Role = Doc<"roles">;
@@ -32,7 +32,12 @@ export type PermissionResource =
 	| "organizations"
 	| "members";
 
-export type PermissionScope = "global" | "organization" | "project" | "team" | "resource";
+export type PermissionScope =
+	| "global"
+	| "organization"
+	| "project"
+	| "team"
+	| "resource";
 
 export type AccessLevel = "owner" | "admin" | "write" | "read";
 

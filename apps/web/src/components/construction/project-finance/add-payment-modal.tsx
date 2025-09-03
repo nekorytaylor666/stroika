@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Dialog,
 	DialogContent,
@@ -12,6 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import {
 	Select,
 	SelectContent,
 	SelectItem,
@@ -19,20 +25,14 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation } from "convex/react";
-import { CalendarIcon, Upload } from "lucide-react";
-import { useState } from "react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { CalendarIcon, Upload } from "lucide-react";
+import { useState } from "react";
 
 interface AddPaymentModalProps {
 	projectId: Id<"constructionProjects">;
@@ -47,30 +47,34 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 	const [counterparty, setCounterparty] = useState("");
 	const [counterpartyInn, setCounterpartyInn] = useState("");
 	const [purpose, setPurpose] = useState("");
-	const [paymentMethod, setPaymentMethod] = useState<"bank_transfer" | "cash" | "card" | "other">("bank_transfer");
+	const [paymentMethod, setPaymentMethod] = useState<
+		"bank_transfer" | "cash" | "card" | "other"
+	>("bank_transfer");
 	const [bankAccount, setBankAccount] = useState("");
 	const [notes, setNotes] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	
+
 	const createPayment = useMutation(api.finance.payments.createPayment);
 	const generateUploadUrl = useMutation(api.files.generateUploadUrl);
-	const addPaymentDocument = useMutation(api.finance.payments.addPaymentDocument);
-	
+	const addPaymentDocument = useMutation(
+		api.finance.payments.addPaymentDocument,
+	);
+
 	const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-	
+
 	const handleSubmit = async () => {
 		if (!amount || !counterparty || !purpose) {
 			return;
 		}
-		
+
 		setIsSubmitting(true);
-		
+
 		try {
 			// Create payment
 			const { paymentId } = await createPayment({
 				projectId,
 				type,
-				amount: parseFloat(amount),
+				amount: Number.parseFloat(amount),
 				paymentDate: format(paymentDate, "yyyy-MM-dd"),
 				dueDate: dueDate ? format(dueDate, "yyyy-MM-dd") : undefined,
 				counterparty,
@@ -80,40 +84,55 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 				paymentMethod,
 				notes: notes || undefined,
 			});
-			
+
 			// Upload documents if any
 			for (const file of selectedFiles) {
 				const uploadUrl = await generateUploadUrl();
-				
+
 				// Upload to storage
 				const response = await fetch(uploadUrl, {
 					method: "POST",
 					headers: { "Content-Type": file.type },
 					body: file,
 				});
-				
+
 				if (!response.ok) {
 					throw new Error("Failed to upload file");
 				}
-				
+
 				const { storageId } = await response.json();
-				
+
 				// Determine document type based on file name
-				let documentType: "invoice" | "act" | "contract" | "receipt" | "bank_statement" | "other" = "other";
+				let documentType:
+					| "invoice"
+					| "act"
+					| "contract"
+					| "receipt"
+					| "bank_statement"
+					| "other" = "other";
 				const fileName = file.name.toLowerCase();
-				
+
 				if (fileName.includes("счет") || fileName.includes("invoice")) {
 					documentType = "invoice";
 				} else if (fileName.includes("акт") || fileName.includes("act")) {
 					documentType = "act";
-				} else if (fileName.includes("договор") || fileName.includes("contract")) {
+				} else if (
+					fileName.includes("договор") ||
+					fileName.includes("contract")
+				) {
 					documentType = "contract";
-				} else if (fileName.includes("квитанция") || fileName.includes("receipt")) {
+				} else if (
+					fileName.includes("квитанция") ||
+					fileName.includes("receipt")
+				) {
 					documentType = "receipt";
-				} else if (fileName.includes("выписка") || fileName.includes("statement")) {
+				} else if (
+					fileName.includes("выписка") ||
+					fileName.includes("statement")
+				) {
 					documentType = "bank_statement";
 				}
-				
+
 				// Attach document to payment
 				await addPaymentDocument({
 					paymentId,
@@ -124,7 +143,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 					mimeType: file.type,
 				});
 			}
-			
+
 			onClose();
 		} catch (error) {
 			console.error("Error creating payment:", error);
@@ -132,24 +151,25 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 			setIsSubmitting(false);
 		}
 	};
-	
+
 	const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const files = event.target.files;
 		if (files) {
 			setSelectedFiles(Array.from(files));
 		}
 	};
-	
+
 	return (
 		<Dialog open onOpenChange={() => onClose()}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Добавить платеж</DialogTitle>
 					<DialogDescription>
-						Создайте новый платеж для проекта. Вы можете прикрепить подтверждающие документы.
+						Создайте новый платеж для проекта. Вы можете прикрепить
+						подтверждающие документы.
 					</DialogDescription>
 				</DialogHeader>
-				
+
 				<div className="grid gap-4 py-4">
 					{/* Payment Type */}
 					<div className="grid gap-2">
@@ -164,7 +184,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							</SelectContent>
 						</Select>
 					</div>
-					
+
 					{/* Amount */}
 					<div className="grid gap-2">
 						<Label>Сумма (₽)</Label>
@@ -175,7 +195,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							onChange={(e) => setAmount(e.target.value)}
 						/>
 					</div>
-					
+
 					{/* Counterparty */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="grid gap-2">
@@ -195,7 +215,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							/>
 						</div>
 					</div>
-					
+
 					{/* Purpose */}
 					<div className="grid gap-2">
 						<Label>Назначение платежа</Label>
@@ -205,7 +225,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							onChange={(e) => setPurpose(e.target.value)}
 						/>
 					</div>
-					
+
 					{/* Dates */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="grid gap-2">
@@ -216,11 +236,13 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 										variant="outline"
 										className={cn(
 											"justify-start text-left font-normal",
-											!paymentDate && "text-muted-foreground"
+											!paymentDate && "text-muted-foreground",
 										)}
 									>
 										<CalendarIcon className="mr-2 h-4 w-4" />
-										{paymentDate ? format(paymentDate, "PPP", { locale: ru }) : "Выберите дату"}
+										{paymentDate
+											? format(paymentDate, "PPP", { locale: ru })
+											: "Выберите дату"}
 									</Button>
 								</PopoverTrigger>
 								<PopoverContent className="w-auto p-0">
@@ -234,7 +256,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 								</PopoverContent>
 							</Popover>
 						</div>
-						
+
 						<div className="grid gap-2">
 							<Label>Срок оплаты (опционально)</Label>
 							<Popover>
@@ -243,11 +265,13 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 										variant="outline"
 										className={cn(
 											"justify-start text-left font-normal",
-											!dueDate && "text-muted-foreground"
+											!dueDate && "text-muted-foreground",
 										)}
 									>
 										<CalendarIcon className="mr-2 h-4 w-4" />
-										{dueDate ? format(dueDate, "PPP", { locale: ru }) : "Выберите дату"}
+										{dueDate
+											? format(dueDate, "PPP", { locale: ru })
+											: "Выберите дату"}
 									</Button>
 								</PopoverTrigger>
 								<PopoverContent className="w-auto p-0">
@@ -262,24 +286,29 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							</Popover>
 						</div>
 					</div>
-					
+
 					{/* Payment Method */}
 					<div className="grid grid-cols-2 gap-4">
 						<div className="grid gap-2">
 							<Label>Способ оплаты</Label>
-							<Select value={paymentMethod} onValueChange={(value: any) => setPaymentMethod(value)}>
+							<Select
+								value={paymentMethod}
+								onValueChange={(value: any) => setPaymentMethod(value)}
+							>
 								<SelectTrigger>
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="bank_transfer">Банковский перевод</SelectItem>
+									<SelectItem value="bank_transfer">
+										Банковский перевод
+									</SelectItem>
 									<SelectItem value="cash">Наличные</SelectItem>
 									<SelectItem value="card">Карта</SelectItem>
 									<SelectItem value="other">Другое</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
-						
+
 						{paymentMethod === "bank_transfer" && (
 							<div className="grid gap-2">
 								<Label>Номер счета (опционально)</Label>
@@ -291,7 +320,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							</div>
 						)}
 					</div>
-					
+
 					{/* Notes */}
 					<div className="grid gap-2">
 						<Label>Примечания (опционально)</Label>
@@ -302,7 +331,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 							rows={3}
 						/>
 					</div>
-					
+
 					{/* File Upload */}
 					<div className="grid gap-2">
 						<Label>Документы</Label>
@@ -332,7 +361,7 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 						{selectedFiles.length > 0 && (
 							<div className="mt-2 space-y-1">
 								{selectedFiles.map((file, index) => (
-									<div key={index} className="text-sm text-muted-foreground">
+									<div key={index} className="text-muted-foreground text-sm">
 										• {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
 									</div>
 								))}
@@ -340,12 +369,15 @@ export function AddPaymentModal({ projectId, onClose }: AddPaymentModalProps) {
 						)}
 					</div>
 				</div>
-				
+
 				<DialogFooter>
 					<Button variant="outline" onClick={onClose} disabled={isSubmitting}>
 						Отмена
 					</Button>
-					<Button onClick={handleSubmit} disabled={isSubmitting || !amount || !counterparty || !purpose}>
+					<Button
+						onClick={handleSubmit}
+						disabled={isSubmitting || !amount || !counterparty || !purpose}
+					>
 						{isSubmitting ? "Создание..." : "Создать платеж"}
 					</Button>
 				</DialogFooter>

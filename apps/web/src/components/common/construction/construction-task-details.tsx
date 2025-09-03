@@ -380,7 +380,9 @@ export function ConstructionTaskDetails({
 									</div>
 									<ConstructionTaskAttachmentsGrid
 										task={currentTask}
-										projectId={currentTask.projectId as Id<"constructionProjects">}
+										projectId={
+											currentTask.projectId as Id<"constructionProjects">
+										}
 										onAttachmentsUpdate={() => {
 											// Optionally refresh task data here
 										}}
