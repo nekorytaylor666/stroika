@@ -20,6 +20,7 @@ import {
 	BarChart3,
 	Calendar,
 	ChevronDown,
+	DollarSign,
 	Folder,
 	LayoutGrid,
 	Paperclip,
@@ -61,6 +62,11 @@ export function ProjectNavigation() {
 			label: "Команда",
 			href: `/construction/${orgId}/projects/${projectId}/team`,
 			icon: Users,
+		},
+		{
+			label: "Финансы",
+			href: `/construction/${orgId}/projects/${projectId}/finance`,
+			icon: DollarSign,
 		},
 		{
 			label: "Календарь",

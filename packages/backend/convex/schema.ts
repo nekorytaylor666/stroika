@@ -873,6 +873,80 @@ export default defineSchema({
 		.index("by_budget", ["budgetId"])
 		.index("by_account", ["accountId"]),
 
+	// Expenses (Расходы)
+	expenses: defineTable({
+		organizationId: v.id("organizations"),
+		projectId: v.id("constructionProjects"),
+		expenseNumber: v.string(), // Unique expense number
+		category: v.union(
+			v.literal("materials"), // Материалы
+			v.literal("labor"), // Работа
+			v.literal("equipment"), // Оборудование
+			v.literal("transport"), // Транспорт
+			v.literal("utilities"), // Коммунальные услуги
+			v.literal("permits"), // Разрешения
+			v.literal("insurance"), // Страхование
+			v.literal("taxes"), // Налоги
+			v.literal("other"), // Другое
+		),
+		description: v.string(),
+		amount: v.number(),
+		currency: v.string(), // RUB, USD, etc.
+		expenseDate: v.string(),
+		vendor: v.string(), // Поставщик
+		vendorInn: v.optional(v.string()), // ИНН поставщика
+		invoiceNumber: v.optional(v.string()),
+		status: v.union(
+			v.literal("pending"), // Ожидается
+			v.literal("approved"), // Одобрено
+			v.literal("paid"), // Оплачено
+			v.literal("rejected"), // Отклонено
+			v.literal("cancelled"), // Отменено
+		),
+		paymentMethod: v.union(
+			v.literal("bank_transfer"), // Банковский перевод
+			v.literal("cash"), // Наличные
+			v.literal("card"), // Карта
+			v.literal("other"), // Другое
+		),
+		relatedPaymentId: v.optional(v.id("payments")), // Link to payment if paid
+		notes: v.optional(v.string()),
+		createdBy: v.id("users"),
+		approvedBy: v.optional(v.id("users")),
+		paidBy: v.optional(v.id("users")),
+		createdAt: v.number(),
+		approvedAt: v.optional(v.number()),
+		paidAt: v.optional(v.number()),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_project", ["projectId"])
+		.index("by_date", ["expenseDate"])
+		.index("by_status", ["status"])
+		.index("by_category", ["category"])
+		.index("by_vendor", ["vendor"])
+		.index("by_payment", ["relatedPaymentId"]),
+
+	// Expense Documents (Документы расходов)
+	expenseDocuments: defineTable({
+		expenseId: v.id("expenses"),
+		documentType: v.union(
+			v.literal("invoice"), // Счет
+			v.literal("receipt"), // Квитанция
+			v.literal("contract"), // Договор
+			v.literal("delivery_note"), // Накладная
+			v.literal("act"), // Акт
+			v.literal("other"), // Другое
+		),
+		fileName: v.string(),
+		fileUrl: v.string(), // Storage ID
+		fileSize: v.number(),
+		mimeType: v.string(),
+		uploadedBy: v.id("users"),
+		uploadedAt: v.number(),
+	})
+		.index("by_expense", ["expenseId"])
+		.index("by_type", ["documentType"]),
+
 	// Budget Revisions (Изменения бюджета)
 	budgetRevisions: defineTable({
 		projectId: v.id("constructionProjects"),

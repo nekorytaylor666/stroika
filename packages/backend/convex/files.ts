@@ -238,8 +238,6 @@ export const uploadToProject = mutation({
 	},
 });
 
-
-
 export const uploadToGeneral = mutation({
 	args: {
 		storageId: v.id("_storage"),
