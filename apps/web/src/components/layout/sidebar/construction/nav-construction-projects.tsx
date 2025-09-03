@@ -27,6 +27,7 @@ import {
 	CalendarDays,
 	CheckSquare,
 	ChevronRight,
+	FileText,
 	DollarSign,
 	Paperclip,
 	Plus,
@@ -85,6 +86,11 @@ export function NavConstructionProjects() {
 			name: "Активность",
 			icon: Activity,
 			url: `/construction/${params.orgId}/projects/${projectId}/activity`,
+		},
+		{
+			name: "Документы",
+			icon: FileText,
+			url: `/construction/${params.orgId}/projects/${projectId}/legal-documents`,
 		},
 		{
 			name: "Календарь",

@@ -500,53 +500,10 @@ export default defineSchema({
 		.index("by_task", ["taskId"])
 		.index("by_type", ["relationshipType"]),
 
-	// Project Legal Documents table
-	projectLegalDocuments: defineTable({
-		constructionProjectId: v.id("constructionProjects"),
-		organizationId: v.id("organizations"),
-		documentType: v.union(
-			v.literal("contract"),
-			v.literal("invoice"),
-			v.literal("permit"),
-			v.literal("insurance"),
-			v.literal("report"),
-			v.literal("legal"),
-			v.literal("financial"),
-			v.literal("other"),
-		),
-		title: v.string(),
-		description: v.optional(v.string()),
-		storageId: v.id("_storage"),
-		fileName: v.string(),
-		fileSize: v.number(),
-		mimeType: v.string(),
-		uploadedBy: v.id("users"),
-		uploadedAt: v.number(),
-		status: v.union(
-			v.literal("draft"),
-			v.literal("pending"),
-			v.literal("approved"),
-			v.literal("rejected"),
-			v.literal("expired"),
-			v.literal("archived"),
-		),
-		validUntil: v.optional(v.string()), // ISO date string for expiration
-		metadata: v.optional(v.string()), // JSON string for additional data
-		isPrivate: v.boolean(),
-		allowedUserIds: v.array(v.id("users")), // Users with special access
-		tags: v.array(v.string()),
-	})
-		.index("by_project", ["constructionProjectId"])
-		.index("by_organization", ["organizationId"])
-		.index("by_type", ["documentType"])
-		.index("by_status", ["status"])
-		.index("by_uploader", ["uploadedBy"])
-		.index("by_upload_date", ["uploadedAt"]),
-
-	// Issue attachments (can be attached to issues or directly to projects)
+	// Issue attachments
 	issueAttachments: defineTable({
-		issueId: v.optional(v.id("issues")), // Optional - can be null for project-level attachments
-		projectId: v.optional(v.id("constructionProjects")), // Project ID for direct project attachments
+		issueId: v.optional(v.id("issues")),
+		projectId: v.optional(v.id("constructionProjects")),
 		fileName: v.string(),
 		fileUrl: v.string(),
 		fileSize: v.number(),
@@ -1068,4 +1025,54 @@ export default defineSchema({
 		.index("by_user", ["userId"])
 		.index("by_team", ["teamId"])
 		.index("by_document_user", ["documentId", "userId"]),
+
+	// Legal documents for construction projects
+	projectLegalDocuments: defineTable({
+		constructionProjectId: v.id("constructionProjects"),
+		organizationId: v.id("organizations"),
+		documentType: v.union(
+			v.literal("contract"),
+			v.literal("invoice"),
+			v.literal("receipt"),
+			v.literal("permit"),
+			v.literal("certificate"),
+			v.literal("report"),
+			v.literal("protocol"),
+			v.literal("other"),
+		),
+		fileName: v.string(),
+		fileUrl: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+		description: v.optional(v.string()),
+		uploadedBy: v.id("users"),
+		uploadedAt: v.number(),
+		status: v.union(
+			v.literal("draft"),
+			v.literal("pending_review"),
+			v.literal("approved"),
+			v.literal("rejected"),
+			v.literal("expired"),
+		),
+		expirationDate: v.optional(v.number()),
+		isConfidential: v.optional(v.boolean()),
+		tags: v.optional(v.array(v.string())),
+		relatedPartyName: v.optional(v.string()),
+		relatedPartyContact: v.optional(v.string()),
+		contractAmount: v.optional(v.number()),
+		paymentStatus: v.optional(
+			v.union(v.literal("pending"), v.literal("partial"), v.literal("paid")),
+		),
+		notes: v.optional(v.string()),
+		reviewedBy: v.optional(v.id("users")),
+		reviewedAt: v.optional(v.number()),
+		approvedBy: v.optional(v.id("users")),
+		approvedAt: v.optional(v.number()),
+	})
+		.index("by_project", ["constructionProjectId"])
+		.index("by_organization", ["organizationId"])
+		.index("by_type", ["documentType"])
+		.index("by_status", ["status"])
+		.index("by_uploader", ["uploadedBy"])
+		.index("by_project_type", ["constructionProjectId", "documentType"]),
 });

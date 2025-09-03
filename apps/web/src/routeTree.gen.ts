@@ -39,6 +39,7 @@ import { Route as ConstructionOrgIdProjectsProjectIdTeamRouteImport } from './ro
 import { Route as ConstructionOrgIdProjectsProjectIdTasksRouteImport } from './routes/construction.$orgId/projects.$projectId/tasks'
 import { Route as ConstructionOrgIdProjectsProjectIdSettingsRouteImport } from './routes/construction.$orgId/projects.$projectId/settings'
 import { Route as ConstructionOrgIdProjectsProjectIdOverviewRouteImport } from './routes/construction.$orgId/projects.$projectId/overview'
+import { Route as ConstructionOrgIdProjectsProjectIdLegalDocumentsRouteImport } from './routes/construction.$orgId/projects.$projectId/legal-documents'
 import { Route as ConstructionOrgIdProjectsProjectIdFinanceRouteImport } from './routes/construction.$orgId/projects.$projectId/finance'
 import { Route as ConstructionOrgIdProjectsProjectIdCalendarRouteImport } from './routes/construction.$orgId/projects.$projectId/calendar'
 import { Route as ConstructionOrgIdProjectsProjectIdAttachmentsRouteImport } from './routes/construction.$orgId/projects.$projectId/attachments'
@@ -213,6 +214,12 @@ const ConstructionOrgIdProjectsProjectIdOverviewRoute =
     path: '/overview',
     getParentRoute: () => ConstructionOrgIdProjectsProjectIdRouteRoute,
   } as any)
+const ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute =
+  ConstructionOrgIdProjectsProjectIdLegalDocumentsRouteImport.update({
+    id: '/legal-documents',
+    path: '/legal-documents',
+    getParentRoute: () => ConstructionOrgIdProjectsProjectIdRouteRoute,
+  } as any)
 const ConstructionOrgIdProjectsProjectIdFinanceRoute =
   ConstructionOrgIdProjectsProjectIdFinanceRouteImport.update({
     id: '/finance',
@@ -274,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/construction/$orgId/projects/$projectId/attachments': typeof ConstructionOrgIdProjectsProjectIdAttachmentsRoute
   '/construction/$orgId/projects/$projectId/calendar': typeof ConstructionOrgIdProjectsProjectIdCalendarRoute
   '/construction/$orgId/projects/$projectId/finance': typeof ConstructionOrgIdProjectsProjectIdFinanceRoute
+  '/construction/$orgId/projects/$projectId/legal-documents': typeof ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
@@ -310,6 +318,7 @@ export interface FileRoutesByTo {
   '/construction/$orgId/projects/$projectId/attachments': typeof ConstructionOrgIdProjectsProjectIdAttachmentsRoute
   '/construction/$orgId/projects/$projectId/calendar': typeof ConstructionOrgIdProjectsProjectIdCalendarRoute
   '/construction/$orgId/projects/$projectId/finance': typeof ConstructionOrgIdProjectsProjectIdFinanceRoute
+  '/construction/$orgId/projects/$projectId/legal-documents': typeof ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
@@ -348,6 +357,7 @@ export interface FileRoutesById {
   '/construction/$orgId/projects/$projectId/attachments': typeof ConstructionOrgIdProjectsProjectIdAttachmentsRoute
   '/construction/$orgId/projects/$projectId/calendar': typeof ConstructionOrgIdProjectsProjectIdCalendarRoute
   '/construction/$orgId/projects/$projectId/finance': typeof ConstructionOrgIdProjectsProjectIdFinanceRoute
+  '/construction/$orgId/projects/$projectId/legal-documents': typeof ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute
   '/construction/$orgId/projects/$projectId/overview': typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   '/construction/$orgId/projects/$projectId/settings': typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   '/construction/$orgId/projects/$projectId/tasks': typeof ConstructionOrgIdProjectsProjectIdTasksRoute
@@ -387,6 +397,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/projects/$projectId/attachments'
     | '/construction/$orgId/projects/$projectId/calendar'
     | '/construction/$orgId/projects/$projectId/finance'
+    | '/construction/$orgId/projects/$projectId/legal-documents'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/projects/$projectId/attachments'
     | '/construction/$orgId/projects/$projectId/calendar'
     | '/construction/$orgId/projects/$projectId/finance'
+    | '/construction/$orgId/projects/$projectId/legal-documents'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
@@ -460,6 +472,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/projects/$projectId/attachments'
     | '/construction/$orgId/projects/$projectId/calendar'
     | '/construction/$orgId/projects/$projectId/finance'
+    | '/construction/$orgId/projects/$projectId/legal-documents'
     | '/construction/$orgId/projects/$projectId/overview'
     | '/construction/$orgId/projects/$projectId/settings'
     | '/construction/$orgId/projects/$projectId/tasks'
@@ -688,6 +701,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdOverviewRouteImport
       parentRoute: typeof ConstructionOrgIdProjectsProjectIdRouteRoute
     }
+    '/construction/$orgId/projects/$projectId/legal-documents': {
+      id: '/construction/$orgId/projects/$projectId/legal-documents'
+      path: '/legal-documents'
+      fullPath: '/construction/$orgId/projects/$projectId/legal-documents'
+      preLoaderRoute: typeof ConstructionOrgIdProjectsProjectIdLegalDocumentsRouteImport
+      parentRoute: typeof ConstructionOrgIdProjectsProjectIdRouteRoute
+    }
     '/construction/$orgId/projects/$projectId/finance': {
       id: '/construction/$orgId/projects/$projectId/finance'
       path: '/finance'
@@ -746,6 +766,7 @@ interface ConstructionOrgIdProjectsProjectIdRouteRouteChildren {
   ConstructionOrgIdProjectsProjectIdAttachmentsRoute: typeof ConstructionOrgIdProjectsProjectIdAttachmentsRoute
   ConstructionOrgIdProjectsProjectIdCalendarRoute: typeof ConstructionOrgIdProjectsProjectIdCalendarRoute
   ConstructionOrgIdProjectsProjectIdFinanceRoute: typeof ConstructionOrgIdProjectsProjectIdFinanceRoute
+  ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute: typeof ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute
   ConstructionOrgIdProjectsProjectIdOverviewRoute: typeof ConstructionOrgIdProjectsProjectIdOverviewRoute
   ConstructionOrgIdProjectsProjectIdSettingsRoute: typeof ConstructionOrgIdProjectsProjectIdSettingsRoute
   ConstructionOrgIdProjectsProjectIdTasksRoute: typeof ConstructionOrgIdProjectsProjectIdTasksRoute
@@ -764,6 +785,8 @@ const ConstructionOrgIdProjectsProjectIdRouteRouteChildren: ConstructionOrgIdPro
       ConstructionOrgIdProjectsProjectIdCalendarRoute,
     ConstructionOrgIdProjectsProjectIdFinanceRoute:
       ConstructionOrgIdProjectsProjectIdFinanceRoute,
+    ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute:
+      ConstructionOrgIdProjectsProjectIdLegalDocumentsRoute,
     ConstructionOrgIdProjectsProjectIdOverviewRoute:
       ConstructionOrgIdProjectsProjectIdOverviewRoute,
     ConstructionOrgIdProjectsProjectIdSettingsRoute:
