@@ -1,23 +1,26 @@
 import { v } from "convex/values";
-import { Id } from "../_generated/dataModel";
+import type { Id } from "../_generated/dataModel";
 import { mutation, query } from "../_generated/server";
 import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
-import { checkPermission } from "./utils";
 import type { AccessLevel } from "./types";
+import { checkPermission } from "./utils";
 
 // Check if user has access to a specific project
 export const checkProjectAccess = query({
 	args: {
 		projectId: v.id("constructionProjects"),
-		requiredLevel: v.optional(v.union(
-			v.literal("owner"),
-			v.literal("admin"),
-			v.literal("write"),
-			v.literal("read")
-		)),
+		requiredLevel: v.optional(
+			v.union(
+				v.literal("owner"),
+				v.literal("admin"),
+				v.literal("write"),
+				v.literal("read"),
+			),
+		),
 	},
 	handler: async (ctx, args) => {
-		const { user, organization, role } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization, role } =
+			await getCurrentUserWithOrganization(ctx);
 
 		// Check if user is organization owner
 		if (organization.ownerId === user._id) {
@@ -30,7 +33,12 @@ export const checkProjectAccess = query({
 		}
 
 		// Check if user has global project management permissions
-		const hasGlobalAccess = await checkPermission(ctx, user._id, "constructionProjects", "manage");
+		const hasGlobalAccess = await checkPermission(
+			ctx,
+			user._id,
+			"constructionProjects",
+			"manage",
+		);
 		if (hasGlobalAccess) {
 			return { hasAccess: true, level: "admin" as AccessLevel };
 		}
@@ -39,14 +47,22 @@ export const checkProjectAccess = query({
 		const projectAccess = await ctx.db
 			.query("projectAccess")
 			.withIndex("by_project_user", (q) =>
-				q.eq("projectId", args.projectId).eq("userId", user._id)
+				q.eq("projectId", args.projectId).eq("userId", user._id),
 			)
 			.first();
 
-		if (projectAccess && (!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())) {
-			const hasRequiredLevel = !args.requiredLevel || 
-				getAccessLevelPriority(projectAccess.accessLevel) >= getAccessLevelPriority(args.requiredLevel);
-			return { hasAccess: hasRequiredLevel, level: projectAccess.accessLevel as AccessLevel };
+		if (
+			projectAccess &&
+			(!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())
+		) {
+			const hasRequiredLevel =
+				!args.requiredLevel ||
+				getAccessLevelPriority(projectAccess.accessLevel) >=
+					getAccessLevelPriority(args.requiredLevel);
+			return {
+				hasAccess: hasRequiredLevel,
+				level: projectAccess.accessLevel as AccessLevel,
+			};
 		}
 
 		// Check team-based access
@@ -59,15 +75,20 @@ export const checkProjectAccess = query({
 			const teamAccess = await ctx.db
 				.query("teamProjectAccess")
 				.withIndex("by_team_project", (q) =>
-					q.eq("teamId", teamMember.teamId).eq("projectId", args.projectId)
+					q.eq("teamId", teamMember.teamId).eq("projectId", args.projectId),
 				)
 				.first();
 
 			if (teamAccess && teamAccess.inheritToMembers) {
-				const hasRequiredLevel = !args.requiredLevel || 
-					getAccessLevelPriority(teamAccess.accessLevel) >= getAccessLevelPriority(args.requiredLevel);
+				const hasRequiredLevel =
+					!args.requiredLevel ||
+					getAccessLevelPriority(teamAccess.accessLevel) >=
+						getAccessLevelPriority(args.requiredLevel);
 				if (hasRequiredLevel) {
-					return { hasAccess: true, level: teamAccess.accessLevel as AccessLevel };
+					return {
+						hasAccess: true,
+						level: teamAccess.accessLevel as AccessLevel,
+					};
 				}
 			}
 		}
@@ -80,8 +101,10 @@ export const checkProjectAccess = query({
 
 		// Check if user is in project team members
 		if (project && project.teamMemberIds.includes(user._id)) {
-			const hasRequiredLevel = !args.requiredLevel || 
-				getAccessLevelPriority("write") >= getAccessLevelPriority(args.requiredLevel);
+			const hasRequiredLevel =
+				!args.requiredLevel ||
+				getAccessLevelPriority("write") >=
+					getAccessLevelPriority(args.requiredLevel);
 			return { hasAccess: hasRequiredLevel, level: "write" as AccessLevel };
 		}
 
@@ -99,29 +122,34 @@ export const grantProjectAccess = mutation({
 			v.literal("owner"),
 			v.literal("admin"),
 			v.literal("write"),
-			v.literal("read")
+			v.literal("read"),
 		),
 		expiresAt: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
-		const { user, role, organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, role, organization } =
+			await getCurrentUserWithOrganization(ctx);
 
 		// Check if user can grant access
-		const canGrantAccess = 
+		const canGrantAccess =
 			organization.ownerId === user._id ||
 			(role && role.isDirector) ||
-			await checkPermission(ctx, user._id, "constructionProjects", "manage");
+			(await checkPermission(ctx, user._id, "constructionProjects", "manage"));
 
 		if (!canGrantAccess) {
 			// Check if user has admin access to this specific project
 			const projectAccess = await ctx.db
 				.query("projectAccess")
 				.withIndex("by_project_user", (q) =>
-					q.eq("projectId", args.projectId).eq("userId", user._id)
+					q.eq("projectId", args.projectId).eq("userId", user._id),
 				)
 				.first();
 
-			if (!projectAccess || projectAccess.accessLevel !== "owner" && projectAccess.accessLevel !== "admin") {
+			if (
+				!projectAccess ||
+				(projectAccess.accessLevel !== "owner" &&
+					projectAccess.accessLevel !== "admin")
+			) {
 				throw new Error("Insufficient permissions to grant project access");
 			}
 		}
@@ -136,7 +164,7 @@ export const grantProjectAccess = mutation({
 			const existingAccess = await ctx.db
 				.query("projectAccess")
 				.withIndex("by_project_user", (q) =>
-					q.eq("projectId", args.projectId).eq("userId", args.userId)
+					q.eq("projectId", args.projectId).eq("userId", args.userId),
 				)
 				.first();
 
@@ -181,7 +209,7 @@ export const grantProjectAccess = mutation({
 			const existingAccess = await ctx.db
 				.query("teamProjectAccess")
 				.withIndex("by_team_project", (q) =>
-					q.eq("teamId", args.teamId).eq("projectId", args.projectId)
+					q.eq("teamId", args.teamId).eq("projectId", args.projectId),
 				)
 				.first();
 
@@ -231,13 +259,14 @@ export const revokeProjectAccess = mutation({
 		teamId: v.optional(v.id("constructionTeams")),
 	},
 	handler: async (ctx, args) => {
-		const { user, role, organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, role, organization } =
+			await getCurrentUserWithOrganization(ctx);
 
 		// Check if user can revoke access
-		const canRevokeAccess = 
+		const canRevokeAccess =
 			organization.ownerId === user._id ||
 			(role && role.isDirector) ||
-			await checkPermission(ctx, user._id, "constructionProjects", "manage");
+			(await checkPermission(ctx, user._id, "constructionProjects", "manage"));
 
 		if (!canRevokeAccess) {
 			throw new Error("Insufficient permissions to revoke project access");
@@ -247,7 +276,7 @@ export const revokeProjectAccess = mutation({
 			const access = await ctx.db
 				.query("projectAccess")
 				.withIndex("by_project_user", (q) =>
-					q.eq("projectId", args.projectId).eq("userId", args.userId)
+					q.eq("projectId", args.projectId).eq("userId", args.userId),
 				)
 				.first();
 
@@ -270,7 +299,7 @@ export const revokeProjectAccess = mutation({
 			const access = await ctx.db
 				.query("teamProjectAccess")
 				.withIndex("by_team_project", (q) =>
-					q.eq("teamId", args.teamId).eq("projectId", args.projectId)
+					q.eq("teamId", args.teamId).eq("projectId", args.projectId),
 				)
 				.first();
 
@@ -322,7 +351,7 @@ export const getProjectAccessList = query({
 
 		const userAccessWithDetails = await Promise.all(
 			userAccess
-				.filter(access => access.userId)
+				.filter((access) => access.userId)
 				.map(async (access) => {
 					const user = await ctx.db.get(access.userId!);
 					const grantedBy = await ctx.db.get(access.grantedBy);
@@ -335,7 +364,7 @@ export const getProjectAccessList = query({
 						grantedAt: access.grantedAt,
 						expiresAt: access.expiresAt,
 					};
-				})
+				}),
 		);
 
 		// Get team access
@@ -357,7 +386,7 @@ export const getProjectAccessList = query({
 					grantedBy,
 					grantedAt: access.grantedAt,
 				};
-			})
+			}),
 		);
 
 		return {
@@ -381,22 +410,28 @@ function getAccessLevelPriority(level: string): number {
 // Get all projects accessible to the current user
 export const getAccessibleProjects = query({
 	handler: async (ctx) => {
-		const { user, organization, role } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization, role } =
+			await getCurrentUserWithOrganization(ctx);
 
 		// If owner or director, return all projects
 		if (organization.ownerId === user._id || (role && role.isDirector)) {
 			const allProjects = await ctx.db
 				.query("constructionProjects")
-				.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+				.withIndex("by_organization", (q) =>
+					q.eq("organizationId", organization._id),
+				)
 				.collect();
-			
-			return allProjects.map(project => ({
+
+			return allProjects.map((project) => ({
 				...project,
 				accessLevel: "admin" as AccessLevel,
 			}));
 		}
 
-		const accessibleProjects: Array<{ projectId: Id<"constructionProjects">; accessLevel: AccessLevel }> = [];
+		const accessibleProjects: Array<{
+			projectId: Id<"constructionProjects">;
+			accessLevel: AccessLevel;
+		}> = [];
 
 		// Get direct user access
 		const userAccess = await ctx.db
@@ -428,10 +463,17 @@ export const getAccessibleProjects = query({
 			for (const teamAccess of teamAccesses) {
 				if (teamAccess.inheritToMembers) {
 					// Check if we already have this project with a higher access level
-					const existingAccess = accessibleProjects.find(p => p.projectId === teamAccess.projectId);
-					if (!existingAccess || getAccessLevelPriority(teamAccess.accessLevel) > getAccessLevelPriority(existingAccess.accessLevel)) {
+					const existingAccess = accessibleProjects.find(
+						(p) => p.projectId === teamAccess.projectId,
+					);
+					if (
+						!existingAccess ||
+						getAccessLevelPriority(teamAccess.accessLevel) >
+							getAccessLevelPriority(existingAccess.accessLevel)
+					) {
 						if (existingAccess) {
-							existingAccess.accessLevel = teamAccess.accessLevel as AccessLevel;
+							existingAccess.accessLevel =
+								teamAccess.accessLevel as AccessLevel;
 						} else {
 							accessibleProjects.push({
 								projectId: teamAccess.projectId,
@@ -446,12 +488,16 @@ export const getAccessibleProjects = query({
 		// Get projects where user is lead or team member
 		const allProjects = await ctx.db
 			.query("constructionProjects")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.collect();
 
 		for (const project of allProjects) {
 			if (project.leadId === user._id) {
-				const existingAccess = accessibleProjects.find(p => p.projectId === project._id);
+				const existingAccess = accessibleProjects.find(
+					(p) => p.projectId === project._id,
+				);
 				if (!existingAccess) {
 					accessibleProjects.push({
 						projectId: project._id,
@@ -459,7 +505,9 @@ export const getAccessibleProjects = query({
 					});
 				}
 			} else if (project.teamMemberIds.includes(user._id)) {
-				const existingAccess = accessibleProjects.find(p => p.projectId === project._id);
+				const existingAccess = accessibleProjects.find(
+					(p) => p.projectId === project._id,
+				);
 				if (!existingAccess) {
 					accessibleProjects.push({
 						projectId: project._id,
@@ -474,7 +522,7 @@ export const getAccessibleProjects = query({
 			accessibleProjects.map(async ({ projectId, accessLevel }) => {
 				const project = await ctx.db.get(projectId);
 				return project ? { ...project, accessLevel } : null;
-			})
+			}),
 		);
 
 		return projectsWithDetails.filter(Boolean);

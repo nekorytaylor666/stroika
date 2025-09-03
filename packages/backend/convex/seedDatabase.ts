@@ -7,14 +7,14 @@ export const seedDatabase = mutation({
 	args: {},
 	handler: async (ctx) => {
 		const results = [];
-		
+
 		// Check if data already exists
 		const existingOrg = await ctx.db.query("organizations").first();
 		if (existingOrg) {
-			return { 
-				message: "Database already seeded", 
+			return {
+				message: "Database already seeded",
 				skipped: true,
-				organizationId: existingOrg._id 
+				organizationId: existingOrg._id,
 			};
 		}
 
@@ -24,7 +24,10 @@ export const seedDatabase = mutation({
 			results.push({ step: "Permissions", ...permissionsResult });
 
 			// 2. Create system roles with permissions
-			const rolesResult = await createSystemRoles(ctx, permissionsResult.permissionMap);
+			const rolesResult = await createSystemRoles(
+				ctx,
+				permissionsResult.permissionMap,
+			);
 			results.push({ step: "System Roles", ...rolesResult });
 
 			// 3. Create organization with proper owner
@@ -36,7 +39,10 @@ export const seedDatabase = mutation({
 			results.push({ step: "Organizational Positions", ...positionsResult });
 
 			// 5. Create departments
-			const departmentsResult = await createDepartments(ctx, orgResult.organizationId);
+			const departmentsResult = await createDepartments(
+				ctx,
+				orgResult.organizationId,
+			);
 			results.push({ step: "Departments", ...departmentsResult });
 
 			// 6. Create base data (statuses, priorities, labels)
@@ -44,24 +50,36 @@ export const seedDatabase = mutation({
 			results.push({ step: "Base Data", ...baseDataResult });
 
 			// 7. Create sample users with proper roles
-			const usersResult = await createUsers(ctx, orgResult.organizationId, rolesResult.roleIds);
+			const usersResult = await createUsers(
+				ctx,
+				orgResult.organizationId,
+				rolesResult.roleIds,
+			);
 			results.push({ step: "Users", ...usersResult });
 
 			// 8. Create teams
-			const teamsResult = await createTeams(ctx, orgResult.organizationId, usersResult.userIds);
+			const teamsResult = await createTeams(
+				ctx,
+				orgResult.organizationId,
+				usersResult.userIds,
+			);
 			results.push({ step: "Teams", ...teamsResult });
 
 			// 9. Create construction teams
-			const constructionTeamsResult = await createConstructionTeams(ctx, orgResult.organizationId, usersResult.userIds);
+			const constructionTeamsResult = await createConstructionTeams(
+				ctx,
+				orgResult.organizationId,
+				usersResult.userIds,
+			);
 			results.push({ step: "Construction Teams", ...constructionTeamsResult });
 
 			// 10. Create construction projects with proper access
 			const projectsResult = await createConstructionProjects(
-				ctx, 
-				orgResult.organizationId, 
+				ctx,
+				orgResult.organizationId,
 				usersResult.userIds,
 				baseDataResult.statusIds,
-				baseDataResult.priorityIds
+				baseDataResult.priorityIds,
 			);
 			results.push({ step: "Construction Projects", ...projectsResult });
 
@@ -73,7 +91,7 @@ export const seedDatabase = mutation({
 				projectsResult.projectIds,
 				baseDataResult.statusIds,
 				baseDataResult.priorityIds,
-				baseDataResult.labelIds
+				baseDataResult.labelIds,
 			);
 			results.push({ step: "Tasks", ...tasksResult });
 
@@ -82,7 +100,7 @@ export const seedDatabase = mutation({
 				ctx,
 				orgResult.organizationId,
 				usersResult.userIds,
-				projectsResult.projectIds
+				projectsResult.projectIds,
 			);
 			results.push({ step: "Documents", ...documentsResult });
 
@@ -95,7 +113,7 @@ export const seedDatabase = mutation({
 					projects: projectsResult.projectIds.length,
 					tasks: tasksResult.taskIds.length,
 					teams: teamsResult.teamIds.length,
-				}
+				},
 			};
 		} catch (error) {
 			return {
@@ -114,51 +132,216 @@ async function createPermissions(ctx: MutationCtx) {
 
 	const permissions = [
 		// Project permissions
-		{ resource: "constructionProjects", action: "create", scope: "organization", description: "Create new projects" },
-		{ resource: "constructionProjects", action: "read", scope: "organization", description: "View projects" },
-		{ resource: "constructionProjects", action: "update", scope: "organization", description: "Edit projects" },
-		{ resource: "constructionProjects", action: "delete", scope: "organization", description: "Delete projects" },
-		{ resource: "constructionProjects", action: "manage", scope: "organization", description: "Full project management" },
+		{
+			resource: "constructionProjects",
+			action: "create",
+			scope: "organization",
+			description: "Create new projects",
+		},
+		{
+			resource: "constructionProjects",
+			action: "read",
+			scope: "organization",
+			description: "View projects",
+		},
+		{
+			resource: "constructionProjects",
+			action: "update",
+			scope: "organization",
+			description: "Edit projects",
+		},
+		{
+			resource: "constructionProjects",
+			action: "delete",
+			scope: "organization",
+			description: "Delete projects",
+		},
+		{
+			resource: "constructionProjects",
+			action: "manage",
+			scope: "organization",
+			description: "Full project management",
+		},
 
 		// User permissions
-		{ resource: "users", action: "create", scope: "organization", description: "Create new users" },
-		{ resource: "users", action: "read", scope: "organization", description: "View user profiles" },
-		{ resource: "users", action: "update", scope: "organization", description: "Edit user profiles" },
-		{ resource: "users", action: "delete", scope: "organization", description: "Delete users" },
-		{ resource: "users", action: "manage", scope: "organization", description: "Full user management" },
+		{
+			resource: "users",
+			action: "create",
+			scope: "organization",
+			description: "Create new users",
+		},
+		{
+			resource: "users",
+			action: "read",
+			scope: "organization",
+			description: "View user profiles",
+		},
+		{
+			resource: "users",
+			action: "update",
+			scope: "organization",
+			description: "Edit user profiles",
+		},
+		{
+			resource: "users",
+			action: "delete",
+			scope: "organization",
+			description: "Delete users",
+		},
+		{
+			resource: "users",
+			action: "manage",
+			scope: "organization",
+			description: "Full user management",
+		},
 
 		// Team permissions
-		{ resource: "teams", action: "create", scope: "organization", description: "Create teams" },
-		{ resource: "teams", action: "read", scope: "organization", description: "View teams" },
-		{ resource: "teams", action: "update", scope: "organization", description: "Edit teams" },
-		{ resource: "teams", action: "delete", scope: "organization", description: "Delete teams" },
-		{ resource: "teams", action: "manage", scope: "organization", description: "Full team management" },
+		{
+			resource: "teams",
+			action: "create",
+			scope: "organization",
+			description: "Create teams",
+		},
+		{
+			resource: "teams",
+			action: "read",
+			scope: "organization",
+			description: "View teams",
+		},
+		{
+			resource: "teams",
+			action: "update",
+			scope: "organization",
+			description: "Edit teams",
+		},
+		{
+			resource: "teams",
+			action: "delete",
+			scope: "organization",
+			description: "Delete teams",
+		},
+		{
+			resource: "teams",
+			action: "manage",
+			scope: "organization",
+			description: "Full team management",
+		},
 
 		// Document permissions
-		{ resource: "documents", action: "create", scope: "project", description: "Create documents" },
-		{ resource: "documents", action: "read", scope: "project", description: "View documents" },
-		{ resource: "documents", action: "update", scope: "project", description: "Edit documents" },
-		{ resource: "documents", action: "delete", scope: "project", description: "Delete documents" },
-		{ resource: "documents", action: "manage", scope: "project", description: "Full document management" },
+		{
+			resource: "documents",
+			action: "create",
+			scope: "project",
+			description: "Create documents",
+		},
+		{
+			resource: "documents",
+			action: "read",
+			scope: "project",
+			description: "View documents",
+		},
+		{
+			resource: "documents",
+			action: "update",
+			scope: "project",
+			description: "Edit documents",
+		},
+		{
+			resource: "documents",
+			action: "delete",
+			scope: "project",
+			description: "Delete documents",
+		},
+		{
+			resource: "documents",
+			action: "manage",
+			scope: "project",
+			description: "Full document management",
+		},
 
 		// Issue permissions
-		{ resource: "issues", action: "create", scope: "project", description: "Create tasks/issues" },
-		{ resource: "issues", action: "read", scope: "project", description: "View tasks/issues" },
-		{ resource: "issues", action: "update", scope: "project", description: "Edit tasks/issues" },
-		{ resource: "issues", action: "delete", scope: "project", description: "Delete tasks/issues" },
-		{ resource: "issues", action: "manage", scope: "project", description: "Full task management" },
+		{
+			resource: "issues",
+			action: "create",
+			scope: "project",
+			description: "Create tasks/issues",
+		},
+		{
+			resource: "issues",
+			action: "read",
+			scope: "project",
+			description: "View tasks/issues",
+		},
+		{
+			resource: "issues",
+			action: "update",
+			scope: "project",
+			description: "Edit tasks/issues",
+		},
+		{
+			resource: "issues",
+			action: "delete",
+			scope: "project",
+			description: "Delete tasks/issues",
+		},
+		{
+			resource: "issues",
+			action: "manage",
+			scope: "project",
+			description: "Full task management",
+		},
 
 		// Member permissions
-		{ resource: "members", action: "invite", scope: "organization", description: "Invite new members" },
-		{ resource: "members", action: "remove", scope: "organization", description: "Remove members" },
-		{ resource: "members", action: "manage", scope: "organization", description: "Full member management" },
+		{
+			resource: "members",
+			action: "invite",
+			scope: "organization",
+			description: "Invite new members",
+		},
+		{
+			resource: "members",
+			action: "remove",
+			scope: "organization",
+			description: "Remove members",
+		},
+		{
+			resource: "members",
+			action: "manage",
+			scope: "organization",
+			description: "Full member management",
+		},
 
 		// Role permissions
-		{ resource: "roles", action: "create", scope: "organization", description: "Create roles" },
-		{ resource: "roles", action: "read", scope: "organization", description: "View roles" },
-		{ resource: "roles", action: "update", scope: "organization", description: "Edit roles" },
-		{ resource: "roles", action: "delete", scope: "organization", description: "Delete roles" },
-		{ resource: "roles", action: "manage", scope: "organization", description: "Full role management" },
+		{
+			resource: "roles",
+			action: "create",
+			scope: "organization",
+			description: "Create roles",
+		},
+		{
+			resource: "roles",
+			action: "read",
+			scope: "organization",
+			description: "View roles",
+		},
+		{
+			resource: "roles",
+			action: "update",
+			scope: "organization",
+			description: "Edit roles",
+		},
+		{
+			resource: "roles",
+			action: "delete",
+			scope: "organization",
+			description: "Delete roles",
+		},
+		{
+			resource: "roles",
+			action: "manage",
+			scope: "organization",
+			description: "Full role management",
+		},
 	];
 
 	for (const perm of permissions) {
@@ -177,7 +360,10 @@ async function createPermissions(ctx: MutationCtx) {
 }
 
 // Create system roles
-async function createSystemRoles(ctx: MutationCtx, permissionMap: Record<string, Id<"permissions">>) {
+async function createSystemRoles(
+	ctx: MutationCtx,
+	permissionMap: Record<string, Id<"permissions">>,
+) {
 	const now = new Date().toISOString();
 	const roleIds: Record<string, Id<"roles">> = {};
 
@@ -321,7 +507,10 @@ async function createSystemRoles(ctx: MutationCtx, permissionMap: Record<string,
 }
 
 // Create organization
-async function createOrganization(ctx: MutationCtx, roleIds: Record<string, Id<"roles">>) {
+async function createOrganization(
+	ctx: MutationCtx,
+	roleIds: Record<string, Id<"roles">>,
+) {
 	// Create the owner user first
 	const ownerId = await ctx.db.insert("users", {
 		name: "Akmt Owner",
@@ -382,14 +571,18 @@ async function createOrganizationalPositions(ctx: MutationCtx) {
 	const positions = [
 		{ name: "owner", displayName: "Владелец", level: 0 },
 		{ name: "ceo", displayName: "Генеральный директор", level: 1 },
-		{ name: "chief_engineer", displayName: "Главный инженер проекта (ГИП)", level: 2 },
+		{
+			name: "chief_engineer",
+			displayName: "Главный инженер проекта (ГИП)",
+			level: 2,
+		},
 		{ name: "department_head", displayName: "Руководитель отдела", level: 3 },
 		{ name: "senior_specialist", displayName: "Старший специалист", level: 4 },
 		{ name: "specialist", displayName: "Специалист", level: 5 },
 	];
 
 	const positionIds: Record<string, Id<"organizationalPositions">> = {};
-	
+
 	for (const position of positions) {
 		const id = await ctx.db.insert("organizationalPositions", {
 			...position,
@@ -408,7 +601,10 @@ async function createOrganizationalPositions(ctx: MutationCtx) {
 }
 
 // Create departments
-async function createDepartments(ctx: MutationCtx, organizationId: Id<"organizations">) {
+async function createDepartments(
+	ctx: MutationCtx,
+	organizationId: Id<"organizations">,
+) {
 	const now = new Date().toISOString();
 
 	// Root company department
@@ -427,14 +623,30 @@ async function createDepartments(ctx: MutationCtx, organizationId: Id<"organizat
 
 	// Main departments
 	const departments = [
-		{ name: "management", displayName: "Управление", description: "Административное управление" },
-		{ name: "engineering", displayName: "Инженерный отдел", description: "Проектирование и инженерные решения" },
-		{ name: "construction", displayName: "Строительный отдел", description: "Выполнение строительных работ" },
-		{ name: "design", displayName: "Отдел проектирования", description: "Архитектурное проектирование" },
+		{
+			name: "management",
+			displayName: "Управление",
+			description: "Административное управление",
+		},
+		{
+			name: "engineering",
+			displayName: "Инженерный отдел",
+			description: "Проектирование и инженерные решения",
+		},
+		{
+			name: "construction",
+			displayName: "Строительный отдел",
+			description: "Выполнение строительных работ",
+		},
+		{
+			name: "design",
+			displayName: "Отдел проектирования",
+			description: "Архитектурное проектирование",
+		},
 	];
 
 	const departmentIds: Record<string, Id<"departments">> = {};
-	
+
 	for (const dept of departments) {
 		const id = await ctx.db.insert("departments", {
 			organizationId,
@@ -478,7 +690,12 @@ async function createBaseData(ctx: MutationCtx) {
 
 	// Priorities - indexes: 0=Критический, 1=Высокий, 2=Средний, 3=Низкий
 	const priorities = [
-		{ name: "Критический", level: 0, iconName: "AlertTriangle", color: "#EF4444" },
+		{
+			name: "Критический",
+			level: 0,
+			iconName: "AlertTriangle",
+			color: "#EF4444",
+		},
 		{ name: "Высокий", level: 1, iconName: "ArrowUp", color: "#F59E0B" },
 		{ name: "Средний", level: 2, iconName: "Minus", color: "#3B82F6" },
 		{ name: "Низкий", level: 3, iconName: "ArrowDown", color: "#10B981" },
@@ -514,9 +731,9 @@ async function createBaseData(ctx: MutationCtx) {
 
 // Create users
 async function createUsers(
-	ctx: MutationCtx, 
+	ctx: MutationCtx,
 	organizationId: Id<"organizations">,
-	roleIds: Record<string, Id<"roles">>
+	roleIds: Record<string, Id<"roles">>,
 ) {
 	const now = new Date().toISOString();
 	const userIds: Id<"users">[] = [];
@@ -526,7 +743,7 @@ async function createUsers(
 		.query("users")
 		.withIndex("by_email", (q) => q.eq("email", "akmt.me23@gmail.com"))
 		.first();
-	
+
 	if (owner) {
 		userIds.push(owner._id);
 	}
@@ -622,7 +839,7 @@ async function createUsers(
 async function createTeams(
 	ctx: MutationCtx,
 	organizationId: Id<"organizations">,
-	userIds: Id<"users">[]
+	userIds: Id<"users">[],
 ) {
 	const teams = [
 		{
@@ -689,7 +906,7 @@ async function createTeams(
 async function createConstructionTeams(
 	ctx: MutationCtx,
 	organizationId: Id<"organizations">,
-	userIds: Id<"users">[]
+	userIds: Id<"users">[],
 ) {
 	const teams = [
 		{
@@ -749,7 +966,7 @@ async function createConstructionProjects(
 	organizationId: Id<"organizations">,
 	userIds: Id<"users">[],
 	statusIds: Record<string, Id<"status">>,
-	priorityIds: Record<string, Id<"priorities">>
+	priorityIds: Record<string, Id<"priorities">>,
 ) {
 	const projects = [
 		{
@@ -871,13 +1088,22 @@ async function createConstructionProjects(
 		}
 
 		// Create monthly revenue data
-		const months = ["2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06"];
+		const months = [
+			"2024-01",
+			"2024-02",
+			"2024-03",
+			"2024-04",
+			"2024-05",
+			"2024-06",
+		];
 		for (const month of months) {
 			await ctx.db.insert("monthlyRevenue", {
 				constructionProjectId: projectId,
 				month,
 				planned: Math.round(project.contractValue / 12),
-				actual: Math.round((project.contractValue / 12) * (0.8 + Math.random() * 0.4)),
+				actual: Math.round(
+					(project.contractValue / 12) * (0.8 + Math.random() * 0.4),
+				),
 			});
 		}
 	}
@@ -897,13 +1123,14 @@ async function createTasks(
 	projectIds: Id<"constructionProjects">[],
 	statusIds: Id<"status">[],
 	priorityIds: Id<"priorities">[],
-	labelIds: Id<"labels">[]
+	labelIds: Id<"labels">[],
 ) {
 	const tasks = [
 		{
 			identifier: "СТРФ-001",
 			title: "Проверка фундамента корпуса А",
-			description: "Необходимо провести инспекцию качества заложенного фундамента корпуса А жилого комплекса",
+			description:
+				"Необходимо провести инспекцию качества заложенного фундамента корпуса А жилого комплекса",
 			statusId: statusIds[1], // В работе
 			assigneeId: userIds[6], // Сергей Петров
 			priorityId: priorityIds[1], // Высокий
@@ -914,7 +1141,8 @@ async function createTasks(
 		{
 			identifier: "СТРЭ-002",
 			title: "Согласование электрической схемы",
-			description: "Получить одобрение электрической схемы от надзорных органов",
+			description:
+				"Получить одобрение электрической схемы от надзорных органов",
 			statusId: statusIds[0], // К выполнению
 			assigneeId: userIds[4], // Андрей Волков
 			priorityId: priorityIds[0], // Критический
@@ -925,7 +1153,8 @@ async function createTasks(
 		{
 			identifier: "СТРМ-003",
 			title: "Закупка строительных материалов",
-			description: "Заказать цемент, арматуру и кирпич для следующего этапа строительства",
+			description:
+				"Заказать цемент, арматуру и кирпич для следующего этапа строительства",
 			statusId: statusIds[2], // На проверке
 			assigneeId: userIds[5], // Ольга Новикова
 			priorityId: priorityIds[2], // Средний
@@ -936,7 +1165,8 @@ async function createTasks(
 		{
 			identifier: "СТРБ-004",
 			title: "Проверка техники безопасности",
-			description: "Провести еженедельную проверку соблюдения норм техники безопасности на строительной площадке",
+			description:
+				"Провести еженедельную проверку соблюдения норм техники безопасности на строительной площадке",
 			statusId: statusIds[3], // Завершено
 			assigneeId: userIds[2], // Дмитрий Сидоров
 			priorityId: priorityIds[1], // Высокий
@@ -958,7 +1188,8 @@ async function createTasks(
 		{
 			identifier: "СТРП-006",
 			title: "Разработка проектной документации",
-			description: "Подготовить полный комплект проектной документации для согласования",
+			description:
+				"Подготовить полный комплект проектной документации для согласования",
 			statusId: statusIds[1], // В работе
 			assigneeId: userIds[3], // Елена Козлова
 			priorityId: priorityIds[2], // Средний
@@ -969,7 +1200,8 @@ async function createTasks(
 		{
 			identifier: "СТРТ-007",
 			title: "Тестирование инженерных систем",
-			description: "Провести комплексное тестирование систем вентиляции и кондиционирования",
+			description:
+				"Провести комплексное тестирование систем вентиляции и кондиционирования",
 			statusId: statusIds[0], // К выполнению
 			assigneeId: userIds[4], // Андрей Волков
 			priorityId: priorityIds[2], // Средний
@@ -980,7 +1212,8 @@ async function createTasks(
 		{
 			identifier: "СТРФ-008",
 			title: "Финансовый отчет за квартал",
-			description: "Подготовить финансовый отчет по всем проектам за первый квартал",
+			description:
+				"Подготовить финансовый отчет по всем проектам за первый квартал",
 			statusId: statusIds[2], // На проверке
 			assigneeId: userIds[7], // Наталья Смирнова
 			priorityId: priorityIds[3], // Низкий
@@ -1017,12 +1250,13 @@ async function createDocuments(
 	ctx: MutationCtx,
 	organizationId: Id<"organizations">,
 	userIds: Id<"users">[],
-	projectIds: Id<"constructionProjects">[]
+	projectIds: Id<"constructionProjects">[],
 ) {
 	const documents = [
 		{
 			title: "Техническое задание на проектирование",
-			content: "Подробное техническое задание на разработку проектной документации для ЖК Садовый",
+			content:
+				"Подробное техническое задание на разработку проектной документации для ЖК Садовый",
 			projectId: projectIds[0],
 			authorId: userIds[1],
 			assignedTo: userIds[3],
@@ -1030,7 +1264,8 @@ async function createDocuments(
 		},
 		{
 			title: "План строительных работ",
-			content: "График выполнения строительных работ с указанием основных этапов и контрольных точек",
+			content:
+				"График выполнения строительных работ с указанием основных этапов и контрольных точек",
 			projectId: projectIds[0],
 			authorId: userIds[2],
 			assignedTo: userIds[6],
@@ -1038,7 +1273,8 @@ async function createDocuments(
 		},
 		{
 			title: "Смета на материалы",
-			content: "Детальная смета на закупку строительных материалов для первого этапа",
+			content:
+				"Детальная смета на закупку строительных материалов для первого этапа",
 			projectId: projectIds[1],
 			authorId: userIds[5],
 			assignedTo: userIds[7],

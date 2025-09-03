@@ -1,11 +1,11 @@
-import { Id } from "../_generated/dataModel";
+import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
 import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
-import type { 
-	PermissionAction, 
-	PermissionResource, 
+import type {
+	AccessLevel,
+	PermissionAction,
+	PermissionResource,
 	PermissionScope,
-	AccessLevel 
 } from "./types";
 
 // Check if user can access a project
@@ -29,7 +29,7 @@ export async function canAccessProject(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", user.currentOrganizationId).eq("userId", userId)
+			q.eq("organizationId", user.currentOrganizationId).eq("userId", userId),
 		)
 		.first();
 
@@ -42,13 +42,19 @@ export async function canAccessProject(
 	const projectAccess = await ctx.db
 		.query("projectAccess")
 		.withIndex("by_project_user", (q) =>
-			q.eq("projectId", projectId).eq("userId", userId)
+			q.eq("projectId", projectId).eq("userId", userId),
 		)
 		.first();
 
-	if (projectAccess && (!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())) {
+	if (
+		projectAccess &&
+		(!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())
+	) {
 		if (!requiredLevel) return true;
-		return getAccessLevelPriority(projectAccess.accessLevel) >= getAccessLevelPriority(requiredLevel);
+		return (
+			getAccessLevelPriority(projectAccess.accessLevel) >=
+			getAccessLevelPriority(requiredLevel)
+		);
 	}
 
 	// Check team-based access
@@ -61,13 +67,16 @@ export async function canAccessProject(
 		const teamAccess = await ctx.db
 			.query("teamProjectAccess")
 			.withIndex("by_team_project", (q) =>
-				q.eq("teamId", teamMember.teamId).eq("projectId", projectId)
+				q.eq("teamId", teamMember.teamId).eq("projectId", projectId),
 			)
 			.first();
 
 		if (teamAccess && teamAccess.inheritToMembers) {
 			if (!requiredLevel) return true;
-			if (getAccessLevelPriority(teamAccess.accessLevel) >= getAccessLevelPriority(requiredLevel)) {
+			if (
+				getAccessLevelPriority(teamAccess.accessLevel) >=
+				getAccessLevelPriority(requiredLevel)
+			) {
 				return true;
 			}
 		}
@@ -79,7 +88,9 @@ export async function canAccessProject(
 		if (project.leadId === userId) return true;
 		if (project.teamMemberIds.includes(userId)) {
 			if (!requiredLevel) return true;
-			return getAccessLevelPriority("write") >= getAccessLevelPriority(requiredLevel);
+			return (
+				getAccessLevelPriority("write") >= getAccessLevelPriority(requiredLevel)
+			);
 		}
 	}
 
@@ -102,7 +113,7 @@ export async function canManageMembers(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", organizationId).eq("userId", userId)
+			q.eq("organizationId", organizationId).eq("userId", userId),
 		)
 		.first();
 
@@ -131,7 +142,7 @@ export async function canCreateProject(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", organizationId).eq("userId", userId)
+			q.eq("organizationId", organizationId).eq("userId", userId),
 		)
 		.first();
 
@@ -151,9 +162,11 @@ export async function canCreateProject(
 
 	for (const rolePerm of rolePermissions) {
 		const permission = await ctx.db.get(rolePerm.permissionId);
-		if (permission && 
-			permission.resource === "constructionProjects" && 
-			(permission.action === "create" || permission.action === "manage")) {
+		if (
+			permission &&
+			permission.resource === "constructionProjects" &&
+			(permission.action === "create" || permission.action === "manage")
+		) {
 			return true;
 		}
 	}
@@ -176,7 +189,12 @@ export async function canAccessDocument(
 
 	// Check if user has access to the project (if document is linked to a project)
 	if (document.projectId) {
-		const hasProjectAccess = await canAccessProject(ctx, userId, document.projectId, "read");
+		const hasProjectAccess = await canAccessProject(
+			ctx,
+			userId,
+			document.projectId,
+			"read",
+		);
 		if (hasProjectAccess) return true;
 	}
 
@@ -184,14 +202,19 @@ export async function canAccessDocument(
 	const documentAccess = await ctx.db
 		.query("documentAccess")
 		.withIndex("by_document_user", (q) =>
-			q.eq("documentId", documentId).eq("userId", userId)
+			q.eq("documentId", documentId).eq("userId", userId),
 		)
 		.first();
 
-	if (documentAccess && (!documentAccess.expiresAt || documentAccess.expiresAt > Date.now())) {
+	if (
+		documentAccess &&
+		(!documentAccess.expiresAt || documentAccess.expiresAt > Date.now())
+	) {
 		if (!requiredLevel) return true;
-		return getDocumentAccessLevelPriority(documentAccess.accessLevel) >= 
-			getDocumentAccessLevelPriority(requiredLevel);
+		return (
+			getDocumentAccessLevelPriority(documentAccess.accessLevel) >=
+			getDocumentAccessLevelPriority(requiredLevel)
+		);
 	}
 
 	// Check team-based document access
@@ -207,10 +230,15 @@ export async function canAccessDocument(
 			.filter((q) => q.eq(q.field("documentId"), documentId))
 			.first();
 
-		if (teamDocAccess && (!teamDocAccess.expiresAt || teamDocAccess.expiresAt > Date.now())) {
+		if (
+			teamDocAccess &&
+			(!teamDocAccess.expiresAt || teamDocAccess.expiresAt > Date.now())
+		) {
 			if (!requiredLevel) return true;
-			if (getDocumentAccessLevelPriority(teamDocAccess.accessLevel) >= 
-				getDocumentAccessLevelPriority(requiredLevel)) {
+			if (
+				getDocumentAccessLevelPriority(teamDocAccess.accessLevel) >=
+				getDocumentAccessLevelPriority(requiredLevel)
+			) {
 				return true;
 			}
 		}
@@ -231,13 +259,18 @@ export async function hasResourcePermission(
 	const resourcePermissions = await ctx.db
 		.query("resourcePermissions")
 		.withIndex("by_resource_user", (q) =>
-			q.eq("resourceType", resourceType)
+			q
+				.eq("resourceType", resourceType)
 				.eq("resourceId", resourceId)
-				.eq("userId", userId)
+				.eq("userId", userId),
 		)
 		.first();
 
-	if (resourcePermissions && (!resourcePermissions.expiresAt || resourcePermissions.expiresAt > Date.now())) {
+	if (
+		resourcePermissions &&
+		(!resourcePermissions.expiresAt ||
+			resourcePermissions.expiresAt > Date.now())
+	) {
 		return resourcePermissions.permissions.includes(action);
 	}
 
@@ -251,17 +284,20 @@ export async function hasResourcePermission(
 		const teamResourcePerms = await ctx.db
 			.query("resourcePermissions")
 			.withIndex("by_team", (q) => q.eq("teamId", teamMember.teamId))
-			.filter((q) => 
+			.filter((q) =>
 				q.and(
 					q.eq(q.field("resourceType"), resourceType),
-					q.eq(q.field("resourceId"), resourceId)
-				)
+					q.eq(q.field("resourceId"), resourceId),
+				),
 			)
 			.first();
 
-		if (teamResourcePerms && 
-			(!teamResourcePerms.expiresAt || teamResourcePerms.expiresAt > Date.now()) &&
-			teamResourcePerms.permissions.includes(action)) {
+		if (
+			teamResourcePerms &&
+			(!teamResourcePerms.expiresAt ||
+				teamResourcePerms.expiresAt > Date.now()) &&
+			teamResourcePerms.permissions.includes(action)
+		) {
 			return true;
 		}
 	}
@@ -288,7 +324,7 @@ export async function isDirector(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", organizationId).eq("userId", userId)
+			q.eq("organizationId", organizationId).eq("userId", userId),
 		)
 		.first();
 
@@ -307,14 +343,16 @@ export async function isAdmin(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", organizationId).eq("userId", userId)
+			q.eq("organizationId", organizationId).eq("userId", userId),
 		)
 		.first();
 
 	if (!membership || !membership.isActive) return false;
 
 	const role = await ctx.db.get(membership.roleId);
-	return role ? (role.name === "admin" || role.name === "owner" || role.isDirector) : false;
+	return role
+		? role.name === "admin" || role.name === "owner" || role.isDirector
+		: false;
 }
 
 // Get user's highest access level for a project
@@ -336,7 +374,7 @@ export async function getUserProjectAccessLevel(
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", user.currentOrganizationId).eq("userId", userId)
+			q.eq("organizationId", user.currentOrganizationId).eq("userId", userId),
 		)
 		.first();
 
@@ -351,11 +389,14 @@ export async function getUserProjectAccessLevel(
 	const projectAccess = await ctx.db
 		.query("projectAccess")
 		.withIndex("by_project_user", (q) =>
-			q.eq("projectId", projectId).eq("userId", userId)
+			q.eq("projectId", projectId).eq("userId", userId),
 		)
 		.first();
 
-	if (projectAccess && (!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())) {
+	if (
+		projectAccess &&
+		(!projectAccess.expiresAt || projectAccess.expiresAt > Date.now())
+	) {
 		highestLevel = projectAccess.accessLevel as AccessLevel;
 	}
 
@@ -369,13 +410,16 @@ export async function getUserProjectAccessLevel(
 		const teamAccess = await ctx.db
 			.query("teamProjectAccess")
 			.withIndex("by_team_project", (q) =>
-				q.eq("teamId", teamMember.teamId).eq("projectId", projectId)
+				q.eq("teamId", teamMember.teamId).eq("projectId", projectId),
 			)
 			.first();
 
 		if (teamAccess && teamAccess.inheritToMembers) {
-			if (!highestLevel || 
-				getAccessLevelPriority(teamAccess.accessLevel) > getAccessLevelPriority(highestLevel)) {
+			if (
+				!highestLevel ||
+				getAccessLevelPriority(teamAccess.accessLevel) >
+					getAccessLevelPriority(highestLevel)
+			) {
 				highestLevel = teamAccess.accessLevel as AccessLevel;
 			}
 		}
@@ -385,11 +429,17 @@ export async function getUserProjectAccessLevel(
 	const project = await ctx.db.get(projectId);
 	if (project) {
 		if (project.leadId === userId) {
-			if (!highestLevel || getAccessLevelPriority("admin") > getAccessLevelPriority(highestLevel)) {
+			if (
+				!highestLevel ||
+				getAccessLevelPriority("admin") > getAccessLevelPriority(highestLevel)
+			) {
 				highestLevel = "admin";
 			}
 		} else if (project.teamMemberIds.includes(userId)) {
-			if (!highestLevel || getAccessLevelPriority("write") > getAccessLevelPriority(highestLevel)) {
+			if (
+				!highestLevel ||
+				getAccessLevelPriority("write") > getAccessLevelPriority(highestLevel)
+			) {
 				highestLevel = "write";
 			}
 		}

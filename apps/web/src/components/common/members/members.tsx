@@ -19,7 +19,8 @@ export default function Members() {
 	const params = useParams({ from: "/construction/$orgId/members" });
 	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 	const [isUrlModalOpen, setIsUrlModalOpen] = useState(false);
-	const [selectedInviteId, setSelectedInviteId] = useState<Id<"organizationInvites"> | null>(null);
+	const [selectedInviteId, setSelectedInviteId] =
+		useState<Id<"organizationInvites"> | null>(null);
 	const [selectedInviteEmail, setSelectedInviteEmail] = useState<string>("");
 	const [activeTab, setActiveTab] = useState("members");
 
@@ -47,7 +48,10 @@ export default function Members() {
 		}
 	};
 
-	const handleShowInviteUrl = (inviteId: Id<"organizationInvites">, email: string) => {
+	const handleShowInviteUrl = (
+		inviteId: Id<"organizationInvites">,
+		email: string,
+	) => {
 		setSelectedInviteId(inviteId);
 		setSelectedInviteEmail(email);
 		setIsUrlModalOpen(true);
@@ -135,12 +139,12 @@ export default function Members() {
 							{invites?.map((invite) => (
 								<div
 									key={invite._id}
-									className="group flex w-full items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50 cursor-pointer"
+									className="group flex w-full cursor-pointer items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50"
 									onClick={() => handleShowInviteUrl(invite._id, invite.email)}
 									title="Click to view invite link"
 								>
-									<div className="w-[40%] font-medium group-hover:text-primary flex items-center gap-2">
-										<Link2 className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+									<div className="flex w-[40%] items-center gap-2 font-medium group-hover:text-primary">
+										<Link2 className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
 										{invite.email}
 									</div>
 									<div className="w-[20%] text-muted-foreground">

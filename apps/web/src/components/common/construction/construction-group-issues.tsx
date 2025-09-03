@@ -20,18 +20,18 @@ import { type FC, useRef } from "react";
 import { useDrop } from "react-dnd";
 import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
 import { Button } from "../../ui/button";
+import {
+	type DragEndEvent,
+	ListGroup,
+	ListHeader,
+	ListItem,
+	ListItems,
+	ListProvider,
+} from "../../ui/kibo-ui/list";
 import { IssueDragType } from "../issues/issue-grid";
 import { ConstructionIssueGrid } from "./construction-issue-grid";
 import { ConstructionIssueLine } from "./construction-issue-line";
 import type { ConstructionTask, StatusType } from "./construction-tasks";
-import {
-	ListProvider,
-	ListGroup,
-	ListHeader,
-	ListItems,
-	ListItem,
-	type DragEndEvent,
-} from "../../ui/kibo-ui/list";
 
 // Sort construction tasks by priority
 function sortConstructionTasksByPriority(
@@ -167,10 +167,7 @@ export function ConstructionGroupIssues({
 							parent={status._id}
 							className="p-0"
 						>
-							<ConstructionIssueLine
-								issue={issue}
-								layoutId={true}
-							/>
+							<ConstructionIssueLine issue={issue} layoutId={true} />
 						</ListItem>
 					))}
 				</ListItems>

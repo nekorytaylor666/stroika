@@ -5,9 +5,7 @@ import { query } from "./_generated/server";
 export const getByIds = query({
 	args: { ids: v.array(v.id("labels")) },
 	handler: async (ctx, args) => {
-		const labels = await Promise.all(
-			args.ids.map((id) => ctx.db.get(id))
-		);
+		const labels = await Promise.all(args.ids.map((id) => ctx.db.get(id)));
 		return labels.filter((label) => label !== null);
 	},
 });
