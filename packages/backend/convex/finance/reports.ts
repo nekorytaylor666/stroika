@@ -406,6 +406,126 @@ export const getBalanceSheet = query({
 	},
 });
 
+// Get simple project financial overview (for UI display)
+export const getProjectFinancialOverview = query({
+	args: {
+		projectId: v.id("constructionProjects"),
+	},
+	handler: async (ctx, args) => {
+		// Get project details
+		const project = await ctx.db.get(args.projectId);
+		if (!project) throw new Error("Проект не найден");
+
+		// Get payment statistics
+		const payments = await ctx.db
+			.query("payments")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+
+		const confirmedPayments = payments.filter((p) => p.status === "confirmed");
+		const pendingPayments = payments.filter((p) => p.status === "pending");
+
+		const totalIncoming = confirmedPayments
+			.filter((p) => p.type === "incoming")
+			.reduce((sum, p) => sum + p.amount, 0);
+
+		const totalOutgoing = confirmedPayments
+			.filter((p) => p.type === "outgoing")
+			.reduce((sum, p) => sum + p.amount, 0);
+
+		const pendingIncoming = pendingPayments
+			.filter((p) => p.type === "incoming")
+			.reduce((sum, p) => sum + p.amount, 0);
+
+		const pendingOutgoing = pendingPayments
+			.filter((p) => p.type === "outgoing")
+			.reduce((sum, p) => sum + p.amount, 0);
+
+		// Get expense statistics
+		const expenses = await ctx.db
+			.query("expenses")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+
+		const paidExpenses = expenses.filter((e) => e.status === "paid");
+		const approvedExpenses = expenses.filter((e) => e.status === "approved");
+		const pendingExpenses = expenses.filter((e) => e.status === "pending");
+
+		const totalExpensesPaid = paidExpenses.reduce(
+			(sum, e) => sum + e.amount,
+			0,
+		);
+		const totalExpensesApproved = approvedExpenses.reduce(
+			(sum, e) => sum + e.amount,
+			0,
+		);
+		const totalExpensesPending = pendingExpenses.reduce(
+			(sum, e) => sum + e.amount,
+			0,
+		);
+
+		// Category breakdown
+		const expensesByCategory = expenses.reduce(
+			(acc, expense) => {
+				if (expense.status === "paid" || expense.status === "approved") {
+					acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+				}
+				return acc;
+			},
+			{} as Record<string, number>,
+		);
+
+		// Use outgoing payments as the actual money spent
+		// This represents all cash that has left the project
+		const actualMoneySpent = totalOutgoing;
+		
+		// Calculate profitability based on actual cash flow
+		const netCashPosition = totalIncoming - actualMoneySpent;
+		const profitMargin = totalIncoming > 0 
+			? (netCashPosition / totalIncoming) * 100
+			: 0;
+
+		return {
+			project: {
+				name: project.name,
+				client: project.client,
+				contractValue: project.contractValue || 0,
+				revenue: project.revenue || 0,
+			},
+			payments: {
+				totalIncoming,
+				totalOutgoing, // This may include expense payments
+				pendingIncoming,
+				pendingOutgoing,
+				netCashFlow: totalIncoming - totalOutgoing,
+				totalCount: payments.length,
+				confirmedCount: confirmedPayments.length,
+				pendingCount: pendingPayments.length,
+			},
+			expenses: {
+				totalPaid: totalExpensesPaid,
+				totalApproved: totalExpensesApproved,
+				totalPending: totalExpensesPending,
+				totalCommitted: totalExpensesPaid + totalExpensesApproved,
+				byCategory: expensesByCategory,
+				totalCount: expenses.length,
+				paidCount: paidExpenses.length,
+				approvedCount: approvedExpenses.length,
+				pendingCount: pendingExpenses.length,
+			},
+			balance: {
+				currentBalance: totalIncoming - actualMoneySpent, // Actual cash position
+				projectedBalance:
+					totalIncoming +
+					pendingIncoming -
+					actualMoneySpent -
+					pendingOutgoing,
+				profitMargin, // Use calculated profit margin based on cash flow
+			},
+		};
+	},
+});
+
 // Get cash flow statement
 export const getCashFlowStatement = query({
 	args: {

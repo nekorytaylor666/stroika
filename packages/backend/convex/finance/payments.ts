@@ -184,11 +184,11 @@ export const listByProject = query({
 			(a, b) =>
 				new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime(),
 		);
-		
+
 		if (args.limit) {
 			return sorted.slice(0, args.limit);
 		}
-		
+
 		return sorted;
 	},
 });
