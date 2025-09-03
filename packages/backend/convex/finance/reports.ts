@@ -19,7 +19,9 @@ export const getFinancialSummary = query({
 		// Get all accounts
 		const accounts = await ctx.db
 			.query("accounts")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.collect();
 
 		// Calculate balances for each account type
@@ -38,8 +40,8 @@ export const getFinancialSummary = query({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("status"), "posted"),
-					q.lte(q.field("date"), period + "-31")
-				)
+					q.lte(q.field("date"), period + "-31"),
+				),
 			)
 			.collect();
 
@@ -76,11 +78,11 @@ export const getFinancialSummary = query({
 			.collect();
 
 		const totalIncoming = payments
-			.filter(p => p.type === "incoming")
+			.filter((p) => p.type === "incoming")
 			.reduce((sum, p) => sum + p.amount, 0);
 
 		const totalOutgoing = payments
-			.filter(p => p.type === "outgoing")
+			.filter((p) => p.type === "outgoing")
 			.reduce((sum, p) => sum + p.amount, 0);
 
 		// Get budget information
@@ -90,8 +92,10 @@ export const getFinancialSummary = query({
 			.filter((q) => q.eq(q.field("status"), "approved"))
 			.collect();
 
-		const currentBudget = budgets.sort((a, b) =>
-			new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
+		const currentBudget = budgets.sort(
+			(a, b) =>
+				new Date(b.effectiveDate).getTime() -
+				new Date(a.effectiveDate).getTime(),
 		)[0];
 
 		return {
@@ -113,20 +117,29 @@ export const getFinancialSummary = query({
 				totalOutgoing,
 				netCashFlow: totalIncoming - totalOutgoing,
 			},
-			budget: currentBudget ? {
-				total: currentBudget.totalBudget,
-				spent: balancesByType.expense,
-				remaining: currentBudget.totalBudget - balancesByType.expense,
-				percentUsed: (balancesByType.expense / currentBudget.totalBudget) * 100,
-			} : null,
+			budget: currentBudget
+				? {
+						total: currentBudget.totalBudget,
+						spent: balancesByType.expense,
+						remaining: currentBudget.totalBudget - balancesByType.expense,
+						percentUsed:
+							(balancesByType.expense / currentBudget.totalBudget) * 100,
+					}
+				: null,
 			profitability: {
 				grossProfit: balancesByType.revenue - balancesByType.expense,
-				profitMargin: balancesByType.revenue > 0
-					? ((balancesByType.revenue - balancesByType.expense) / balancesByType.revenue) * 100
-					: 0,
-				roi: project.contractValue > 0
-					? ((balancesByType.revenue - balancesByType.expense) / project.contractValue) * 100
-					: 0,
+				profitMargin:
+					balancesByType.revenue > 0
+						? ((balancesByType.revenue - balancesByType.expense) /
+								balancesByType.revenue) *
+							100
+						: 0,
+				roi:
+					project.contractValue > 0
+						? ((balancesByType.revenue - balancesByType.expense) /
+								project.contractValue) *
+							100
+						: 0,
 			},
 		};
 	},
@@ -147,15 +160,13 @@ export const getProfitLossStatement = query({
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id)
-						.eq("type", "revenue")
+					q.eq("organizationId", organization._id).eq("type", "revenue"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id)
-						.eq("type", "expense")
+					q.eq("organizationId", organization._id).eq("type", "expense"),
 				)
 				.collect(),
 		]);
@@ -168,8 +179,8 @@ export const getProfitLossStatement = query({
 				q.and(
 					q.eq(q.field("status"), "posted"),
 					q.gte(q.field("date"), args.dateFrom),
-					q.lte(q.field("date"), args.dateTo)
-				)
+					q.lte(q.field("date"), args.dateTo),
+				),
 			)
 			.collect();
 
@@ -192,7 +203,7 @@ export const getProfitLossStatement = query({
 					account,
 					amount,
 				};
-			})
+			}),
 		);
 
 		// Calculate expense items
@@ -214,11 +225,17 @@ export const getProfitLossStatement = query({
 					account,
 					amount,
 				};
-			})
+			}),
 		);
 
-		const totalRevenue = revenueItems.reduce((sum, item) => sum + item.amount, 0);
-		const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
+		const totalRevenue = revenueItems.reduce(
+			(sum, item) => sum + item.amount,
+			0,
+		);
+		const totalExpenses = expenseItems.reduce(
+			(sum, item) => sum + item.amount,
+			0,
+		);
 
 		return {
 			period: {
@@ -226,15 +243,18 @@ export const getProfitLossStatement = query({
 				to: args.dateTo,
 			},
 			revenue: {
-				items: revenueItems.filter(item => item.amount !== 0),
+				items: revenueItems.filter((item) => item.amount !== 0),
 				total: totalRevenue,
 			},
 			expenses: {
-				items: expenseItems.filter(item => item.amount !== 0),
+				items: expenseItems.filter((item) => item.amount !== 0),
 				total: totalExpenses,
 			},
 			netIncome: totalRevenue - totalExpenses,
-			profitMargin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0,
+			profitMargin:
+				totalRevenue > 0
+					? ((totalRevenue - totalExpenses) / totalRevenue) * 100
+					: 0,
 		};
 	},
 });
@@ -253,22 +273,19 @@ export const getBalanceSheet = query({
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id)
-						.eq("type", "asset")
+					q.eq("organizationId", organization._id).eq("type", "asset"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id)
-						.eq("type", "liability")
+					q.eq("organizationId", organization._id).eq("type", "liability"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id)
-						.eq("type", "equity")
+					q.eq("organizationId", organization._id).eq("type", "equity"),
 				)
 				.collect(),
 		]);
@@ -276,17 +293,21 @@ export const getBalanceSheet = query({
 		// Get journal entries up to the date
 		let journalEntries = await ctx.db
 			.query("journalEntries")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("status"), "posted"),
-					q.lte(q.field("date"), args.date)
-				)
+					q.lte(q.field("date"), args.date),
+				),
 			)
 			.collect();
 
 		if (args.projectId) {
-			journalEntries = journalEntries.filter(e => e.projectId === args.projectId);
+			journalEntries = journalEntries.filter(
+				(e) => e.projectId === args.projectId,
+			);
 		}
 
 		// Calculate asset balances
@@ -308,7 +329,7 @@ export const getBalanceSheet = query({
 					account,
 					balance,
 				};
-			})
+			}),
 		);
 
 		// Calculate liability balances
@@ -330,7 +351,7 @@ export const getBalanceSheet = query({
 					account,
 					balance,
 				};
-			})
+			}),
 		);
 
 		// Calculate equity balances
@@ -352,28 +373,35 @@ export const getBalanceSheet = query({
 					account,
 					balance,
 				};
-			})
+			}),
 		);
 
 		const totalAssets = assetItems.reduce((sum, item) => sum + item.balance, 0);
-		const totalLiabilities = liabilityItems.reduce((sum, item) => sum + item.balance, 0);
-		const totalEquity = equityItems.reduce((sum, item) => sum + item.balance, 0);
+		const totalLiabilities = liabilityItems.reduce(
+			(sum, item) => sum + item.balance,
+			0,
+		);
+		const totalEquity = equityItems.reduce(
+			(sum, item) => sum + item.balance,
+			0,
+		);
 
 		return {
 			date: args.date,
 			assets: {
-				items: assetItems.filter(item => item.balance !== 0),
+				items: assetItems.filter((item) => item.balance !== 0),
 				total: totalAssets,
 			},
 			liabilities: {
-				items: liabilityItems.filter(item => item.balance !== 0),
+				items: liabilityItems.filter((item) => item.balance !== 0),
 				total: totalLiabilities,
 			},
 			equity: {
-				items: equityItems.filter(item => item.balance !== 0),
+				items: equityItems.filter((item) => item.balance !== 0),
 				total: totalEquity,
 			},
-			isBalanced: Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01,
+			isBalanced:
+				Math.abs(totalAssets - (totalLiabilities + totalEquity)) < 0.01,
 		};
 	},
 });
@@ -391,12 +419,11 @@ export const getCashFlowStatement = query({
 		// Get cash accounts (50 - Касса, 51 - Расчетные счета)
 		const cashAccounts = await ctx.db
 			.query("accounts")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.filter((q) =>
-				q.or(
-					q.eq(q.field("code"), "50"),
-					q.eq(q.field("code"), "51")
-				)
+				q.or(q.eq(q.field("code"), "50"), q.eq(q.field("code"), "51")),
 			)
 			.collect();
 
@@ -408,8 +435,8 @@ export const getCashFlowStatement = query({
 				q.and(
 					q.eq(q.field("status"), "posted"),
 					q.gte(q.field("date"), args.dateFrom),
-					q.lte(q.field("date"), args.dateTo)
-				)
+					q.lte(q.field("date"), args.dateTo),
+				),
 			)
 			.collect();
 
@@ -425,12 +452,15 @@ export const getCashFlowStatement = query({
 				.collect();
 
 			// Check if any cash account is involved
-			const cashLines = lines.filter(l =>
-				cashAccounts.some(ca => ca._id === l.accountId)
+			const cashLines = lines.filter((l) =>
+				cashAccounts.some((ca) => ca._id === l.accountId),
 			);
 
 			if (cashLines.length > 0) {
-				const cashFlow = cashLines.reduce((sum, l) => sum + l.debit - l.credit, 0);
+				const cashFlow = cashLines.reduce(
+					(sum, l) => sum + l.debit - l.credit,
+					0,
+				);
 
 				const activity = {
 					date: entry.date,
@@ -440,7 +470,11 @@ export const getCashFlowStatement = query({
 				};
 
 				// Categorize by type
-				if (entry.type === "payment" || entry.type === "expense" || entry.type === "revenue") {
+				if (
+					entry.type === "payment" ||
+					entry.type === "expense" ||
+					entry.type === "revenue"
+				) {
 					operatingActivities.push(activity);
 				} else if (entry.type === "adjustment") {
 					investingActivities.push(activity);
@@ -450,9 +484,18 @@ export const getCashFlowStatement = query({
 			}
 		}
 
-		const totalOperating = operatingActivities.reduce((sum, a) => sum + a.amount, 0);
-		const totalInvesting = investingActivities.reduce((sum, a) => sum + a.amount, 0);
-		const totalFinancing = financingActivities.reduce((sum, a) => sum + a.amount, 0);
+		const totalOperating = operatingActivities.reduce(
+			(sum, a) => sum + a.amount,
+			0,
+		);
+		const totalInvesting = investingActivities.reduce(
+			(sum, a) => sum + a.amount,
+			0,
+		);
+		const totalFinancing = financingActivities.reduce(
+			(sum, a) => sum + a.amount,
+			0,
+		);
 
 		return {
 			period: {

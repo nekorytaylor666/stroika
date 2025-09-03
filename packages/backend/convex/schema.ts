@@ -257,7 +257,8 @@ export default defineSchema({
 		),
 		description: v.optional(v.string()),
 		createdAt: v.string(),
-	}).index("by_resource_action", ["resource", "action"])
+	})
+		.index("by_resource_action", ["resource", "action"])
 		.index("by_scope", ["scope"]),
 
 	// Role-Permission mapping table
@@ -709,7 +710,7 @@ export default defineSchema({
 		name: v.string(), // Russian name (e.g., "Расчетные счета")
 		type: v.union(
 			v.literal("asset"), // Активы
-			v.literal("liability"), // Пассивы  
+			v.literal("liability"), // Пассивы
 			v.literal("equity"), // Капитал
 			v.literal("revenue"), // Доходы
 			v.literal("expense"), // Расходы
@@ -952,8 +953,7 @@ export default defineSchema({
 		isSystem: v.boolean(),
 		createdAt: v.string(),
 		updatedAt: v.string(),
-	})
-		.index("by_name", ["name"]),
+	}).index("by_name", ["name"]),
 
 	// Team project access for bulk team assignments
 	teamProjectAccess: defineTable({

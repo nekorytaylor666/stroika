@@ -28,20 +28,20 @@ import {
 	CircleDot,
 	Clock,
 	DollarSign,
+	FileText,
 	Loader2,
 	MapPin,
 	MoreHorizontal,
 	Plus,
 	Tag,
 	Target,
+	TrendingUp,
 	User,
 	Users,
 	Wallet,
-	FileText,
-	TrendingUp,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { lazy, Suspense, useState } from "react";
+import { Suspense, lazy, useState } from "react";
 
 // Lazy load finance component
 const ProjectFinanceTab = lazy(() => import("../project-finance/finance-overview").then(m => ({ default: m.ProjectFinanceTab })));
@@ -634,7 +634,7 @@ export function ConstructionProjectOverview({
 					</TabsList>
 				</div>
 
-				<TabsContent value="overview" className="h-full mt-0">
+				<TabsContent value="overview" className="mt-0 h-full">
 					<div className="flex h-full">
 						{/* Main Content */}
 						<div className="flex-1 overflow-auto">
@@ -1206,18 +1206,18 @@ export function ConstructionProjectOverview({
 						</div>
 				</TabsContent>
 
-				<TabsContent value="finance" className="h-full mt-0">
+				<TabsContent value="finance" className="mt-0 h-full">
 					<Suspense fallback={<ProjectSkeleton />}>
 						<ProjectFinanceTab projectId={projectId} />
 					</Suspense>
 				</TabsContent>
 
-				<TabsContent value="documents" className="h-full mt-0">
+				<TabsContent value="documents" className="mt-0 h-full">
 					<div className="flex h-full items-center justify-center">
 						<div className="text-center">
 							<FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
 							<h3 className="font-medium text-lg">Документы проекта</h3>
-							<p className="text-muted-foreground text-sm mt-2">Раздел документов в разработке</p>
+							<p className="mt-2 text-muted-foreground text-sm">Раздел документов в разработке</p>
 						</div>
 					</div>
 				</TabsContent>

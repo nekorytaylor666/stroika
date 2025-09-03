@@ -1,7 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
-import { canAccessProject, canCreateProject, getUserProjectAccessLevel } from "./permissions/checks";
+import {
+	canAccessProject,
+	canCreateProject,
+	getUserProjectAccessLevel,
+} from "./permissions/checks";
 import { getAccessibleProjects } from "./permissions/projectAccess";
 
 // Queries - Get all projects the current user has access to
@@ -16,12 +20,12 @@ export const getAll = query({
 		// Get projects accessible to the user using the permission system
 		try {
 			const accessibleProjects = await getAccessibleProjects(ctx);
-			
+
 			// Populate related data
 			const populatedProjects = await Promise.all(
 				accessibleProjects.map(async (project) => {
 					if (!project) return null;
-					
+
 					const [status, lead, priority, monthlyRevenue] = await Promise.all([
 						ctx.db.get(project.statusId),
 						ctx.db.get(project.leadId),
@@ -56,7 +60,7 @@ export const getById = query({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-		
+
 		// Check if user has access to this project
 		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
 		if (!hasAccess) {
@@ -66,18 +70,19 @@ export const getById = query({
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
 
-		const [status, lead, priority, monthlyRevenue, accessLevel] = await Promise.all([
-			ctx.db.get(project.statusId),
-			ctx.db.get(project.leadId),
-			ctx.db.get(project.priorityId),
-			ctx.db
-				.query("monthlyRevenue")
-				.withIndex("by_project", (q) =>
-					q.eq("constructionProjectId", project._id),
-				)
-				.collect(),
-			getUserProjectAccessLevel(ctx, user._id, args.id),
-		]);
+		const [status, lead, priority, monthlyRevenue, accessLevel] =
+			await Promise.all([
+				ctx.db.get(project.statusId),
+				ctx.db.get(project.leadId),
+				ctx.db.get(project.priorityId),
+				ctx.db
+					.query("monthlyRevenue")
+					.withIndex("by_project", (q) =>
+						q.eq("constructionProjectId", project._id),
+					)
+					.collect(),
+				getUserProjectAccessLevel(ctx, user._id, args.id),
+			]);
 
 		return {
 			...project,
@@ -94,7 +99,7 @@ export const getProjectWithTasks = query({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-		
+
 		// Check if user has access to this project
 		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
 		if (!hasAccess) {
@@ -402,7 +407,7 @@ export const update = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-		
+
 		// Check if user has write access to this project
 		const hasAccess = await canAccessProject(ctx, user._id, args.id, "write");
 		if (!hasAccess) {
@@ -410,13 +415,13 @@ export const update = mutation({
 		}
 
 		const { id, ...updates } = args;
-		
+
 		// If lead is changed, grant them admin access
 		if (updates.leadId) {
 			const existingAccess = await ctx.db
 				.query("projectAccess")
 				.withIndex("by_project_user", (q) =>
-					q.eq("projectId", id).eq("userId", updates.leadId)
+					q.eq("projectId", id).eq("userId", updates.leadId),
 				)
 				.first();
 
@@ -430,7 +435,10 @@ export const update = mutation({
 					grantedAt: Date.now(),
 					expiresAt: undefined,
 				});
-			} else if (existingAccess.accessLevel !== "admin" && existingAccess.accessLevel !== "owner") {
+			} else if (
+				existingAccess.accessLevel !== "admin" &&
+				existingAccess.accessLevel !== "owner"
+			) {
 				await ctx.db.patch(existingAccess._id, {
 					accessLevel: "admin",
 					grantedBy: user._id,
@@ -445,7 +453,7 @@ export const update = mutation({
 				const existingAccess = await ctx.db
 					.query("projectAccess")
 					.withIndex("by_project_user", (q) =>
-						q.eq("projectId", id).eq("userId", memberId)
+						q.eq("projectId", id).eq("userId", memberId),
 					)
 					.first();
 
@@ -524,7 +532,7 @@ export const deleteProject = mutation({
 	args: { id: v.id("constructionProjects") },
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-		
+
 		// Check if user has admin access to delete this project
 		const hasAccess = await canAccessProject(ctx, user._id, args.id, "admin");
 		if (!hasAccess) {

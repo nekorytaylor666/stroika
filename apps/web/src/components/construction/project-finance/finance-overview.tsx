@@ -32,7 +32,21 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	Cell,
+	Legend,
+	Line,
+	LineChart,
+	Pie,
+	PieChart,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from "recharts";
 import { AddPaymentModal } from "./add-payment-modal";
 import { BudgetTracker } from "./budget-tracker";
 import { JournalEntries } from "./journal-entries";
@@ -52,27 +66,27 @@ const paymentStatusColors = {
 export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 	const [showAddPayment, setShowAddPayment] = useState(false);
 	const [selectedTab, setSelectedTab] = useState("overview");
-	
+
 	// Initialize accounts if needed
 	const initAccounts = useMutation(api.finance.accounts.initializeAccounts);
 	const accounts = useQuery(api.finance.accounts.getAccounts);
-	
+
 	// Fetch financial data
-	const paymentStats = useQuery(api.finance.payments.getPaymentStatistics, { 
-		projectId 
+	const paymentStats = useQuery(api.finance.payments.getPaymentStatistics, {
+		projectId,
 	});
-	
-	const financialSummary = useQuery(api.finance.reports.getFinancialSummary, { 
-		projectId 
+
+	const financialSummary = useQuery(api.finance.reports.getFinancialSummary, {
+		projectId,
 	});
-	
+
 	// Initialize accounts on mount if needed
 	useEffect(() => {
 		if (accounts && accounts.length === 0) {
 			initAccounts();
 		}
 	}, [accounts, initAccounts]);
-	
+
 	// Format currency
 	const formatCurrency = (value: number) => {
 		return new Intl.NumberFormat("ru-RU", {
@@ -82,19 +96,27 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 			maximumFractionDigits: 0,
 		}).format(value);
 	};
-	
+
 	if (!paymentStats || !financialSummary) {
 		return <FinanceSkeleton />;
 	}
-	
+
 	// Prepare cash flow chart data
 	const cashFlowData = [
-		{ name: "Поступления", value: paymentStats.totalIncoming, color: "hsl(142, 76%, 36%)" },
-		{ name: "Платежи", value: paymentStats.totalOutgoing, color: "hsl(0, 84%, 60%)" },
+		{
+			name: "Поступления",
+			value: paymentStats.totalIncoming,
+			color: "hsl(142, 76%, 36%)",
+		},
+		{
+			name: "Платежи",
+			value: paymentStats.totalOutgoing,
+			color: "hsl(0, 84%, 60%)",
+		},
 	];
-	
+
 	const isPositiveCashFlow = paymentStats.netCashFlow >= 0;
-	
+
 	return (
 		<div className="h-full overflow-auto">
 			<div className="space-y-6 p-6">
@@ -111,16 +133,18 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 						Добавить платеж
 					</Button>
 				</div>
-				
+
 				<Separator />
-				
+
 				{/* Financial Stats Cards */}
 				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 					{/* Contract Value */}
 					<Card className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-muted-foreground text-sm">Стоимость контракта</p>
+								<p className="text-muted-foreground text-sm">
+									Стоимость контракта
+								</p>
 								<p className="font-semibold text-2xl">
 									{formatCurrency(financialSummary.project.contractValue)}
 								</p>
@@ -130,7 +154,7 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 							</div>
 						</div>
 					</Card>
-					
+
 					{/* Total Incoming */}
 					<Card className="p-4">
 						<div className="flex items-center justify-between">
@@ -150,7 +174,7 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 							</div>
 						</div>
 					</Card>
-					
+
 					{/* Total Outgoing */}
 					<Card className="p-4">
 						<div className="flex items-center justify-between">
@@ -170,26 +194,30 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 							</div>
 						</div>
 					</Card>
-					
+
 					{/* Net Cash Flow */}
 					<Card className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-muted-foreground text-sm">Денежный поток</p>
-								<p className={cn(
-									"font-semibold text-2xl",
-									isPositiveCashFlow ? "text-green-600" : "text-red-600"
-								)}>
+								<p
+									className={cn(
+										"font-semibold text-2xl",
+										isPositiveCashFlow ? "text-green-600" : "text-red-600",
+									)}
+								>
 									{formatCurrency(paymentStats.netCashFlow)}
 								</p>
 								<p className="text-muted-foreground text-xs">
 									{isPositiveCashFlow ? "Положительный" : "Отрицательный"}
 								</p>
 							</div>
-							<div className={cn(
-								"rounded-full p-3",
-								isPositiveCashFlow ? "bg-green-100" : "bg-red-100"
-							)}>
+							<div
+								className={cn(
+									"rounded-full p-3",
+									isPositiveCashFlow ? "bg-green-100" : "bg-red-100",
+								)}
+							>
 								{isPositiveCashFlow ? (
 									<TrendingUp className="h-6 w-6 text-green-600" />
 								) : (
@@ -199,16 +227,20 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 						</div>
 					</Card>
 				</div>
-				
+
 				{/* Tabs for different views */}
-				<Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
+				<Tabs
+					value={selectedTab}
+					onValueChange={setSelectedTab}
+					className="space-y-4"
+				>
 					<TabsList className="grid w-full max-w-md grid-cols-4">
 						<TabsTrigger value="overview">Обзор</TabsTrigger>
 						<TabsTrigger value="payments">Платежи</TabsTrigger>
 						<TabsTrigger value="budget">Бюджет</TabsTrigger>
 						<TabsTrigger value="journal">Проводки</TabsTrigger>
 					</TabsList>
-					
+
 					<TabsContent value="overview" className="space-y-6">
 						<div className="grid gap-6 lg:grid-cols-2">
 							{/* Cash Flow Chart */}
@@ -230,7 +262,9 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 													<Cell key={`cell-${index}`} fill={entry.color} />
 												))}
 											</Pie>
-											<Tooltip formatter={(value: number) => formatCurrency(value)} />
+											<Tooltip
+												formatter={(value: number) => formatCurrency(value)}
+											/>
 										</PieChart>
 									</ResponsiveContainer>
 								</div>
@@ -248,7 +282,7 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 									))}
 								</div>
 							</Card>
-							
+
 							{/* Budget vs Actual */}
 							{financialSummary.budget && (
 								<Card className="p-6">
@@ -256,36 +290,44 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 									<div className="space-y-4">
 										<div>
 											<div className="mb-2 flex items-center justify-between">
-												<span className="text-muted-foreground text-sm">Общий бюджет</span>
+												<span className="text-muted-foreground text-sm">
+													Общий бюджет
+												</span>
 												<span className="font-medium">
 													{formatCurrency(financialSummary.budget.total)}
 												</span>
 											</div>
 											<div className="mb-2 flex items-center justify-between">
-												<span className="text-muted-foreground text-sm">Потрачено</span>
+												<span className="text-muted-foreground text-sm">
+													Потрачено
+												</span>
 												<span className="font-medium">
 													{formatCurrency(financialSummary.budget.spent)}
 												</span>
 											</div>
 											<div className="mb-4 flex items-center justify-between">
-												<span className="text-muted-foreground text-sm">Остаток</span>
-												<span className={cn(
-													"font-medium",
-													financialSummary.budget.remaining > 0 
-														? "text-green-600" 
-														: "text-red-600"
-												)}>
+												<span className="text-muted-foreground text-sm">
+													Остаток
+												</span>
+												<span
+													className={cn(
+														"font-medium",
+														financialSummary.budget.remaining > 0
+															? "text-green-600"
+															: "text-red-600",
+													)}
+												>
 													{formatCurrency(financialSummary.budget.remaining)}
 												</span>
 											</div>
-											
+
 											{/* Progress bar */}
 											<div>
 												<div className="mb-1 flex items-center justify-between">
 													<span className="text-muted-foreground text-xs">
 														Использовано
 													</span>
-													<span className="text-xs font-medium">
+													<span className="font-medium text-xs">
 														{Math.round(financialSummary.budget.percentUsed)}%
 													</span>
 												</div>
@@ -296,12 +338,12 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 															financialSummary.budget.percentUsed > 90
 																? "bg-red-500"
 																: financialSummary.budget.percentUsed > 70
-																? "bg-yellow-500"
-																: "bg-green-500"
+																	? "bg-yellow-500"
+																	: "bg-green-500",
 														)}
 														initial={{ width: 0 }}
-														animate={{ 
-															width: `${Math.min(financialSummary.budget.percentUsed, 100)}%` 
+														animate={{
+															width: `${Math.min(financialSummary.budget.percentUsed, 100)}%`,
 														}}
 														transition={{ duration: 0.5 }}
 													/>
@@ -312,19 +354,23 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 								</Card>
 							)}
 						</div>
-						
+
 						{/* Profitability Metrics */}
 						<Card className="p-6">
 							<h3 className="mb-4 font-medium">Показатели рентабельности</h3>
 							<div className="grid gap-4 md:grid-cols-4">
 								<div>
-									<p className="text-muted-foreground text-sm">Валовая прибыль</p>
-									<p className={cn(
-										"font-semibold text-xl",
-										financialSummary.profitability.grossProfit >= 0
-											? "text-green-600"
-											: "text-red-600"
-									)}>
+									<p className="text-muted-foreground text-sm">
+										Валовая прибыль
+									</p>
+									<p
+										className={cn(
+											"font-semibold text-xl",
+											financialSummary.profitability.grossProfit >= 0
+												? "text-green-600"
+												: "text-red-600",
+										)}
+									>
 										{formatCurrency(financialSummary.profitability.grossProfit)}
 									</p>
 								</div>
@@ -342,33 +388,35 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 								</div>
 								<div>
 									<p className="text-muted-foreground text-sm">Чистый доход</p>
-									<p className={cn(
-										"font-semibold text-xl",
-										financialSummary.balances.netIncome >= 0
-											? "text-green-600"
-											: "text-red-600"
-									)}>
+									<p
+										className={cn(
+											"font-semibold text-xl",
+											financialSummary.balances.netIncome >= 0
+												? "text-green-600"
+												: "text-red-600",
+										)}
+									>
 										{formatCurrency(financialSummary.balances.netIncome)}
 									</p>
 								</div>
 							</div>
 						</Card>
 					</TabsContent>
-					
+
 					<TabsContent value="payments" className="space-y-4">
 						<PaymentList projectId={projectId} />
 					</TabsContent>
-					
+
 					<TabsContent value="budget" className="space-y-4">
 						<BudgetTracker projectId={projectId} />
 					</TabsContent>
-					
+
 					<TabsContent value="journal" className="space-y-4">
 						<JournalEntries projectId={projectId} />
 					</TabsContent>
 				</Tabs>
 			</div>
-			
+
 			{/* Add Payment Modal */}
 			{showAddPayment && (
 				<AddPaymentModal

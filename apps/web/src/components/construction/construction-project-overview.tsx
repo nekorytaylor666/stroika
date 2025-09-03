@@ -27,8 +27,13 @@ import {
 	Plus,
 	Target,
 	XIcon,
+	Banknote,
+	FileText,
+	TrendingUp,
+	Wallet,
 } from "lucide-react";
 import { motion } from "motion/react";
+import * as React from "react";
 import {
 	EditableDate,
 	EditableNumber,
@@ -87,12 +92,35 @@ export function ConstructionProjectOverview({
 	projectId,
 }: ConstructionProjectOverviewProps) {
 	const isMobile = useMobile();
+	const [showFinanceDetails, setShowFinanceDetails] = React.useState(false);
+	
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
 	});
 	const statuses = useQuery(api.metadata.getAllStatus);
 	const priorities = useQuery(api.metadata.getAllPriorities);
 	const allUsers = useQuery(api.users.getAll);
+	
+	// Finance queries
+	const financialSummary = useQuery(api.finance.reports.getProjectFinancialSummary, {
+		projectId,
+	});
+	const recentPayments = useQuery(api.finance.payments.listByProject, {
+		projectId,
+		limit: 5,
+	});
+	const pendingPayments = useQuery(api.finance.payments.listByProject, {
+		projectId,
+		status: "pending",
+	});
+	const budget = useQuery(api.finance.budgets.getProjectBudget, {
+		projectId,
+	});
+	const budgetVariance = budget
+		? useQuery(api.finance.budgets.getBudgetVariance, {
+				budgetId: budget._id,
+			})
+		: undefined;
 
 	const updateProject = useMutation(api.constructionProjects.update);
 	const updateStatus = useMutation(api.constructionProjects.updateStatus);
@@ -471,6 +499,53 @@ export function ConstructionProjectOverview({
 
 						<Separator className="my-4" />
 
+						{/* Finance Section (Mobile) */}
+						<div className="space-y-4">
+							<h2 className="font-medium text-base">Финансы</h2>
+							
+							{/* Finance Summary Cards */}
+							<div className="grid grid-cols-2 gap-3">
+								<Card className="p-3">
+									<div className="space-y-1">
+										<p className="font-semibold text-lg">
+											{formatCurrency(financialSummary?.totalRevenue || 0)}
+										</p>
+										<p className="text-muted-foreground text-xs">Доход</p>
+									</div>
+								</Card>
+								
+								<Card className="p-3">
+									<div className="space-y-1">
+										<p className="font-semibold text-lg">
+											{formatCurrency(financialSummary?.totalExpenses || 0)}
+										</p>
+										<p className="text-muted-foreground text-xs">Расходы</p>
+									</div>
+								</Card>
+							</div>
+							
+							{/* Pending Payments Badge */}
+							{pendingPayments && pendingPayments.length > 0 && (
+								<Card className="border-yellow-200 bg-yellow-50/50 p-3">
+									<div className="flex items-center justify-between">
+										<div className="space-y-1">
+											<p className="font-medium text-sm">
+												{formatCurrency(
+													pendingPayments.reduce((sum, p) => sum + p.amount, 0)
+												)}
+											</p>
+											<p className="text-muted-foreground text-xs">
+												Ожидает оплаты ({pendingPayments.length})
+											</p>
+										</div>
+										<ChevronRight className="h-4 w-4 text-muted-foreground" />
+									</div>
+								</Card>
+							)}
+						</div>
+
+						<Separator className="my-4" />
+
 						{/* Recent Tasks */}
 						{projectData.tasks && projectData.tasks.length > 0 && (
 							<div className="pb-6">
@@ -812,8 +887,229 @@ export function ConstructionProjectOverview({
 									/>
 								</div>
 
-								{/* Revenue Chart */}
 							</div>
+						</div>
+
+						{/* Finance Section */}
+						<div>
+							<div className="mb-4 flex items-center justify-between">
+								<h2 className="font-medium text-base">Финансы</h2>
+								<Button
+									variant="ghost"
+									size="sm"
+									className="h-8"
+									onClick={() => setShowFinanceDetails(!showFinanceDetails)}
+								>
+									{showFinanceDetails ? "Скрыть" : "Показать детали"}
+								</Button>
+							</div>
+
+							{/* Finance Summary Cards */}
+							<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+								<Card className="p-4">
+									<div className="mb-2 flex items-center justify-between">
+										<Wallet className="h-4 w-4 text-muted-foreground" />
+										<span className="text-green-600 text-xs font-medium">+12%</span>
+									</div>
+									<div className="space-y-1">
+										<p className="font-semibold text-2xl">
+											{formatCurrency(financialSummary?.totalRevenue || 0)}
+										</p>
+										<p className="text-muted-foreground text-xs">Общий доход</p>
+									</div>
+								</Card>
+
+								<Card className="p-4">
+									<div className="mb-2 flex items-center justify-between">
+										<Banknote className="h-4 w-4 text-muted-foreground" />
+										<span className="text-red-600 text-xs font-medium">-8%</span>
+									</div>
+									<div className="space-y-1">
+										<p className="font-semibold text-2xl">
+											{formatCurrency(financialSummary?.totalExpenses || 0)}
+										</p>
+										<p className="text-muted-foreground text-xs">Общие расходы</p>
+									</div>
+								</Card>
+
+								<Card className="p-4">
+									<div className="mb-2 flex items-center justify-between">
+										<TrendingUp className="h-4 w-4 text-muted-foreground" />
+										<span className="text-green-600 text-xs font-medium">+24%</span>
+									</div>
+									<div className="space-y-1">
+										<p className="font-semibold text-2xl">
+											{formatCurrency(financialSummary?.netIncome || 0)}
+										</p>
+										<p className="text-muted-foreground text-xs">Чистая прибыль</p>
+									</div>
+								</Card>
+
+								<Card className="p-4">
+									<div className="mb-2 flex items-center justify-between">
+										<FileText className="h-4 w-4 text-muted-foreground" />
+										<Badge variant="outline" className="text-xs">
+											{pendingPayments?.length || 0}
+										</Badge>
+									</div>
+									<div className="space-y-1">
+										<p className="font-semibold text-2xl">
+											{formatCurrency(
+												pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0,
+											)}
+										</p>
+										<p className="text-muted-foreground text-xs">Ожидает оплаты</p>
+									</div>
+								</Card>
+							</div>
+
+							{/* Finance Details (collapsible) */}
+							{showFinanceDetails && (
+								<motion.div
+									initial={{ opacity: 0, height: 0 }}
+									animate={{ opacity: 1, height: "auto" }}
+									exit={{ opacity: 0, height: 0 }}
+									className="mt-6 space-y-6"
+								>
+									{/* Recent Payments */}
+									<div>
+										<div className="mb-3 flex items-center justify-between">
+											<h3 className="font-medium text-sm">Последние платежи</h3>
+											<Button variant="ghost" size="sm" className="h-8">
+												<Plus className="mr-1 h-3.5 w-3.5" />
+												Добавить платеж
+											</Button>
+										</div>
+										<Card className="p-4">
+											<div className="space-y-3">
+												{recentPayments?.slice(0, 5).map((payment) => (
+													<div
+														key={payment._id}
+														className="flex items-center justify-between rounded-lg p-3 transition-colors hover:bg-muted/50"
+													>
+														<div className="flex items-center gap-3">
+															<div
+																className={cn(
+																	"flex h-8 w-8 items-center justify-center rounded",
+																	payment.type === "income"
+																		? "bg-green-100 text-green-700"
+																		: "bg-red-100 text-red-700",
+																)}
+															>
+																{payment.type === "income" ? (
+																	<TrendingUp className="h-4 w-4" />
+																) : (
+																	<Banknote className="h-4 w-4" />
+																)}
+															</div>
+															<div>
+																<p className="font-medium text-sm">
+																	{payment.description}
+																</p>
+																<p className="text-muted-foreground text-xs">
+																	{payment.paymentNumber} •{" "}
+																	{format(new Date(payment.date), "d MMM yyyy", {
+																		locale: ru,
+																	})}
+																</p>
+															</div>
+														</div>
+														<div className="flex items-center gap-2">
+															<span
+																className={cn(
+																	"font-semibold text-sm",
+																	payment.type === "income"
+																		? "text-green-700"
+																		: "text-red-700",
+																)}
+															>
+																{payment.type === "income" ? "+" : "-"}
+																{formatCurrency(payment.amount)}
+															</span>
+															<Badge
+																variant="outline"
+																className={cn(
+																	"text-xs",
+																	payment.status === "pending" &&
+																		"border-yellow-200 bg-yellow-50 text-yellow-700",
+																	payment.status === "confirmed" &&
+																		"border-blue-200 bg-blue-50 text-blue-700",
+																	payment.status === "posted" &&
+																		"border-green-200 bg-green-50 text-green-700",
+																)}
+															>
+																{payment.status === "pending" && "Ожидает"}
+																{payment.status === "confirmed" && "Подтвержден"}
+																{payment.status === "posted" && "Проведен"}
+															</Badge>
+														</div>
+													</div>
+												))}
+
+												{(!recentPayments || recentPayments.length === 0) && (
+													<div className="py-8 text-center text-muted-foreground text-sm">
+														Нет платежей
+													</div>
+												)}
+											</div>
+										</Card>
+									</div>
+
+									{/* Budget vs Actual */}
+									{budget && (
+										<div>
+											<h3 className="mb-3 font-medium text-sm">Бюджет проекта</h3>
+											<Card className="p-4">
+												<div className="space-y-4">
+													<div className="grid grid-cols-3 gap-4">
+														<div>
+															<p className="text-muted-foreground text-xs">План</p>
+															<p className="font-semibold text-lg">
+																{formatCurrency(budget.totalBudget)}
+															</p>
+														</div>
+														<div>
+															<p className="text-muted-foreground text-xs">Факт</p>
+															<p className="font-semibold text-lg">
+																{formatCurrency(budgetVariance?.actualTotal || 0)}
+															</p>
+														</div>
+														<div>
+															<p className="text-muted-foreground text-xs">Отклонение</p>
+															<p
+																className={cn(
+																	"font-semibold text-lg",
+																	(budgetVariance?.varianceTotal || 0) > 0
+																		? "text-green-600"
+																		: "text-red-600",
+																)}
+															>
+																{formatCurrency(budgetVariance?.varianceTotal || 0)}
+															</p>
+														</div>
+													</div>
+
+													<div className="h-2 overflow-hidden rounded-full bg-muted">
+														<div
+															className="h-full bg-primary transition-all"
+															style={{
+																width: `${
+																	Math.min(
+																		100,
+																		((budgetVariance?.actualTotal || 0) /
+																			budget.totalBudget) *
+																			100,
+																	)
+																}%`,
+															}}
+														/>
+													</div>
+												</div>
+											</Card>
+										</div>
+									)}
+								</motion.div>
+							)}
 						</div>
 
 						{/* Recent Tasks */}

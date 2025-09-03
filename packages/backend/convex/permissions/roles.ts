@@ -11,7 +11,9 @@ export const getRoles = query({
 		// Get organization-specific roles
 		const orgRoles = await ctx.db
 			.query("roles")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.collect();
 
 		// Get system roles (applicable to all organizations)
@@ -21,7 +23,9 @@ export const getRoles = query({
 			.collect();
 
 		// Combine and sort by priority
-		const allRoles = [...systemRoles, ...orgRoles].sort((a, b) => b.priority - a.priority);
+		const allRoles = [...systemRoles, ...orgRoles].sort(
+			(a, b) => b.priority - a.priority,
+		);
 
 		// Get permissions for each role
 		const rolesWithPermissions = await Promise.all(
@@ -32,7 +36,7 @@ export const getRoles = query({
 					.collect();
 
 				const permissions = await Promise.all(
-					rolePermissions.map(async (rp) => ctx.db.get(rp.permissionId))
+					rolePermissions.map(async (rp) => ctx.db.get(rp.permissionId)),
 				);
 
 				return {
@@ -40,12 +44,14 @@ export const getRoles = query({
 					permissions: permissions.filter(Boolean),
 					memberCount: await ctx.db
 						.query("organizationMembers")
-						.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+						.withIndex("by_organization", (q) =>
+							q.eq("organizationId", organization._id),
+						)
 						.filter((q) => q.eq(q.field("roleId"), role._id))
 						.collect()
-						.then(members => members.length),
+						.then((members) => members.length),
 				};
-			})
+			}),
 		);
 
 		return rolesWithPermissions;
@@ -74,7 +80,9 @@ export const createRole = mutation({
 		// Check if role name already exists in organization
 		const existingRole = await ctx.db
 			.query("roles")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.filter((q) => q.eq(q.field("name"), args.name))
 			.first();
 
@@ -147,7 +155,10 @@ export const updateRole = mutation({
 		}
 
 		// Cannot update system roles unless you're the owner
-		if (role.isSystem && !(await isOrganizationOwner(ctx, user._id, organization._id))) {
+		if (
+			role.isSystem &&
+			!(await isOrganizationOwner(ctx, user._id, organization._id))
+		) {
 			throw new Error("Cannot modify system roles");
 		}
 
@@ -226,12 +237,16 @@ export const deleteRole = mutation({
 		// Check if any users have this role
 		const usersWithRole = await ctx.db
 			.query("organizationMembers")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organization._id))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization._id),
+			)
 			.filter((q) => q.eq(q.field("roleId"), args.roleId))
 			.collect();
 
 		if (usersWithRole.length > 0) {
-			throw new Error(`Cannot delete role: ${usersWithRole.length} users still have this role`);
+			throw new Error(
+				`Cannot delete role: ${usersWithRole.length} users still have this role`,
+			);
 		}
 
 		// Delete role permissions
@@ -280,7 +295,7 @@ export const assignRole = mutation({
 		const membership = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", args.userId)
+				q.eq("organizationId", organization._id).eq("userId", args.userId),
 			)
 			.first();
 
@@ -295,7 +310,10 @@ export const assignRole = mutation({
 		}
 
 		// If assigning director role, check if user is owner
-		if (newRole.isDirector && !(await isOrganizationOwner(ctx, user._id, organization._id))) {
+		if (
+			newRole.isDirector &&
+			!(await isOrganizationOwner(ctx, user._id, organization._id))
+		) {
 			throw new Error("Only organization owner can assign director role");
 		}
 
@@ -329,22 +347,25 @@ export const getPermissions = query({
 		const permissions = await ctx.db.query("permissions").collect();
 
 		// Group permissions by resource and scope
-		const groupedPermissions = permissions.reduce((acc, permission) => {
-			const key = `${permission.resource}_${permission.scope}`;
-			if (!acc[key]) {
-				acc[key] = {
-					resource: permission.resource,
-					scope: permission.scope,
-					actions: [],
-				};
-			}
-			acc[key].actions.push({
-				_id: permission._id,
-				action: permission.action,
-				description: permission.description,
-			});
-			return acc;
-		}, {} as Record<string, any>);
+		const groupedPermissions = permissions.reduce(
+			(acc, permission) => {
+				const key = `${permission.resource}_${permission.scope}`;
+				if (!acc[key]) {
+					acc[key] = {
+						resource: permission.resource,
+						scope: permission.scope,
+						actions: [],
+					};
+				}
+				acc[key].actions.push({
+					_id: permission._id,
+					action: permission.action,
+					description: permission.description,
+				});
+				return acc;
+			},
+			{} as Record<string, any>,
+		);
 
 		return Object.values(groupedPermissions);
 	},
@@ -376,50 +397,210 @@ export const initializeDefaultRoles = mutation({
 
 		const defaultPermissions = [
 			// Project permissions
-			{ resource: "constructionProjects", action: "create", scope: "organization", description: "Create new projects" },
-			{ resource: "constructionProjects", action: "read", scope: "organization", description: "View projects" },
-			{ resource: "constructionProjects", action: "update", scope: "organization", description: "Edit projects" },
-			{ resource: "constructionProjects", action: "delete", scope: "organization", description: "Delete projects" },
-			{ resource: "constructionProjects", action: "manage", scope: "organization", description: "Full project management" },
+			{
+				resource: "constructionProjects",
+				action: "create",
+				scope: "organization",
+				description: "Create new projects",
+			},
+			{
+				resource: "constructionProjects",
+				action: "read",
+				scope: "organization",
+				description: "View projects",
+			},
+			{
+				resource: "constructionProjects",
+				action: "update",
+				scope: "organization",
+				description: "Edit projects",
+			},
+			{
+				resource: "constructionProjects",
+				action: "delete",
+				scope: "organization",
+				description: "Delete projects",
+			},
+			{
+				resource: "constructionProjects",
+				action: "manage",
+				scope: "organization",
+				description: "Full project management",
+			},
 
 			// User permissions
-			{ resource: "users", action: "create", scope: "organization", description: "Create new users" },
-			{ resource: "users", action: "read", scope: "organization", description: "View user profiles" },
-			{ resource: "users", action: "update", scope: "organization", description: "Edit user profiles" },
-			{ resource: "users", action: "delete", scope: "organization", description: "Delete users" },
-			{ resource: "users", action: "manage", scope: "organization", description: "Full user management" },
+			{
+				resource: "users",
+				action: "create",
+				scope: "organization",
+				description: "Create new users",
+			},
+			{
+				resource: "users",
+				action: "read",
+				scope: "organization",
+				description: "View user profiles",
+			},
+			{
+				resource: "users",
+				action: "update",
+				scope: "organization",
+				description: "Edit user profiles",
+			},
+			{
+				resource: "users",
+				action: "delete",
+				scope: "organization",
+				description: "Delete users",
+			},
+			{
+				resource: "users",
+				action: "manage",
+				scope: "organization",
+				description: "Full user management",
+			},
 
 			// Team permissions
-			{ resource: "teams", action: "create", scope: "organization", description: "Create teams" },
-			{ resource: "teams", action: "read", scope: "organization", description: "View teams" },
-			{ resource: "teams", action: "update", scope: "organization", description: "Edit teams" },
-			{ resource: "teams", action: "delete", scope: "organization", description: "Delete teams" },
-			{ resource: "teams", action: "manage", scope: "organization", description: "Full team management" },
+			{
+				resource: "teams",
+				action: "create",
+				scope: "organization",
+				description: "Create teams",
+			},
+			{
+				resource: "teams",
+				action: "read",
+				scope: "organization",
+				description: "View teams",
+			},
+			{
+				resource: "teams",
+				action: "update",
+				scope: "organization",
+				description: "Edit teams",
+			},
+			{
+				resource: "teams",
+				action: "delete",
+				scope: "organization",
+				description: "Delete teams",
+			},
+			{
+				resource: "teams",
+				action: "manage",
+				scope: "organization",
+				description: "Full team management",
+			},
 
 			// Document permissions
-			{ resource: "documents", action: "create", scope: "project", description: "Create documents" },
-			{ resource: "documents", action: "read", scope: "project", description: "View documents" },
-			{ resource: "documents", action: "update", scope: "project", description: "Edit documents" },
-			{ resource: "documents", action: "delete", scope: "project", description: "Delete documents" },
-			{ resource: "documents", action: "manage", scope: "project", description: "Full document management" },
+			{
+				resource: "documents",
+				action: "create",
+				scope: "project",
+				description: "Create documents",
+			},
+			{
+				resource: "documents",
+				action: "read",
+				scope: "project",
+				description: "View documents",
+			},
+			{
+				resource: "documents",
+				action: "update",
+				scope: "project",
+				description: "Edit documents",
+			},
+			{
+				resource: "documents",
+				action: "delete",
+				scope: "project",
+				description: "Delete documents",
+			},
+			{
+				resource: "documents",
+				action: "manage",
+				scope: "project",
+				description: "Full document management",
+			},
 
 			// Issue permissions
-			{ resource: "issues", action: "create", scope: "project", description: "Create tasks/issues" },
-			{ resource: "issues", action: "read", scope: "project", description: "View tasks/issues" },
-			{ resource: "issues", action: "update", scope: "project", description: "Edit tasks/issues" },
-			{ resource: "issues", action: "delete", scope: "project", description: "Delete tasks/issues" },
-			{ resource: "issues", action: "manage", scope: "project", description: "Full task management" },
+			{
+				resource: "issues",
+				action: "create",
+				scope: "project",
+				description: "Create tasks/issues",
+			},
+			{
+				resource: "issues",
+				action: "read",
+				scope: "project",
+				description: "View tasks/issues",
+			},
+			{
+				resource: "issues",
+				action: "update",
+				scope: "project",
+				description: "Edit tasks/issues",
+			},
+			{
+				resource: "issues",
+				action: "delete",
+				scope: "project",
+				description: "Delete tasks/issues",
+			},
+			{
+				resource: "issues",
+				action: "manage",
+				scope: "project",
+				description: "Full task management",
+			},
 
 			// Member permissions
-			{ resource: "members", action: "invite", scope: "organization", description: "Invite new members" },
-			{ resource: "members", action: "remove", scope: "organization", description: "Remove members" },
-			{ resource: "members", action: "manage", scope: "organization", description: "Full member management" },
+			{
+				resource: "members",
+				action: "invite",
+				scope: "organization",
+				description: "Invite new members",
+			},
+			{
+				resource: "members",
+				action: "remove",
+				scope: "organization",
+				description: "Remove members",
+			},
+			{
+				resource: "members",
+				action: "manage",
+				scope: "organization",
+				description: "Full member management",
+			},
 
 			// Role permissions
-			{ resource: "roles", action: "create", scope: "organization", description: "Create roles" },
-			{ resource: "roles", action: "update", scope: "organization", description: "Edit roles" },
-			{ resource: "roles", action: "delete", scope: "organization", description: "Delete roles" },
-			{ resource: "roles", action: "manage", scope: "organization", description: "Full role management" },
+			{
+				resource: "roles",
+				action: "create",
+				scope: "organization",
+				description: "Create roles",
+			},
+			{
+				resource: "roles",
+				action: "update",
+				scope: "organization",
+				description: "Edit roles",
+			},
+			{
+				resource: "roles",
+				action: "delete",
+				scope: "organization",
+				description: "Delete roles",
+			},
+			{
+				resource: "roles",
+				action: "manage",
+				scope: "organization",
+				description: "Full role management",
+			},
 		];
 
 		for (const perm of defaultPermissions) {
@@ -556,6 +737,8 @@ export const initializeDefaultRoles = mutation({
 			}
 		}
 
-		return { message: "Default roles and permissions initialized successfully" };
+		return {
+			message: "Default roles and permissions initialized successfully",
+		};
 	},
 });
