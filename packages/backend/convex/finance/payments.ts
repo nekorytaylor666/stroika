@@ -130,6 +130,69 @@ export const getProjectPayments = query({
 	},
 });
 
+// List payments by project (alias for getProjectPayments with limit support)
+export const listByProject = query({
+	args: {
+		projectId: v.id("constructionProjects"),
+		type: v.optional(v.union(v.literal("incoming"), v.literal("outgoing"))),
+		status: v.optional(
+			v.union(
+				v.literal("pending"),
+				v.literal("confirmed"),
+				v.literal("rejected"),
+				v.literal("cancelled"),
+			),
+		),
+		limit: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Get payments for project
+		let payments = await ctx.db
+			.query("payments")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.collect();
+
+		// Filter by type if specified
+		if (args.type) {
+			payments = payments.filter((p) => p.type === args.type);
+		}
+
+		// Filter by status if specified
+		if (args.status) {
+			payments = payments.filter((p) => p.status === args.status);
+		}
+
+		// Get user details
+		const paymentsWithUsers = await Promise.all(
+			payments.map(async (payment) => {
+				const [createdBy, confirmedBy] = await Promise.all([
+					ctx.db.get(payment.createdBy),
+					payment.confirmedBy ? ctx.db.get(payment.confirmedBy) : null,
+				]);
+
+				return {
+					...payment,
+					createdBy,
+					confirmedBy,
+				};
+			}),
+		);
+
+		const sorted = paymentsWithUsers.sort(
+			(a, b) =>
+				new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime(),
+		);
+		
+		if (args.limit) {
+			return sorted.slice(0, args.limit);
+		}
+		
+		return sorted;
+	},
+});
+
 // Update payment status
 export const updatePaymentStatus = mutation({
 	args: {

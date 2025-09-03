@@ -837,6 +837,7 @@ export default defineSchema({
 
 	// Project Budgets (Бюджеты проектов)
 	projectBudgets: defineTable({
+		organizationId: v.id("organizations"),
 		projectId: v.id("constructionProjects"),
 		name: v.string(), // Budget name/version
 		totalBudget: v.number(), // Total budget amount
@@ -852,6 +853,7 @@ export default defineSchema({
 		createdAt: v.number(),
 		approvedAt: v.optional(v.number()),
 	})
+		.index("by_organization", ["organizationId"])
 		.index("by_project", ["projectId"])
 		.index("by_status", ["status"])
 		.index("by_date", ["effectiveDate"]),
