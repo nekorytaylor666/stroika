@@ -3,7 +3,7 @@ import { query } from "../_generated/server";
 import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
 
 // Get project financial summary
-export const getFinancialSummary = query({
+export const getProjectFinancialSummary = query({
 	args: {
 		projectId: v.id("constructionProjects"),
 		period: v.optional(v.string()), // YYYY-MM format
