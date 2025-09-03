@@ -115,7 +115,8 @@ export const removeAttachment = mutation({
 // Issue attachment functions
 export const attachToIssue = mutation({
 	args: {
-		issueId: v.id("issues"),
+		issueId: v.optional(v.id("issues")),
+		projectId: v.optional(v.id("constructionProjects")),
 		storageId: v.id("_storage"),
 		fileName: v.string(),
 		fileSize: v.number(),
@@ -126,6 +127,7 @@ export const attachToIssue = mutation({
 
 		await ctx.db.insert("issueAttachments", {
 			issueId: args.issueId,
+			projectId: args.projectId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
@@ -137,12 +139,25 @@ export const attachToIssue = mutation({
 });
 
 export const getIssueAttachments = query({
-	args: { issueId: v.id("issues") },
+	args: {
+		issueId: v.optional(v.id("issues")),
+		projectId: v.optional(v.id("constructionProjects")),
+	},
 	handler: async (ctx, args) => {
-		const attachments = await ctx.db
-			.query("issueAttachments")
-			.withIndex("by_issue", (q) => q.eq("issueId", args.issueId))
-			.collect();
+		let attachments;
+		if (args.issueId) {
+			attachments = await ctx.db
+				.query("issueAttachments")
+				.withIndex("by_issue", (q) => q.eq("issueId", args.issueId))
+				.collect();
+		} else if (args.projectId) {
+			attachments = await ctx.db
+				.query("issueAttachments")
+				.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+				.collect();
+		} else {
+			attachments = [];
+		}
 
 		const attachmentsWithUsers = await Promise.all(
 			attachments.map(async (attachment) => {
@@ -232,6 +247,7 @@ export const uploadToProject = mutation({
 
 		await ctx.db.insert("issueAttachments", {
 			issueId,
+			projectId: args.projectId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,
@@ -292,6 +308,7 @@ export const uploadToGeneral = mutation({
 
 		await ctx.db.insert("issueAttachments", {
 			issueId,
+			projectId: undefined,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
 			fileSize: args.fileSize,

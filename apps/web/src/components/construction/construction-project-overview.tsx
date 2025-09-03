@@ -37,6 +37,7 @@ import {
 	EditableTextarea,
 	EditableUserSelect,
 } from "./project-overview/editable";
+import { LegalDocumentsSidebar } from "./legal-documents/legal-documents-sidebar";
 import { ProjectTimelineChart } from "./project-timeline-chart";
 
 interface ConstructionProjectOverviewProps {
@@ -1118,6 +1119,10 @@ export function ConstructionProjectOverview({
 						</div>
 					</div>
 				</div>
+
+				{/* Legal Documents Section */}
+				<Separator className="my-4" />
+				<LegalDocumentsSidebar projectId={projectId} />
 			</div>
 		</div>
 	);

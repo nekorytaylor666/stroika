@@ -257,8 +257,9 @@ export default defineSchema({
 		),
 		description: v.optional(v.string()),
 		createdAt: v.string(),
-	}).index("by_resource_action", ["resource", "action"])
-	  .index("by_scope", ["scope"]),
+	})
+		.index("by_resource_action", ["resource", "action"])
+		.index("by_scope", ["scope"]),
 
 	// Role-Permission mapping table
 	rolePermissions: defineTable({
@@ -501,14 +502,17 @@ export default defineSchema({
 
 	// Issue attachments
 	issueAttachments: defineTable({
-		issueId: v.id("issues"),
+		issueId: v.optional(v.id("issues")),
+		projectId: v.optional(v.id("constructionProjects")),
 		fileName: v.string(),
 		fileUrl: v.string(),
 		fileSize: v.number(),
 		mimeType: v.string(),
 		uploadedBy: v.id("users"),
 		uploadedAt: v.number(),
-	}).index("by_issue", ["issueId"]),
+	})
+		.index("by_issue", ["issueId"])
+		.index("by_project", ["projectId"]),
 
 	// Issue comments
 	issueComments: defineTable({
@@ -705,8 +709,7 @@ export default defineSchema({
 		isSystem: v.boolean(),
 		createdAt: v.string(),
 		updatedAt: v.string(),
-	})
-		.index("by_name", ["name"]),
+	}).index("by_name", ["name"]),
 
 	// Team project access for bulk team assignments
 	teamProjectAccess: defineTable({
@@ -745,4 +748,54 @@ export default defineSchema({
 		.index("by_user", ["userId"])
 		.index("by_team", ["teamId"])
 		.index("by_document_user", ["documentId", "userId"]),
+
+	// Legal documents for construction projects
+	projectLegalDocuments: defineTable({
+		constructionProjectId: v.id("constructionProjects"),
+		organizationId: v.id("organizations"),
+		documentType: v.union(
+			v.literal("contract"),
+			v.literal("invoice"),
+			v.literal("receipt"),
+			v.literal("permit"),
+			v.literal("certificate"),
+			v.literal("report"),
+			v.literal("protocol"),
+			v.literal("other"),
+		),
+		fileName: v.string(),
+		fileUrl: v.string(),
+		fileSize: v.number(),
+		mimeType: v.string(),
+		description: v.optional(v.string()),
+		uploadedBy: v.id("users"),
+		uploadedAt: v.number(),
+		status: v.union(
+			v.literal("draft"),
+			v.literal("pending_review"),
+			v.literal("approved"),
+			v.literal("rejected"),
+			v.literal("expired"),
+		),
+		expirationDate: v.optional(v.number()),
+		isConfidential: v.optional(v.boolean()),
+		tags: v.optional(v.array(v.string())),
+		relatedPartyName: v.optional(v.string()),
+		relatedPartyContact: v.optional(v.string()),
+		contractAmount: v.optional(v.number()),
+		paymentStatus: v.optional(
+			v.union(v.literal("pending"), v.literal("partial"), v.literal("paid")),
+		),
+		notes: v.optional(v.string()),
+		reviewedBy: v.optional(v.id("users")),
+		reviewedAt: v.optional(v.number()),
+		approvedBy: v.optional(v.id("users")),
+		approvedAt: v.optional(v.number()),
+	})
+		.index("by_project", ["constructionProjectId"])
+		.index("by_organization", ["organizationId"])
+		.index("by_type", ["documentType"])
+		.index("by_status", ["status"])
+		.index("by_uploader", ["uploadedBy"])
+		.index("by_project_type", ["constructionProjectId", "documentType"]),
 });

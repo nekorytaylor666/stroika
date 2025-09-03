@@ -20,6 +20,7 @@ import {
 	BarChart3,
 	Calendar,
 	ChevronDown,
+	FileText,
 	Folder,
 	LayoutGrid,
 	Paperclip,
@@ -76,6 +77,11 @@ export function ProjectNavigation() {
 			label: "Вложения",
 			href: `/construction/${orgId}/projects/${projectId}/attachments`,
 			icon: Paperclip,
+		},
+		{
+			label: "Документы",
+			href: `/construction/${orgId}/projects/${projectId}/legal-documents`,
+			icon: FileText,
 		},
 		{
 			label: "Настройки",
