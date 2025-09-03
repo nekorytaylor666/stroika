@@ -24,6 +24,7 @@ export const createBudget = mutation({
 
 		// Create budget
 		const budgetId = await ctx.db.insert("projectBudgets", {
+			organizationId: organization._id,
 			projectId: args.projectId,
 			name: args.name,
 			totalBudget: args.totalBudget,
@@ -233,6 +234,7 @@ export const createBudgetRevision = mutation({
 
 		// Create new budget
 		const newBudgetId = await ctx.db.insert("projectBudgets", {
+			organizationId: organization._id,
 			projectId: args.projectId,
 			name: args.name,
 			totalBudget: args.totalBudget,
@@ -285,6 +287,152 @@ export const createBudgetRevision = mutation({
 		});
 
 		return { newBudgetId };
+	},
+});
+
+// Get project budget (current active budget)
+export const getProjectBudget = query({
+	args: {
+		projectId: v.id("constructionProjects"),
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Get approved budget for the project
+		const budgets = await ctx.db
+			.query("projectBudgets")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.filter((q) => q.eq(q.field("status"), "approved"))
+			.collect();
+
+		if (budgets.length === 0) {
+			return null;
+		}
+
+		// Get the most recent approved budget
+		const currentBudget = budgets.sort(
+			(a, b) =>
+				new Date(b.effectiveDate).getTime() -
+				new Date(a.effectiveDate).getTime(),
+		)[0];
+
+		// Get budget lines
+		const budgetLines = await ctx.db
+			.query("budgetLines")
+			.withIndex("by_budget", (q) => q.eq("budgetId", currentBudget._id))
+			.collect();
+
+		// Get approver info
+		const approver = currentBudget.approvedBy
+			? await ctx.db.get(currentBudget.approvedBy)
+			: null;
+
+		return {
+			...currentBudget,
+			lines: budgetLines,
+			approver,
+		};
+	},
+});
+
+// Get budget variance
+export const getBudgetVariance = query({
+	args: {
+		budgetId: v.id("projectBudgets"),
+		period: v.optional(v.string()), // YYYY-MM format
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const budget = await ctx.db.get(args.budgetId);
+		if (!budget) throw new Error("Бюджет не найден");
+
+		const period = args.period || new Date().toISOString().slice(0, 7);
+
+		// Get budget lines
+		const budgetLines = await ctx.db
+			.query("budgetLines")
+			.withIndex("by_budget", (q) => q.eq("budgetId", args.budgetId))
+			.collect();
+
+		// Get actual expenses from journal entries
+		const journalEntries = await ctx.db
+			.query("journalEntries")
+			.withIndex("by_project", (q) => q.eq("projectId", budget.projectId))
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("status"), "posted"),
+					q.lte(q.field("date"), period + "-31"),
+				),
+			)
+			.collect();
+
+		// Get expense accounts
+		const expenseAccounts = await ctx.db
+			.query("accounts")
+			.withIndex("by_type", (q) =>
+				q.eq("organizationId", organization._id).eq("type", "expense"),
+			)
+			.collect();
+
+		// Calculate actual expenses by category
+		const actualByCategory: Record<string, number> = {};
+
+		for (const entry of journalEntries) {
+			const lines = await ctx.db
+				.query("journalLines")
+				.withIndex("by_entry", (q) => q.eq("journalEntryId", entry._id))
+				.collect();
+
+			for (const line of lines) {
+				const account = expenseAccounts.find((a) => a._id === line.accountId);
+				if (account) {
+					const category = account.category || "Прочие";
+					actualByCategory[category] =
+						(actualByCategory[category] || 0) + line.debit - line.credit;
+				}
+			}
+		}
+
+		// Compare budget vs actual
+		const comparison = budgetLines.map((budgetLine) => {
+			const actual = actualByCategory[budgetLine.category] || 0;
+			const variance = budgetLine.plannedAmount - actual;
+			const variancePercent =
+				budgetLine.plannedAmount > 0 ? (variance / budgetLine.plannedAmount) * 100 : 0;
+
+			return {
+				...budgetLine,
+				actual,
+				variance,
+				variancePercent,
+				status:
+					variancePercent < -10
+						? "overbudget"
+						: variancePercent < 0
+							? "warning"
+							: "ontrack",
+			};
+		});
+
+		const totalBudget = budgetLines.reduce((sum, l) => sum + l.plannedAmount, 0);
+		const totalActual = Object.values(actualByCategory).reduce(
+			(sum, v) => sum + v,
+			0,
+		);
+		const totalVariance = totalBudget - totalActual;
+
+		return {
+			budgetId: args.budgetId,
+			period,
+			lines: comparison,
+			summary: {
+				totalBudget,
+				totalActual,
+				totalVariance,
+				variancePercent:
+					totalBudget > 0 ? (totalVariance / totalBudget) * 100 : 0,
+			},
+		};
 	},
 });
 
