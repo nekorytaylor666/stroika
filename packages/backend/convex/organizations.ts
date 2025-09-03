@@ -212,7 +212,7 @@ export const getUserOrganizations = query({
 				const org = await ctx.db.get(membership.organizationId);
 				const role = await ctx.db.get(membership.roleId);
 				return {
-					...org!,
+					...org,
 					membership: {
 						roleId: membership.roleId,
 						roleName: role?.name,

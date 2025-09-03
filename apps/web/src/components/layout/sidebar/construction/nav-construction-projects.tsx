@@ -28,6 +28,7 @@ import {
 	CheckSquare,
 	ChevronRight,
 	FileText,
+	DollarSign,
 	Paperclip,
 	Plus,
 	Settings,
@@ -70,6 +71,11 @@ export function NavConstructionProjects() {
 			name: "Задачи",
 			icon: CheckSquare,
 			url: `/construction/${params.orgId}/projects/${projectId}/tasks`,
+		},
+		{
+			name: "Финансы",
+			icon: DollarSign,
+			url: `/construction/${params.orgId}/projects/${projectId}/finance`,
 		},
 		{
 			name: "Файлы",

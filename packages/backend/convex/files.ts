@@ -268,46 +268,9 @@ export const uploadToGeneral = mutation({
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Create a placeholder issue for general attachments
-		// This could be improved in the future by having a separate attachments table
-		const generalIssue = await ctx.db
-			.query("issues")
-			.filter((q) => q.eq(q.field("title"), "[General Attachments]"))
-			.first();
-
-		let issueId = generalIssue?._id;
-
-		if (!issueId) {
-			// Get default status and priority
-			const defaultStatus = await ctx.db.query("status").first();
-			const defaultPriority = await ctx.db.query("priorities").first();
-
-			if (!defaultStatus || !defaultPriority) {
-				throw new Error("No default status or priority found");
-			}
-
-			// Create a general attachments issue if it doesn't exist
-			issueId = await ctx.db.insert("issues", {
-				organizationId: organization._id,
-				title: "[General Attachments]",
-				description: "Container for general file attachments",
-				identifier: "GENERAL-001",
-				projectId: undefined,
-				statusId: defaultStatus._id,
-				priorityId: defaultPriority._id,
-				assigneeId: undefined,
-				labelIds: [],
-				createdAt: new Date().toISOString(),
-				cycleId: "default",
-				rank: "0",
-				dueDate: undefined,
-				isConstructionTask: true,
-				parentTaskId: undefined,
-			});
-		}
-
+		// General attachments without issue or project association
 		await ctx.db.insert("issueAttachments", {
-			issueId,
+			issueId: undefined,
 			projectId: undefined,
 			fileName: args.fileName,
 			fileUrl: args.storageId,
