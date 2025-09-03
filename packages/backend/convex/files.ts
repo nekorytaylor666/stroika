@@ -238,31 +238,7 @@ export const uploadToProject = mutation({
 	},
 });
 
-export const getProjectAttachments = query({
-	args: { projectId: v.id("constructionProjects") },
-	handler: async (ctx, args) => {
-		const attachments = await ctx.db
-			.query("issueAttachments")
-			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-			.collect();
 
-		const attachmentsWithUsers = await Promise.all(
-			attachments.map(async (attachment) => {
-				const [uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.uploadedBy),
-					ctx.storage.getUrl(attachment.fileUrl as any),
-				]);
-				return {
-					...attachment,
-					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-					uploader,
-				};
-			}),
-		);
-
-		return attachmentsWithUsers;
-	},
-});
 
 export const uploadToGeneral = mutation({
 	args: {

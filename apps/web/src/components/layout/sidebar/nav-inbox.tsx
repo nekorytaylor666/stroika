@@ -21,10 +21,10 @@ export function NavInbox() {
 			<SidebarMenuItem>
 				<Link
 					to="/construction/$orgId/inbox"
-					disabled={!organizations?.[0]._id}
+					disabled={!organizations?.[0]?._id}
 					params={{
 						// @ts-expect-error - Reason: disabled link if no id
-						orgId: organizations?.[0]._id,
+						orgId: organizations?.[0]?._id,
 					}}
 					className="w-full"
 				>

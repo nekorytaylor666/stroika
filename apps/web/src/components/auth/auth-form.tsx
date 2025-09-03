@@ -48,17 +48,13 @@ export function AuthForm() {
 				const organizations = await convex.query(
 					api.organizations.getUserOrganizations,
 				);
+				console.log("organizations", organizations);
 
-				if (organizations && organizations.length > 0) {
-					// Navigate to the first organization
-					navigate({
-						to: "/construction/$orgId/inbox",
-						params: { orgId: organizations[0]._id },
-					});
-				} else {
-					// No organizations, redirect to organization setup
-					navigate({ to: "/auth/organization-setup" });
-				}
+				// No organizations, redirect to organization setup
+				navigate({
+					to: "/construction/$orgId/inbox",
+					params: { orgId: "q975mm4ant52hw0nwc6afz2x3h7perjg" },
+				});
 			}
 		} catch (error) {
 			toast.error(
