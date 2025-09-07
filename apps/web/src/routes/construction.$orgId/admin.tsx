@@ -1,5 +1,8 @@
 import { SeedButton } from "@/components/admin/seed-button";
 import { OrganizationalHierarchy } from "@/components/permissions/organizational-hierarchy";
+import { PermissionsManagement } from "@/components/settings/permissions-management";
+import { LinearPermissionsManagement } from "@/components/settings/linear-style/permissions-management";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -9,13 +12,19 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, Database, Shield } from "lucide-react";
+import { Building2, Database, Shield, Settings } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/construction/$orgId/admin")({
 	component: AdminSettings,
 });
 
 function AdminSettings() {
+	const { orgId } = Route.useParams();
+	const [permissionsViewStyle, setPermissionsViewStyle] = useState<
+		"classic" | "linear"
+	>("linear");
+
 	return (
 		<div className="container mx-auto space-y-8 py-8">
 			<div>
@@ -32,6 +41,7 @@ function AdminSettings() {
 				<TabsList>
 					<TabsTrigger value="database">База данных</TabsTrigger>
 					<TabsTrigger value="hierarchy">Организационная структура</TabsTrigger>
+					<TabsTrigger value="permissions">Права доступа</TabsTrigger>
 					<TabsTrigger value="roles">Роли и разрешения</TabsTrigger>
 				</TabsList>
 
@@ -72,6 +82,51 @@ function AdminSettings() {
 						</CardHeader>
 						<CardContent>
 							<OrganizationalHierarchy />
+						</CardContent>
+					</Card>
+				</TabsContent>
+
+				<TabsContent value="permissions" className="space-y-4">
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<Settings className="h-5 w-5" />
+									Управление правами доступа
+								</div>
+								<div className="flex items-center gap-2">
+									<Button
+										variant={
+											permissionsViewStyle === "classic" ? "default" : "outline"
+										}
+										size="sm"
+										onClick={() => setPermissionsViewStyle("classic")}
+									>
+										Классический
+									</Button>
+									<Button
+										variant={
+											permissionsViewStyle === "linear" ? "default" : "outline"
+										}
+										size="sm"
+										onClick={() => setPermissionsViewStyle("linear")}
+									>
+										Linear стиль
+									</Button>
+								</div>
+							</CardTitle>
+							<CardDescription>
+								Настройка ролей, разрешений и индивидуальных прав пользователей
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="p-0">
+							{permissionsViewStyle === "linear" ? (
+								<LinearPermissionsManagement organizationId={orgId} />
+							) : (
+								<div className="p-6">
+									<PermissionsManagement organizationId={orgId} />
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</TabsContent>

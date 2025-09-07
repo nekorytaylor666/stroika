@@ -9,6 +9,7 @@ import {
 	MoreHorizontal,
 	Settings,
 	Shield,
+	ShieldCheck,
 	Truck,
 } from "lucide-react";
 
@@ -67,6 +68,12 @@ const constructionSettingsItems = [
 		url: "/construction/$orgId/settings",
 		icon: Settings,
 		description: "Конфигурация системы",
+	},
+	{
+		name: "Права доступа",
+		url: "/construction/$orgId/permissions",
+		icon: ShieldCheck,
+		description: "Управление ролями и разрешениями",
 	},
 	{
 		name: "Отчеты",
