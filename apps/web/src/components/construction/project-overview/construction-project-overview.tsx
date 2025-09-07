@@ -4,11 +4,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,31 +18,29 @@ import {
 	Building2,
 	Calendar,
 	CheckCircle2,
-	ChevronDown,
 	Circle,
 	CircleDot,
 	Clock,
 	DollarSign,
 	FileText,
-	Loader2,
 	MapPin,
 	MoreHorizontal,
 	Plus,
-	Tag,
 	Target,
 	TrendingUp,
 	User,
-	Users,
 	Wallet,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { Suspense, lazy, useState } from "react";
 
 // Lazy load finance component
-const ProjectFinanceTab = lazy(() => import("../project-finance/finance-overview").then(m => ({ default: m.ProjectFinanceTab })));
+const ProjectFinanceTab = lazy(() =>
+	import("../project-finance/finance-overview").then((m) => ({
+		default: m.ProjectFinanceTab,
+	})),
+);
 import {
-	Area,
-	AreaChart,
 	Bar,
 	BarChart,
 	CartesianGrid,
@@ -59,7 +52,11 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import { LegalDocumentsSection } from "../legal-documents/legal-documents-section";
+
+// Dummy LegalDocumentsSection for placeholder
+function LegalDocumentsSection() {
+	return null;
+}
 
 interface ConstructionProjectOverviewProps {
 	projectId: Id<"constructionProjects">;
@@ -110,10 +107,14 @@ export function ConstructionProjectOverview({
 	projectId,
 }: ConstructionProjectOverviewProps) {
 	const isMobile = useMobile();
-	const [expandedSections, setExpandedSections] = useState({
+	const [expandedSections, setExpandedSections] = useState<{
+		charts?: boolean;
+		tasks?: boolean;
+		legalDocuments?: boolean;
+	}>({
 		charts: true,
 		tasks: true,
-		legalDocuments: false,
+		legalDocuments: true,
 	});
 	const project = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
@@ -129,10 +130,11 @@ export function ConstructionProjectOverview({
 		? differenceInDays(parseISO(project.targetDate), new Date())
 		: null;
 
-	const StatusIcon = project.status?.name
-		? statusStyles[project.status.name as keyof typeof statusStyles]?.icon ||
-		Circle
-		: Circle;
+	const StatusIcon =
+		project.status?.name &&
+		statusStyles[project.status.name as keyof typeof statusStyles]?.icon
+			? statusStyles[project.status.name as keyof typeof statusStyles].icon
+			: Circle;
 
 	// Data for pie chart
 	const pieData = [
@@ -236,7 +238,7 @@ export function ConstructionProjectOverview({
 									className={cn(
 										"border-0 text-xs",
 										priorityStyles[
-										project.priority.name as keyof typeof priorityStyles
+											project.priority.name as keyof typeof priorityStyles
 										] || "bg-gray-100",
 									)}
 								>
@@ -363,8 +365,8 @@ export function ConstructionProjectOverview({
 									-{" "}
 									{project.targetDate
 										? format(parseISO(project.targetDate), "d MMM", {
-											locale: ru,
-										})
+												locale: ru,
+											})
 										: "Не определено"}
 								</span>
 							</div>
@@ -588,19 +590,6 @@ export function ConstructionProjectOverview({
 						</div>
 					)}
 
-					{/* Legal Documents - Mobile */}
-					<LegalDocumentsSection
-						projectId={projectId}
-						compact={true}
-						expanded={expandedSections.legalDocuments}
-						onToggle={(expanded) =>
-							setExpandedSections({
-								...expandedSections,
-								legalDocuments: expanded,
-							})
-						}
-					/>
-
 					{/* Notes - Mobile */}
 					{project.notes && (
 						<Card className="p-4">
@@ -704,7 +693,7 @@ export function ConstructionProjectOverview({
 												className={cn(
 													"border-0",
 													priorityStyles[
-													project.priority.name as keyof typeof priorityStyles
+														project.priority.name as keyof typeof priorityStyles
 													] || "bg-gray-100",
 												)}
 											>
@@ -724,12 +713,14 @@ export function ConstructionProjectOverview({
 										<div className="flex items-center gap-2">
 											<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
 											<span className="text-muted-foreground">
-												{format(parseISO(project.startDate), "d MMM", { locale: ru })}{" "}
+												{format(parseISO(project.startDate), "d MMM", {
+													locale: ru,
+												})}{" "}
 												→{" "}
 												{project.targetDate
 													? format(parseISO(project.targetDate), "d MMM yyyy", {
-														locale: ru,
-													})
+															locale: ru,
+														})
 													: "Не определено"}
 											</span>
 										</div>
@@ -757,7 +748,9 @@ export function ConstructionProjectOverview({
 									transition={{ delay: 0.1 }}
 								>
 									<div>
-										<h2 className="mb-4 font-medium text-base">Прогресс проекта</h2>
+										<h2 className="mb-4 font-medium text-base">
+											Прогресс проекта
+										</h2>
 
 										<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 											{/* Stats Cards */}
@@ -796,9 +789,10 @@ export function ConstructionProjectOverview({
 																	•{" "}
 																	{taskStats.total > 0
 																		? Math.round(
-																			(taskStats.inProgress / taskStats.total) *
-																			100,
-																		)
+																				(taskStats.inProgress /
+																					taskStats.total) *
+																					100,
+																			)
 																		: 0}
 																	%
 																</span>
@@ -825,8 +819,10 @@ export function ConstructionProjectOverview({
 																	•{" "}
 																	{taskStats.total > 0
 																		? Math.round(
-																			(taskStats.completed / taskStats.total) * 100,
-																		)
+																				(taskStats.completed /
+																					taskStats.total) *
+																					100,
+																			)
 																		: 0}
 																	%
 																</span>
@@ -841,7 +837,9 @@ export function ConstructionProjectOverview({
 												{/* Overall Progress */}
 												<Card className="p-4">
 													<div className="mb-2 flex items-center justify-between">
-														<h3 className="font-medium text-sm">Общий прогресс</h3>
+														<h3 className="font-medium text-sm">
+															Общий прогресс
+														</h3>
 														<span className="font-medium text-sm">
 															{Math.round(progressPercentage)}%
 														</span>
@@ -874,11 +872,16 @@ export function ConstructionProjectOverview({
 																	dataKey="value"
 																>
 																	{pieData.map((entry, index) => (
-																		<Cell key={`cell-${index}`} fill={entry.color} />
+																		<Cell
+																			key={`cell-${index}`}
+																			fill={entry.color}
+																		/>
 																	))}
 																</Pie>
 																<Tooltip
-																	formatter={(value: number) => `${value} задач`}
+																	formatter={(value: number) =>
+																		`${value} задач`
+																	}
 																	contentStyle={{
 																		backgroundColor: "var(--background)",
 																		border: "1px solid var(--border)",
@@ -938,10 +941,14 @@ export function ConstructionProjectOverview({
 																	fontSize={12}
 																	tickLine={false}
 																	axisLine={false}
-																	tickFormatter={(value) => `${value / 1000000}M`}
+																	tickFormatter={(value) =>
+																		`${value / 1000000}M`
+																	}
 																/>
 																<Tooltip
-																	formatter={(value: number) => formatCurrency(value)}
+																	formatter={(value: number) =>
+																		formatCurrency(value)
+																	}
 																	contentStyle={{
 																		backgroundColor: "var(--background)",
 																		border: "1px solid var(--border)",
@@ -971,7 +978,9 @@ export function ConstructionProjectOverview({
 									{project.tasks.length > 0 && (
 										<div>
 											<div className="mb-4 flex items-center justify-between">
-												<h2 className="font-medium text-base">Последние задачи</h2>
+												<h2 className="font-medium text-base">
+													Последние задачи
+												</h2>
 												<Button variant="ghost" size="sm" className="h-8">
 													<Plus className="mr-1 h-3.5 w-3.5" />
 													Добавить задачу
@@ -1000,7 +1009,9 @@ export function ConstructionProjectOverview({
 																)}
 															</div>
 															<div>
-																<p className="font-medium text-sm">{task.title}</p>
+																<p className="font-medium text-sm">
+																	{task.title}
+																</p>
 																<p className="text-muted-foreground text-xs">
 																	{task.identifier} •{" "}
 																	{task.assignee?.name || "Не назначено"}
@@ -1025,7 +1036,7 @@ export function ConstructionProjectOverview({
 										projectId={projectId}
 										compact={true}
 										expanded={expandedSections.legalDocuments}
-										onToggle={(expanded) =>
+										onToggle={(expanded: boolean) =>
 											setExpandedSections({
 												...expandedSections,
 												legalDocuments: expanded,
@@ -1056,7 +1067,9 @@ export function ConstructionProjectOverview({
 
 									{/* Location */}
 									<div className="space-y-1.5">
-										<p className="text-muted-foreground text-xs">Местоположение</p>
+										<p className="text-muted-foreground text-xs">
+											Местоположение
+										</p>
 										<div className="flex items-center gap-2">
 											<MapPin className="h-4 w-4 text-muted-foreground" />
 											<span className="text-sm">{project.location}</span>
@@ -1119,7 +1132,7 @@ export function ConstructionProjectOverview({
 												className={cn(
 													"border-0",
 													priorityStyles[
-													project.priority.name as keyof typeof priorityStyles
+														project.priority.name as keyof typeof priorityStyles
 													] || "bg-gray-100",
 												)}
 											>
@@ -1131,11 +1144,15 @@ export function ConstructionProjectOverview({
 									{/* Lead */}
 									{project.lead && (
 										<div className="space-y-1.5">
-											<p className="text-muted-foreground text-xs">Руководитель</p>
+											<p className="text-muted-foreground text-xs">
+												Руководитель
+											</p>
 											<div className="flex items-center gap-2">
 												<Avatar className="h-6 w-6">
 													<AvatarImage src={project.lead.avatarUrl} />
-													<AvatarFallback>{project.lead.name[0]}</AvatarFallback>
+													<AvatarFallback>
+														{project.lead.name[0]}
+													</AvatarFallback>
 												</Avatar>
 												<span className="text-sm">{project.lead.name}</span>
 											</div>
@@ -1178,8 +1195,8 @@ export function ConstructionProjectOverview({
 											<span>
 												{project.targetDate
 													? format(parseISO(project.targetDate), "d MMM yyyy", {
-														locale: ru,
-													})
+															locale: ru,
+														})
 													: "Не определено"}
 											</span>
 										</div>
@@ -1187,7 +1204,9 @@ export function ConstructionProjectOverview({
 
 									{/* Health Status */}
 									<div className="space-y-1.5">
-										<p className="text-muted-foreground text-xs">Состояние проекта</p>
+										<p className="text-muted-foreground text-xs">
+											Состояние проекта
+										</p>
 										<div className="flex items-center gap-2">
 											<div
 												className="h-3 w-3 rounded-full"
@@ -1204,6 +1223,7 @@ export function ConstructionProjectOverview({
 								</div>
 							</div>
 						</div>
+					</div>
 				</TabsContent>
 
 				<TabsContent value="finance" className="mt-0 h-full">
@@ -1217,7 +1237,9 @@ export function ConstructionProjectOverview({
 						<div className="text-center">
 							<FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
 							<h3 className="font-medium text-lg">Документы проекта</h3>
-							<p className="mt-2 text-muted-foreground text-sm">Раздел документов в разработке</p>
+							<p className="mt-2 text-muted-foreground text-sm">
+								Раздел документов в разработке
+							</p>
 						</div>
 					</div>
 				</TabsContent>

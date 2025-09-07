@@ -72,13 +72,13 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 	const accounts = useQuery(api.finance.accounts.getAccounts);
 
 	// Fetch financial data
-	const paymentStats = useQuery(api.finance.payments.getPaymentStatistics, {
+	const financialOverview = useQuery(api.finance.reports.getProjectFinancialOverview, {
 		projectId,
 	});
 
-	const financialSummary = useQuery(api.finance.reports.getFinancialSummary, {
-		projectId,
-	});
+	// Keep these for backward compatibility with existing UI
+	const paymentStats = financialOverview?.payments;
+	const financialSummary = financialOverview;
 
 	// Initialize accounts on mount if needed
 	useEffect(() => {
@@ -284,7 +284,7 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 							</Card>
 
 							{/* Budget vs Actual */}
-							{financialSummary.budget && (
+							{financialSummary.budget ? (
 								<Card className="p-6">
 									<h3 className="mb-4 font-medium">Бюджет проекта</h3>
 									<div className="space-y-4">
@@ -352,6 +352,49 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 										</div>
 									</div>
 								</Card>
+							) : (
+								<Card className="p-6">
+									<h3 className="mb-4 font-medium">Финансовая сводка</h3>
+									<div className="space-y-4">
+										<div className="mb-2 flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">
+												Поступления
+											</span>
+											<span className="font-medium text-green-600">
+												{formatCurrency(paymentStats?.totalIncoming || 0)}
+											</span>
+										</div>
+										<div className="mb-2 flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">
+												Платежи
+											</span>
+											<span className="font-medium text-red-600">
+												{formatCurrency(paymentStats?.totalOutgoing || 0)}
+											</span>
+										</div>
+										<div className="mb-2 flex items-center justify-between">
+											<span className="text-muted-foreground text-sm">
+												Расходы (оплачено)
+											</span>
+											<span className="font-medium text-orange-600">
+												{formatCurrency(financialSummary.expenses?.totalPaid || 0)}
+											</span>
+										</div>
+										<div className="mb-4 flex items-center justify-between border-t pt-2">
+											<span className="text-muted-foreground text-sm font-medium">
+												Баланс
+											</span>
+											<span className={cn(
+												"font-bold text-lg",
+												financialSummary.balance?.currentBalance >= 0
+													? "text-green-600"
+													: "text-red-600"
+											)}>
+												{formatCurrency(financialSummary.balance?.currentBalance || 0)}
+											</span>
+										</div>
+									</div>
+								</Card>
 							)}
 						</div>
 
@@ -361,42 +404,49 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 							<div className="grid gap-4 md:grid-cols-4">
 								<div>
 									<p className="text-muted-foreground text-sm">
-										Валовая прибыль
+										Текущий баланс
 									</p>
 									<p
 										className={cn(
 											"font-semibold text-xl",
-											financialSummary.profitability.grossProfit >= 0
+											financialSummary.balance?.currentBalance >= 0
 												? "text-green-600"
 												: "text-red-600",
 										)}
 									>
-										{formatCurrency(financialSummary.profitability.grossProfit)}
+										{formatCurrency(financialSummary.balance?.currentBalance || 0)}
 									</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-sm">Маржа прибыли</p>
-									<p className="font-semibold text-xl">
-										{financialSummary.profitability.profitMargin.toFixed(1)}%
+									<p className="text-muted-foreground text-sm">Рентабельность</p>
+									<p className={cn(
+										"font-semibold text-xl",
+										financialSummary.balance?.profitMargin > 0
+											? "text-green-600"
+											: financialSummary.balance?.profitMargin < 0
+											? "text-red-600"
+											: "",
+									)}>
+										{(financialSummary.balance?.profitMargin || 0).toFixed(1)}%
 									</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-sm">ROI</p>
-									<p className="font-semibold text-xl">
-										{financialSummary.profitability.roi.toFixed(1)}%
+									<p className="text-muted-foreground text-sm">Расходы</p>
+									<p className="font-semibold text-xl text-red-600">
+										{formatCurrency(financialSummary.expenses?.totalPaid || 0)}
 									</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-sm">Чистый доход</p>
+									<p className="text-muted-foreground text-sm">Чистый денежный поток</p>
 									<p
 										className={cn(
 											"font-semibold text-xl",
-											financialSummary.balances.netIncome >= 0
+											paymentStats?.netCashFlow >= 0
 												? "text-green-600"
 												: "text-red-600",
 										)}
 									>
-										{formatCurrency(financialSummary.balances.netIncome)}
+										{formatCurrency(paymentStats?.netCashFlow || 0)}
 									</p>
 								</div>
 							</div>

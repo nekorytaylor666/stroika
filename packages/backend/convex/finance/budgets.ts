@@ -398,7 +398,9 @@ export const getBudgetVariance = query({
 			const actual = actualByCategory[budgetLine.category] || 0;
 			const variance = budgetLine.plannedAmount - actual;
 			const variancePercent =
-				budgetLine.plannedAmount > 0 ? (variance / budgetLine.plannedAmount) * 100 : 0;
+				budgetLine.plannedAmount > 0
+					? (variance / budgetLine.plannedAmount) * 100
+					: 0;
 
 			return {
 				...budgetLine,
@@ -414,7 +416,10 @@ export const getBudgetVariance = query({
 			};
 		});
 
-		const totalBudget = budgetLines.reduce((sum, l) => sum + l.plannedAmount, 0);
+		const totalBudget = budgetLines.reduce(
+			(sum, l) => sum + l.plannedAmount,
+			0,
+		);
 		const totalActual = Object.values(actualByCategory).reduce(
 			(sum, v) => sum + v,
 			0,

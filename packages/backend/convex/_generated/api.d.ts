@@ -35,6 +35,7 @@ import type * as emailActions from "../emailActions.js";
 import type * as files from "../files.js";
 import type * as finance_accounts from "../finance/accounts.js";
 import type * as finance_budgets from "../finance/budgets.js";
+import type * as finance_expenses from "../finance/expenses.js";
 import type * as finance_journalEntries from "../finance/journalEntries.js";
 import type * as finance_payments from "../finance/payments.js";
 import type * as finance_reports from "../finance/reports.js";
@@ -102,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   "finance/accounts": typeof finance_accounts;
   "finance/budgets": typeof finance_budgets;
+  "finance/expenses": typeof finance_expenses;
   "finance/journalEntries": typeof finance_journalEntries;
   "finance/payments": typeof finance_payments;
   "finance/reports": typeof finance_reports;

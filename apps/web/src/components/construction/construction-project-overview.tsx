@@ -14,6 +14,7 @@ import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
+	Banknote,
 	Building2,
 	Calendar,
 	CheckCircle2,
@@ -22,15 +23,14 @@ import {
 	CircleDot,
 	Clock,
 	DollarSign,
+	FileText,
 	MapPin,
 	MoreHorizontal,
 	Plus,
 	Target,
-	XIcon,
-	Banknote,
-	FileText,
 	TrendingUp,
 	Wallet,
+	XIcon,
 } from "lucide-react";
 import { motion } from "motion/react";
 import * as React from "react";
@@ -42,6 +42,7 @@ import {
 	EditableTextarea,
 	EditableUserSelect,
 } from "./project-overview/editable";
+import { LegalDocumentsSidebar } from "./legal-documents/legal-documents-sidebar";
 import { ProjectTimelineChart } from "./project-timeline-chart";
 
 interface ConstructionProjectOverviewProps {
@@ -93,18 +94,21 @@ export function ConstructionProjectOverview({
 }: ConstructionProjectOverviewProps) {
 	const isMobile = useMobile();
 	const [showFinanceDetails, setShowFinanceDetails] = React.useState(false);
-	
+
 	const projectData = useQuery(api.constructionProjects.getProjectWithTasks, {
 		id: projectId,
 	});
 	const statuses = useQuery(api.metadata.getAllStatus);
 	const priorities = useQuery(api.metadata.getAllPriorities);
 	const allUsers = useQuery(api.users.getAll);
-	
+
 	// Finance queries
-	const financialSummary = useQuery(api.finance.reports.getProjectFinancialSummary, {
-		projectId,
-	});
+	const financialOverview = useQuery(
+		api.finance.reports.getProjectFinancialOverview,
+		{
+			projectId,
+		},
+	);
 	const recentPayments = useQuery(api.finance.payments.listByProject, {
 		projectId,
 		limit: 5,
@@ -502,28 +506,28 @@ export function ConstructionProjectOverview({
 						{/* Finance Section (Mobile) */}
 						<div className="space-y-4">
 							<h2 className="font-medium text-base">Финансы</h2>
-							
+
 							{/* Finance Summary Cards */}
 							<div className="grid grid-cols-2 gap-3">
 								<Card className="p-3">
 									<div className="space-y-1">
-										<p className="font-semibold text-lg">
-											{formatCurrency(financialSummary?.totalRevenue || 0)}
+										<p className="font-semibold text-lg text-green-600">
+											{formatCurrency(financialOverview?.payments?.totalIncoming || 0)}
 										</p>
-										<p className="text-muted-foreground text-xs">Доход</p>
+										<p className="text-muted-foreground text-xs">Поступления</p>
 									</div>
 								</Card>
-								
+
 								<Card className="p-3">
 									<div className="space-y-1">
-										<p className="font-semibold text-lg">
-											{formatCurrency(financialSummary?.totalExpenses || 0)}
+										<p className="font-semibold text-lg text-red-600">
+											{formatCurrency(financialOverview?.payments?.totalOutgoing || 0)}
 										</p>
-										<p className="text-muted-foreground text-xs">Расходы</p>
+										<p className="text-muted-foreground text-xs">Платежи</p>
 									</div>
 								</Card>
 							</div>
-							
+
 							{/* Pending Payments Badge */}
 							{pendingPayments && pendingPayments.length > 0 && (
 								<Card className="border-yellow-200 bg-yellow-50/50 p-3">
@@ -531,7 +535,7 @@ export function ConstructionProjectOverview({
 										<div className="space-y-1">
 											<p className="font-medium text-sm">
 												{formatCurrency(
-													pendingPayments.reduce((sum, p) => sum + p.amount, 0)
+													pendingPayments.reduce((sum, p) => sum + p.amount, 0),
 												)}
 											</p>
 											<p className="text-muted-foreground text-xs">
@@ -886,7 +890,6 @@ export function ConstructionProjectOverview({
 										projectData={{ ...projectData, _id: projectId }}
 									/>
 								</div>
-
 							</div>
 						</div>
 
@@ -909,39 +912,57 @@ export function ConstructionProjectOverview({
 								<Card className="p-4">
 									<div className="mb-2 flex items-center justify-between">
 										<Wallet className="h-4 w-4 text-muted-foreground" />
-										<span className="text-green-600 text-xs font-medium">+12%</span>
+										<span className="font-medium text-green-600 text-xs">
+											+12%
+										</span>
 									</div>
 									<div className="space-y-1">
-										<p className="font-semibold text-2xl">
-											{formatCurrency(financialSummary?.totalRevenue || 0)}
+										<p className="font-semibold text-2xl text-green-600">
+											{formatCurrency(financialOverview?.payments?.totalIncoming || 0)}
 										</p>
-										<p className="text-muted-foreground text-xs">Общий доход</p>
+										<p className="text-muted-foreground text-xs">Поступления</p>
 									</div>
 								</Card>
 
 								<Card className="p-4">
 									<div className="mb-2 flex items-center justify-between">
 										<Banknote className="h-4 w-4 text-muted-foreground" />
-										<span className="text-red-600 text-xs font-medium">-8%</span>
+										<span className="font-medium text-red-600 text-xs">
+											-8%
+										</span>
 									</div>
 									<div className="space-y-1">
-										<p className="font-semibold text-2xl">
-											{formatCurrency(financialSummary?.totalExpenses || 0)}
+										<p className="font-semibold text-2xl text-red-600">
+											{formatCurrency(financialOverview?.payments?.totalOutgoing || 0)}
 										</p>
-										<p className="text-muted-foreground text-xs">Общие расходы</p>
+										<p className="text-muted-foreground text-xs">
+											Платежи
+										</p>
 									</div>
 								</Card>
 
 								<Card className="p-4">
 									<div className="mb-2 flex items-center justify-between">
 										<TrendingUp className="h-4 w-4 text-muted-foreground" />
-										<span className="text-green-600 text-xs font-medium">+24%</span>
+										<span className={`font-medium text-xs ${
+											(financialOverview?.balance?.profitMargin || 0) >= 0 
+												? "text-green-600" 
+												: "text-red-600"
+										}`}>
+											{(financialOverview?.balance?.profitMargin || 0).toFixed(1)}%
+										</span>
 									</div>
 									<div className="space-y-1">
-										<p className="font-semibold text-2xl">
-											{formatCurrency(financialSummary?.netIncome || 0)}
+										<p className={`font-semibold text-2xl ${
+											(financialOverview?.balance?.currentBalance || 0) >= 0 
+												? "text-green-600" 
+												: "text-red-600"
+										}`}>
+											{formatCurrency(financialOverview?.balance?.currentBalance || 0)}
 										</p>
-										<p className="text-muted-foreground text-xs">Чистая прибыль</p>
+										<p className="text-muted-foreground text-xs">
+											Баланс / Рентабельность
+										</p>
 									</div>
 								</Card>
 
@@ -955,10 +976,15 @@ export function ConstructionProjectOverview({
 									<div className="space-y-1">
 										<p className="font-semibold text-2xl">
 											{formatCurrency(
-												pendingPayments?.reduce((sum, p) => sum + p.amount, 0) || 0,
+												pendingPayments?.reduce(
+													(sum, p) => sum + p.amount,
+													0,
+												) || 0,
 											)}
 										</p>
-										<p className="text-muted-foreground text-xs">Ожидает оплаты</p>
+										<p className="text-muted-foreground text-xs">
+											Ожидает оплаты
+										</p>
 									</div>
 								</Card>
 							</div>
@@ -1008,9 +1034,13 @@ export function ConstructionProjectOverview({
 																</p>
 																<p className="text-muted-foreground text-xs">
 																	{payment.paymentNumber} •{" "}
-																	{format(new Date(payment.date), "d MMM yyyy", {
-																		locale: ru,
-																	})}
+																	{format(
+																		new Date(payment.date),
+																		"d MMM yyyy",
+																		{
+																			locale: ru,
+																		},
+																	)}
 																</p>
 															</div>
 														</div>
@@ -1039,7 +1069,8 @@ export function ConstructionProjectOverview({
 																)}
 															>
 																{payment.status === "pending" && "Ожидает"}
-																{payment.status === "confirmed" && "Подтвержден"}
+																{payment.status === "confirmed" &&
+																	"Подтвержден"}
 																{payment.status === "posted" && "Проведен"}
 															</Badge>
 														</div>
@@ -1058,24 +1089,34 @@ export function ConstructionProjectOverview({
 									{/* Budget vs Actual */}
 									{budget && (
 										<div>
-											<h3 className="mb-3 font-medium text-sm">Бюджет проекта</h3>
+											<h3 className="mb-3 font-medium text-sm">
+												Бюджет проекта
+											</h3>
 											<Card className="p-4">
 												<div className="space-y-4">
 													<div className="grid grid-cols-3 gap-4">
 														<div>
-															<p className="text-muted-foreground text-xs">План</p>
+															<p className="text-muted-foreground text-xs">
+																План
+															</p>
 															<p className="font-semibold text-lg">
 																{formatCurrency(budget.totalBudget)}
 															</p>
 														</div>
 														<div>
-															<p className="text-muted-foreground text-xs">Факт</p>
+															<p className="text-muted-foreground text-xs">
+																Факт
+															</p>
 															<p className="font-semibold text-lg">
-																{formatCurrency(budgetVariance?.actualTotal || 0)}
+																{formatCurrency(
+																	budgetVariance?.actualTotal || 0,
+																)}
 															</p>
 														</div>
 														<div>
-															<p className="text-muted-foreground text-xs">Отклонение</p>
+															<p className="text-muted-foreground text-xs">
+																Отклонение
+															</p>
 															<p
 																className={cn(
 																	"font-semibold text-lg",
@@ -1084,7 +1125,9 @@ export function ConstructionProjectOverview({
 																		: "text-red-600",
 																)}
 															>
-																{formatCurrency(budgetVariance?.varianceTotal || 0)}
+																{formatCurrency(
+																	budgetVariance?.varianceTotal || 0,
+																)}
 															</p>
 														</div>
 													</div>
@@ -1093,14 +1136,12 @@ export function ConstructionProjectOverview({
 														<div
 															className="h-full bg-primary transition-all"
 															style={{
-																width: `${
-																	Math.min(
+																width: `${Math.min(
+																	100,
+																	((budgetVariance?.actualTotal || 0) /
+																		budget.totalBudget) *
 																		100,
-																		((budgetVariance?.actualTotal || 0) /
-																			budget.totalBudget) *
-																			100,
-																	)
-																}%`,
+																)}%`,
 															}}
 														/>
 													</div>
@@ -1414,6 +1455,10 @@ export function ConstructionProjectOverview({
 						</div>
 					</div>
 				</div>
+
+				{/* Legal Documents Section */}
+				<Separator className="my-4" />
+				<LegalDocumentsSidebar projectId={projectId} />
 			</div>
 		</div>
 	);
