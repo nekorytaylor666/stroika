@@ -1,69 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
+import type { Id } from "./_generated/dataModel";
 
-// Get current authenticated user
-export const getCurrentUser = query({
-	handler: async (ctx) => {
-		const userId = await auth.getUserId(ctx);
-		if (!userId) {
-			return null;
-		}
-
-		const user = await ctx.db.get(userId);
-		return user;
-	},
-});
-
-// Get current authenticated user (alias for backward compatibility)
-export const viewer = query({
-	handler: async (ctx) => {
-		// Try to get userId from auth
-		const userId = await auth.getUserId(ctx);
-
-		if (userId) {
-			// Try to get user by auth user ID
-			const userByAuthId = await ctx.db.get(userId);
-			if (userByAuthId) {
-				return userByAuthId;
-			}
-		}
-
-		// Fall back to getUserIdentity
-		const identity = await ctx.auth.getUserIdentity();
-
-		if (!identity) {
-			return null;
-		}
-
-		// Try multiple fields for email - ensure it's a string
-		const email =
-			(typeof identity.email === "string" ? identity.email : null) ||
-			(typeof identity.preferredUsername === "string"
-				? identity.preferredUsername
-				: null) ||
-			(typeof identity.emailVerified === "string"
-				? identity.emailVerified
-				: null) ||
-			(typeof identity.subject === "string" ? identity.subject : null) ||
-			(typeof identity.email_verified === "string"
-				? identity.email_verified
-				: null) ||
-			(typeof identity.sub === "string" ? identity.sub : null);
-
-		if (!email) {
-			return null;
-		}
-
-		// Try to find user by email
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", email))
-			.first();
-
-		return user;
-	},
-});
+// Get current authenticated user (now uses the one from auth.ts)
+export { getCurrentUser, viewer, me } from "./auth";
 
 // Queries
 export const getAll = query({
@@ -74,14 +14,8 @@ export const getAll = query({
 			throw new Error("Not authenticated");
 		}
 
-		// Get the user using auth.getUserId instead of email lookup
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
+		const userId = identity.subject as Id<"users">;
+		const user = await ctx.db.get(userId);
 
 		if (!user || !user.currentOrganizationId) {
 			// Return empty array if user doesn't exist or has no organization
@@ -111,25 +45,6 @@ export const getAll = query({
 	},
 });
 
-// Get current user (alias for viewer)
-export const me = query({
-	handler: async (ctx) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			return null;
-		}
-
-		const tokenIdentifier = identity.tokenIdentifier;
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-			.first();
-
-		return user;
-	},
-});
-
 // Update current user's profile
 export const updateProfile = mutation({
 	args: {
@@ -137,18 +52,14 @@ export const updateProfile = mutation({
 		phone: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		// Get user ID from identity
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) {
 			throw new Error("Not authenticated");
 		}
 
-		const tokenIdentifier = identity.tokenIdentifier;
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_token", (q) => q.eq("tokenIdentifier", tokenIdentifier))
-			.first();
-
+		const userId = identity.subject as Id<"users">;
+		const user = await ctx.db.get(userId);
 		if (!user) {
 			throw new Error("User not found");
 		}

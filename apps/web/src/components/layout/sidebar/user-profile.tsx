@@ -9,13 +9,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { authClient } from "@/lib/auth-client";
 import { Link } from "@tanstack/react-router";
 import { LogOut, Settings, User } from "lucide-react";
 
 export function UserProfile() {
 	const user = useCurrentUser();
-	const { signOut } = useAuthActions();
 
 	if (!user) return null;
 
@@ -59,7 +58,7 @@ export function UserProfile() {
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					className="text-red-600"
-					onSelect={() => void signOut()}
+					onSelect={() => void authClient.signOut()}
 				>
 					<LogOut className="mr-2 h-4 w-4" />
 					<span>Выйти</span>

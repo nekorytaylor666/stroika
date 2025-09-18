@@ -1,26 +1,28 @@
 {
-	"name": "@stroika/backend",
-	"version": "1.0.0",
-	"main": "./index.ts",
-	"types": "./index.ts",
-	"exports": {
-		".": "./index.ts"
-	},
-	"scripts": {
-		"dev": "convex dev --typecheck=disable",
-		"setup": "convex dev --configure --until-success"
-	},
-	"author": "",
-	"license": "ISC",
-	"description": "",
-	"devDependencies": {
-		"@types/web-push": "^3.6.4",
-		"typescript": "^5.8.3"
-	},
-	"dependencies": {
-		"@convex-dev/auth": "^0.0.87",
-		"convex": "^1.23.0",
-		"jose": "^6.0.11",
-		"web-push": "^3.6.7"
-	}
+  "name": "@stroika/backend",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "dev": "convex dev --typecheck=disable",
+    "setup": "convex dev --configure --until-success"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/web-push": "^3.6.4",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@convex-dev/auth": "^0.0.87",
+    "@convex-dev/better-auth": "0.8.4",
+    "better-auth": "1.3.8",
+    "convex": "^1.27.0",
+    "jose": "^6.0.11",
+    "web-push": "^3.6.7"
+  }
 }

@@ -1,44 +1,60 @@
-import { Password } from "@convex-dev/auth/providers/Password";
-import { convexAuth } from "@convex-dev/auth/server";
+import { v } from "convex/values";
+import { query } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 
-export const { auth, signIn, signOut, store } = convexAuth({
-	providers: [
-		Password({
-			profile(params) {
-				return {
-					email: params.email as string,
-					name: params.name as string,
-					avatarUrl: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(params.name as string)}`,
-					status: "offline" as const,
-					joinedDate: new Date().toISOString(),
-					teamIds: [],
-					isActive: true,
-					lastLogin: new Date().toISOString(),
-				};
-			},
-		}),
-	],
-	callbacks: {
-		async afterUserCreatedOrUpdated(ctx, args) {
-			if (args.existingUserId) {
-				// Update existing user in our users table
-				const existingUser = await ctx.db
-					.query("users")
-					// @ts-expect-error
-					.withIndex("by_email", (q) =>
-						// @ts-expect-error
-						q.eq("email", args.profile.email as string),
-					)
-					.first();
+// Re-export the old auth for backward compatibility temporarily
+export { auth } from "./auth.old";
 
-				if (existingUser) {
-					await ctx.db.patch(existingUser._id, {
-						lastLogin: new Date().toISOString(),
-						name: (args.profile.name as string) || existingUser.name,
-					});
-				}
-			}
-			// Don't create user automatically - let organization setup handle it
-		},
-	},
+// Export Better Auth functions
+export { createUser, updateUser, deleteUser, getUserByEmail } from "./betterAuth/index";
+
+// Query functions for getting current user
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+    
+    // The subject is the user ID from Better Auth
+    const userId = identity.subject as Id<"users">;
+    const user = await ctx.db.get(userId);
+    
+    if (!user) {
+      return null;
+    }
+    
+    return user;
+  },
+});
+
+// Alias for backward compatibility
+export const viewer = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+    
+    const userId = identity.subject as Id<"users">;
+    const user = await ctx.db.get(userId);
+    
+    return user;
+  },
+});
+
+// Alias for backward compatibility  
+export const me = query({
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+    
+    const userId = identity.subject as Id<"users">;
+    const user = await ctx.db.get(userId);
+    
+    return user;
+  },
 });

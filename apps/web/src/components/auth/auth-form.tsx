@@ -9,15 +9,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@stroika/backend";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useConvex, useQuery } from "convex/react";
+import { useConvex } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function AuthForm() {
-	const { signIn } = useAuthActions();
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/auth" });
 	const returnTo = (search as any)?.returnTo;
@@ -32,10 +31,21 @@ export function AuthForm() {
 		setIsLoading(true);
 
 		const formData = new FormData(event.currentTarget);
-		formData.append("flow", flow);
 
 		try {
-			await signIn("password", formData);
+			if (flow === "signIn") {
+				await authClient.signIn.email({
+					email: formData.get("email") as string,
+					password: formData.get("password") as string,
+				});
+			} else {
+				await authClient.signUp.email({
+					name: formData.get("name") as string,
+					email: formData.get("email") as string,
+					password: formData.get("password") as string,
+				});
+			}
+			
 			toast.success(
 				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
 			);
