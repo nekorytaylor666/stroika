@@ -37,7 +37,10 @@ export function createRouter() {
 			context: { queryClient },
 			Wrap: ({ children }) => (
 				<ConvexProvider client={convexQueryClient.convexClient}>
-					<ConvexBetterAuthProvider client={convexQueryClient.convexClient} authClient={authClient}>
+					<ConvexBetterAuthProvider
+						client={convexQueryClient.convexClient}
+						authClient={authClient}
+					>
 						{children}
 					</ConvexBetterAuthProvider>
 				</ConvexProvider>
