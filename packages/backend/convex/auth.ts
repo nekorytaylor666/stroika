@@ -43,8 +43,24 @@ export const createAuth = (
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
+    // Try to get auth user first
     const authUser = await authComponent.getAuthUser(ctx);
-    if (!authUser) return null;
+    if (!authUser || !authUser.userId) {
+      // Fall back to old auth system for backward compatibility
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) return null;
+      
+      // Try to find user by email from identity
+      if (identity.email) {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", identity.email as string))
+          .first();
+        return user;
+      }
+      
+      return null;
+    }
     
     // Get the full user data from the users table
     const user = await ctx.db.get(authUser.userId as Id<"users">);
@@ -52,7 +68,9 @@ export const getCurrentUser = query({
     
     return {
       ...user,
-      ...authUser,
+      email: authUser.email || user.email,
+      name: authUser.name || user.name,
+      image: authUser.image || user.avatarUrl,
     };
   },
 });
@@ -60,8 +78,24 @@ export const getCurrentUser = query({
 // Alias for backward compatibility
 export const viewer = query({
   handler: async (ctx) => {
+    // Try to get auth user first
     const authUser = await authComponent.getAuthUser(ctx);
-    if (!authUser) return null;
+    if (!authUser || !authUser.userId) {
+      // Fall back to old auth system for backward compatibility
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) return null;
+      
+      // Try to find user by email from identity
+      if (identity.email) {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", identity.email as string))
+          .first();
+        return user;
+      }
+      
+      return null;
+    }
     
     // Get the full user data from the users table
     const user = await ctx.db.get(authUser.userId as Id<"users">);
@@ -69,7 +103,9 @@ export const viewer = query({
     
     return {
       ...user,
-      ...authUser,
+      email: authUser.email || user.email,
+      name: authUser.name || user.name,
+      image: authUser.image || user.avatarUrl,
     };
   },
 });
@@ -77,8 +113,24 @@ export const viewer = query({
 // Alias for backward compatibility  
 export const me = query({
   handler: async (ctx) => {
+    // Try to get auth user first
     const authUser = await authComponent.getAuthUser(ctx);
-    if (!authUser) return null;
+    if (!authUser || !authUser.userId) {
+      // Fall back to old auth system for backward compatibility
+      const identity = await ctx.auth.getUserIdentity();
+      if (!identity) return null;
+      
+      // Try to find user by email from identity
+      if (identity.email) {
+        const user = await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", identity.email as string))
+          .first();
+        return user;
+      }
+      
+      return null;
+    }
     
     // Get the full user data from the users table
     const user = await ctx.db.get(authUser.userId as Id<"users">);
@@ -86,7 +138,9 @@ export const me = query({
     
     return {
       ...user,
-      ...authUser,
+      email: authUser.email || user.email,
+      name: authUser.name || user.name,
+      image: authUser.image || user.avatarUrl,
     };
   },
 });
