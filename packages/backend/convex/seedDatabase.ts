@@ -1,6 +1,7 @@
 import type { Id } from "./_generated/dataModel";
 import { mutation } from "./_generated/server";
 import type { MutationCtx } from "./_generated/server";
+import { authComponent, createAuth } from "./auth";
 
 // Main seed function that orchestrates all seeding
 export const seedDatabase = mutation({
@@ -511,20 +512,40 @@ async function createOrganization(
 	ctx: MutationCtx,
 	roleIds: Record<string, Id<"roles">>,
 ) {
-	// Create the owner user first
-	const ownerId = await ctx.db.insert("users", {
-		name: "Akmt Owner",
-		email: "akmt.me23@gmail.com",
-		avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=akmt",
-		status: "online",
-		roleId: roleIds.owner,
-		joinedDate: "2020-01-15",
-		teamIds: [],
-		position: "Генеральный директор",
-		currentOrganizationId: undefined as any, // Will be set after org creation
-		isActive: true,
-		lastLogin: new Date().toISOString(),
-	});
+	// Check if the owner user already exists (might be created by Better Auth)
+	let owner = await ctx.db
+		.query("users")
+		.withIndex("by_email", (q) => q.eq("email", "akmt.me23@gmail.com"))
+		.first();
+
+	let ownerId: Id<"users">;
+
+	if (owner) {
+		// Update existing user with proper role and position
+		await ctx.db.patch(owner._id, {
+			roleId: roleIds.owner,
+			position: "Генеральный директор",
+			status: "online",
+			isActive: true,
+			lastLogin: new Date().toISOString(),
+		});
+		ownerId = owner._id;
+	} else {
+		// Create the owner user if doesn't exist
+		ownerId = await ctx.db.insert("users", {
+			name: "Akmt Owner",
+			email: "akmt.me23@gmail.com",
+			avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=akmt",
+			status: "online",
+			roleId: roleIds.owner,
+			joinedDate: "2020-01-15",
+			teamIds: [],
+			position: "Генеральный директор",
+			currentOrganizationId: undefined as any, // Will be set after org creation
+			isActive: true,
+			lastLogin: new Date().toISOString(),
+		});
+	}
 
 	// Create organization
 	const organizationId = await ctx.db.insert("organizations", {
@@ -735,6 +756,15 @@ async function createUsers(
 	organizationId: Id<"organizations">,
 	roleIds: Record<string, Id<"roles">>,
 ) {
+	await createAuth(ctx).api.createUser({
+		body: {
+			email: "akmt.me23@gmail.com",
+			name: "Akmt Owner",
+			role: "admin",
+			password: "123456",
+		},
+		headers: await authComponent.getHeaders(ctx),
+	})
 	const now = new Date().toISOString();
 	const userIds: Id<"users">[] = [];
 
@@ -748,7 +778,7 @@ async function createUsers(
 		userIds.push(owner._id);
 	}
 
-	// Additional users
+	// Additional users (check if they exist first)
 	const users = [
 		{
 			name: "Мария Иванова",
@@ -801,29 +831,61 @@ async function createUsers(
 	];
 
 	for (const userData of users) {
-		const userId = await ctx.db.insert("users", {
-			name: userData.name,
-			email: userData.email,
-			avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-			status: "online",
-			roleId: userData.roleId,
-			joinedDate: "2021-01-15",
-			teamIds: [],
-			position: userData.position,
-			currentOrganizationId: organizationId,
-			isActive: true,
-			lastLogin: now,
-		});
+		// Check if user already exists
+		let existingUser = await ctx.db
+			.query("users")
+			.withIndex("by_email", (q) => q.eq("email", userData.email))
+			.first();
 
-		// Add as organization member
-		await ctx.db.insert("organizationMembers", {
-			organizationId,
-			userId,
-			roleId: userData.roleId,
-			joinedAt: Date.now(),
-			invitedBy: owner?._id,
-			isActive: true,
-		});
+		let userId: Id<"users">;
+
+		if (existingUser) {
+			// Update existing user
+			await ctx.db.patch(existingUser._id, {
+				roleId: userData.roleId,
+				position: userData.position,
+				currentOrganizationId: organizationId,
+				status: "online",
+				isActive: true,
+				lastLogin: now,
+			});
+			userId = existingUser._id;
+		} else {
+			// Create new user
+			userId = await ctx.db.insert("users", {
+				name: userData.name,
+				email: userData.email,
+				avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
+				status: "online",
+				roleId: userData.roleId,
+				joinedDate: "2021-01-15",
+				teamIds: [],
+				position: userData.position,
+				currentOrganizationId: organizationId,
+				isActive: true,
+				lastLogin: now,
+			});
+		}
+
+		// Check if already a member of the organization
+		const existingMembership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_org_user", (q) =>
+				q.eq("organizationId", organizationId).eq("userId", userId)
+			)
+			.first();
+
+		if (!existingMembership) {
+			// Add as organization member
+			await ctx.db.insert("organizationMembers", {
+				organizationId,
+				userId,
+				roleId: userData.roleId,
+				joinedAt: Date.now(),
+				invitedBy: owner?._id,
+				isActive: true,
+			});
+		}
 
 		userIds.push(userId);
 	}

@@ -1,18 +1,19 @@
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { auth } from "../auth";
+import { authComponent, getUserId } from "../auth";
 
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
-	// First try to get user by auth ID
-	const authUserId = await auth.getUserId(ctx);
-	if (authUserId) {
-		const user = await ctx.db.get(authUserId);
-		if (user) {
-			return user;
+	// Try Better Auth first
+	const authUser = await authComponent.getAuthUser(ctx);
+	if (authUser && authUser.userId) {
+		const user = await ctx.db.get(authUser.userId as Id<"users">);
+		if (!user) {
+			throw new Error("User not found");
 		}
+		return user;
 	}
 
-	// Fallback to identity-based lookup
+	// Fallback to identity-based lookup for backward compatibility
 	const identity = await ctx.auth.getUserIdentity();
 	if (!identity) {
 		throw new Error("Not authenticated");
