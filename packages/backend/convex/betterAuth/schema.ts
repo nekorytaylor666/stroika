@@ -32,6 +32,7 @@ export const tables = {
     userId: v.string(),
     impersonatedBy: v.optional(v.union(v.null(), v.string())),
     activeOrganizationId: v.optional(v.union(v.null(), v.string())),
+    activeTeamId: v.optional(v.union(v.null(), v.string())),
   })
     .index("expiresAt", ["expiresAt"])
     .index("expiresAt_userId", ["expiresAt","userId"])
@@ -64,6 +65,20 @@ export const tables = {
   })
     .index("expiresAt", ["expiresAt"])
     .index("identifier", ["identifier"]),
+  team: defineTable({
+    name: v.string(),
+    organizationId: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.union(v.null(), v.number())),
+  })
+    .index("organizationId", ["organizationId"]),
+  teamMember: defineTable({
+    teamId: v.string(),
+    userId: v.string(),
+    createdAt: v.optional(v.union(v.null(), v.number())),
+  })
+    .index("teamId", ["teamId"])
+    .index("userId", ["userId"]),
   organization: defineTable({
     name: v.string(),
     slug: v.optional(v.union(v.null(), v.string())),
@@ -86,6 +101,7 @@ export const tables = {
     organizationId: v.string(),
     email: v.string(),
     role: v.optional(v.union(v.null(), v.string())),
+    teamId: v.optional(v.union(v.null(), v.string())),
     status: v.string(),
     expiresAt: v.number(),
     inviterId: v.string(),
@@ -93,6 +109,7 @@ export const tables = {
     .index("email_organizationId_status", ["email","organizationId","status"])
     .index("organizationId_status", ["organizationId","status"])
     .index("role", ["role"])
+    .index("teamId", ["teamId"])
     .index("status", ["status"])
     .index("inviterId", ["inviterId"]),
   jwks: defineTable({

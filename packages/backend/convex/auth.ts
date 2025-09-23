@@ -73,7 +73,14 @@ export const createAuth = (
       // The cross domain plugin is required for client side frameworks
       crossDomain({ siteUrl }),
       admin(),
-      organization(),
+      organization({
+        teams: {
+          enabled: true,
+          maximumTeams: 10, // Optional: limit teams per organization
+          allowRemovingAllTeams: false, // Optional: prevent removing the last team
+        },
+      }),
+
       // The Convex plugin is required for Convex compatibility
       convex(),
     ],

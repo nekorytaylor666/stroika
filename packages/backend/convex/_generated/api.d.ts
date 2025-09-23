@@ -189,6 +189,7 @@ export declare const components: {
             | {
                 data: {
                   activeOrganizationId?: null | string;
+                  activeTeamId?: null | string;
                   createdAt: number;
                   expiresAt: number;
                   impersonatedBy?: null | string;
@@ -230,6 +231,23 @@ export declare const components: {
             | {
                 data: {
                   createdAt: number;
+                  name: string;
+                  organizationId: string;
+                  updatedAt?: null | number;
+                };
+                model: "team";
+              }
+            | {
+                data: {
+                  createdAt?: null | number;
+                  teamId: string;
+                  userId: string;
+                };
+                model: "teamMember";
+              }
+            | {
+                data: {
+                  createdAt: number;
                   logo?: null | string;
                   metadata?: null | string;
                   name: string;
@@ -254,6 +272,7 @@ export declare const components: {
                   organizationId: string;
                   role?: null | string;
                   status: string;
+                  teamId?: null | string;
                 };
                 model: "invitation";
               }
@@ -326,6 +345,7 @@ export declare const components: {
                     | "userId"
                     | "impersonatedBy"
                     | "activeOrganizationId"
+                    | "activeTeamId"
                     | "id";
                   operator?:
                     | "lt"
@@ -417,6 +437,61 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "team";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "name"
+                    | "organizationId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "teamMember";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field: "teamId" | "userId" | "createdAt" | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "organization";
                 where?: Array<{
                   connector?: "AND" | "OR";
@@ -485,6 +560,7 @@ export declare const components: {
                     | "organizationId"
                     | "email"
                     | "role"
+                    | "teamId"
                     | "status"
                     | "expiresAt"
                     | "inviterId"
@@ -602,6 +678,7 @@ export declare const components: {
                     | "userId"
                     | "impersonatedBy"
                     | "activeOrganizationId"
+                    | "activeTeamId"
                     | "id";
                   operator?:
                     | "lt"
@@ -693,6 +770,61 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "team";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "name"
+                    | "organizationId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "teamMember";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field: "teamId" | "userId" | "createdAt" | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "organization";
                 where?: Array<{
                   connector?: "AND" | "OR";
@@ -761,6 +893,7 @@ export declare const components: {
                     | "organizationId"
                     | "email"
                     | "role"
+                    | "teamId"
                     | "status"
                     | "expiresAt"
                     | "inviterId"
@@ -824,6 +957,8 @@ export declare const components: {
             | "session"
             | "account"
             | "verification"
+            | "team"
+            | "teamMember"
             | "organization"
             | "member"
             | "invitation"
@@ -872,6 +1007,8 @@ export declare const components: {
             | "session"
             | "account"
             | "verification"
+            | "team"
+            | "teamMember"
             | "organization"
             | "member"
             | "invitation"
@@ -961,6 +1098,7 @@ export declare const components: {
                 model: "session";
                 update: {
                   activeOrganizationId?: null | string;
+                  activeTeamId?: null | string;
                   createdAt?: number;
                   expiresAt?: number;
                   impersonatedBy?: null | string;
@@ -982,6 +1120,7 @@ export declare const components: {
                     | "userId"
                     | "impersonatedBy"
                     | "activeOrganizationId"
+                    | "activeTeamId"
                     | "id";
                   operator?:
                     | "lt"
@@ -1094,6 +1233,72 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "team";
+                update: {
+                  createdAt?: number;
+                  name?: string;
+                  organizationId?: string;
+                  updatedAt?: null | number;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "name"
+                    | "organizationId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "teamMember";
+                update: {
+                  createdAt?: null | number;
+                  teamId?: string;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field: "teamId" | "userId" | "createdAt" | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "organization";
                 update: {
                   createdAt?: number;
@@ -1176,6 +1381,7 @@ export declare const components: {
                   organizationId?: string;
                   role?: null | string;
                   status?: string;
+                  teamId?: null | string;
                 };
                 where?: Array<{
                   connector?: "AND" | "OR";
@@ -1183,6 +1389,7 @@ export declare const components: {
                     | "organizationId"
                     | "email"
                     | "role"
+                    | "teamId"
                     | "status"
                     | "expiresAt"
                     | "inviterId"
@@ -1308,6 +1515,7 @@ export declare const components: {
                 model: "session";
                 update: {
                   activeOrganizationId?: null | string;
+                  activeTeamId?: null | string;
                   createdAt?: number;
                   expiresAt?: number;
                   impersonatedBy?: null | string;
@@ -1329,6 +1537,7 @@ export declare const components: {
                     | "userId"
                     | "impersonatedBy"
                     | "activeOrganizationId"
+                    | "activeTeamId"
                     | "id";
                   operator?:
                     | "lt"
@@ -1441,6 +1650,72 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "team";
+                update: {
+                  createdAt?: number;
+                  name?: string;
+                  organizationId?: string;
+                  updatedAt?: null | number;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "name"
+                    | "organizationId"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "teamMember";
+                update: {
+                  createdAt?: null | number;
+                  teamId?: string;
+                  userId?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field: "teamId" | "userId" | "createdAt" | "id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "organization";
                 update: {
                   createdAt?: number;
@@ -1523,6 +1798,7 @@ export declare const components: {
                   organizationId?: string;
                   role?: null | string;
                   status?: string;
+                  teamId?: null | string;
                 };
                 where?: Array<{
                   connector?: "AND" | "OR";
@@ -1530,6 +1806,7 @@ export declare const components: {
                     | "organizationId"
                     | "email"
                     | "role"
+                    | "teamId"
                     | "status"
                     | "expiresAt"
                     | "inviterId"

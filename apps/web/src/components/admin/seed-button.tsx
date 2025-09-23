@@ -18,14 +18,13 @@ import { toast } from "sonner";
 
 export function SeedButton() {
 	const [isSeeding, setIsSeeding] = useState(false);
-	const seedAll = useMutation(api.seed.seedAll);
-	const cleanupUsers = useMutation(api.migrations.cleanupUsers.cleanupUsers);
+	const seedAll = useMutation(api.seedDatabase.seedDatabase);
+	// const cleanupUsers = useMutation(api.migrations.cleanupUsers.cleanupUsers);
 
 	const handleSeed = async () => {
 		setIsSeeding(true);
 		try {
 			// First cleanup users to fix schema
-			const cleanupResult = await cleanupUsers();
 
 			// Then run the seed
 			const result = await seedAll();

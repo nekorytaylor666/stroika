@@ -5,30 +5,11 @@ import { v } from "convex/values";
 export default defineSchema({
 	...authTables,
 
-	// Organizations table
-	organizations: defineTable({
-		name: v.string(),
-		slug: v.string(), // URL-friendly unique identifier
-		description: v.optional(v.string()),
-		logoUrl: v.optional(v.string()),
-		website: v.optional(v.string()),
-		ownerId: v.id("users"), // Organization owner
-		settings: v.optional(
-			v.object({
-				allowInvites: v.boolean(),
-				requireEmailVerification: v.boolean(),
-				defaultRoleId: v.optional(v.id("roles")),
-			}),
-		),
-		createdAt: v.number(),
-		updatedAt: v.number(),
-	})
-		.index("by_slug", ["slug"])
-		.index("by_owner", ["ownerId"]),
+	// NOTE: Organizations are now managed by Better Auth - see betterAuth/schema.ts
 
 	// Organization members
 	organizationMembers: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		userId: v.id("users"),
 		roleId: v.id("roles"),
 		joinedAt: v.number(),
@@ -41,7 +22,7 @@ export default defineSchema({
 
 	// Organization invites
 	organizationInvites: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		email: v.string(),
 		inviteCode: v.string(), // Unique invite code
 		roleId: v.id("roles"), // Role to assign when accepted
@@ -64,7 +45,7 @@ export default defineSchema({
 
 	// Organization teams
 	teams: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		name: v.string(),
 		description: v.optional(v.string()),
 		parentTeamId: v.optional(v.id("teams")), // For nested teams
@@ -105,7 +86,7 @@ export default defineSchema({
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
 		// Organization fields
-		currentOrganizationId: v.optional(v.id("organizations")), // Current active organization
+		currentOrganizationId: v.optional(v.string()), // Current active organization (Better Auth ID)
 		// Auth fields
 		authId: v.optional(v.string()), // External auth provider ID
 		tokenIdentifier: v.optional(v.string()), // Clerk token identifier
@@ -140,7 +121,7 @@ export default defineSchema({
 
 	// Construction Projects table
 	constructionProjects: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(),
 		client: v.string(),
 		statusId: v.id("status"),
@@ -185,7 +166,7 @@ export default defineSchema({
 
 	// Construction Teams table
 	constructionTeams: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(),
 		shortName: v.string(),
 		icon: v.string(),
@@ -204,7 +185,7 @@ export default defineSchema({
 
 	// Issues/Tasks table
 	issues: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		identifier: v.string(),
 		title: v.string(),
 		description: v.string(),
@@ -230,7 +211,7 @@ export default defineSchema({
 
 	// Roles table
 	roles: defineTable({
-		organizationId: v.optional(v.id("organizations")), // null for system roles
+		organizationId: v.optional(v.string()), // null for system roles (Better Auth organization ID)
 		name: v.string(), // e.g., "owner", "director", "admin", "project_manager", "team_lead", "member", "viewer"
 		displayName: v.string(), // e.g., "Owner", "Director", "Administrator", etc.
 		description: v.optional(v.string()),
@@ -298,7 +279,7 @@ export default defineSchema({
 
 	// Departments table - hierarchical structure
 	departments: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(), // e.g., "Engineering", "Design", "Construction"
 		displayName: v.string(), // Display name in Russian
 		description: v.optional(v.string()),
@@ -343,7 +324,7 @@ export default defineSchema({
 
 	// Documents table
 	documents: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		title: v.string(),
 		content: v.string(),
 		projectId: v.optional(v.id("constructionProjects")),
@@ -662,7 +643,7 @@ export default defineSchema({
 
 	// Chart of Accounts (План счетов)
 	accounts: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		code: v.string(), // Account code (e.g., "51" for bank accounts)
 		name: v.string(), // Russian name (e.g., "Расчетные счета")
 		type: v.union(
@@ -686,7 +667,7 @@ export default defineSchema({
 
 	// Journal Entries (Журнал проводок)
 	journalEntries: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		projectId: v.optional(v.id("constructionProjects")),
 		entryNumber: v.string(), // Unique entry number
 		date: v.string(), // Transaction date
@@ -731,7 +712,7 @@ export default defineSchema({
 
 	// Payments (Платежи)
 	payments: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		projectId: v.id("constructionProjects"),
 		paymentNumber: v.string(), // Unique payment number
 		type: v.union(
@@ -794,7 +775,7 @@ export default defineSchema({
 
 	// Project Budgets (Бюджеты проектов)
 	projectBudgets: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		projectId: v.id("constructionProjects"),
 		name: v.string(), // Budget name/version
 		totalBudget: v.number(), // Total budget amount
@@ -832,7 +813,7 @@ export default defineSchema({
 
 	// Expenses (Расходы)
 	expenses: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		projectId: v.id("constructionProjects"),
 		expenseNumber: v.string(), // Unique expense number
 		category: v.union(
@@ -1029,7 +1010,7 @@ export default defineSchema({
 	// Legal documents for construction projects
 	projectLegalDocuments: defineTable({
 		constructionProjectId: v.id("constructionProjects"),
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		documentType: v.union(
 			v.literal("contract"),
 			v.literal("invoice"),
