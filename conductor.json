@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "setup": "# Copy configuration files\n# cp \"$CONDUCTOR_ROOT_PATH/.env\" .\ncp \"$CONDUCTOR_ROOT_PATH/apps/web/.env\" ./apps/web/\ncp \"$CONDUCTOR_ROOT_PATH/packages/backend/.env.local\" ./packages/backend/\n# Install dependencies\npnpm install"
+  }
+}
