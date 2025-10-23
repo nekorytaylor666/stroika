@@ -9,26 +9,31 @@ export const Route = createFileRoute("/")({
 });
 
 function RouteComponent() {
-	const { data, error, isPending } = authClient.useListOrganizations();
 	const session = authClient.useSession();
 	const navigate = useNavigate();
 	useEffect(() => {
+		const navigateToOrganization = async () => {
+			const { data: organizations, error } =
+				await authClient.organization.list();
+			if (error) {
+				console.error("Error getting organizations:", error);
+				return;
+			}
+			if (organizations.length === 0) {
+				navigate({ to: "/auth/organization-setup" });
+				return;
+			}
+			navigate({
+				to: "/construction/$orgId/inbox",
+				params: { orgId: organizations[0].id },
+			});
+		};
 		if (!session) {
 			return;
 		}
-		if (data && !isPending) {
-			console.log("data", data);
-			navigate({
-				to: "/construction/$orgId/inbox",
-				params: { orgId: data[0].id },
-			});
-		}
-	}, [data, isPending, navigate, session]);
-	if (isPending) {
-		return <div>Loading...</div>;
-	}
-	if (error) {
-		return <div>Error: {error.message}</div>;
-	}
+
+		navigateToOrganization();
+	}, [navigate, session]);
+
 	return <div>Hello "/"!</div>;
 }

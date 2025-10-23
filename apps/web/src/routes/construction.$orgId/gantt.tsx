@@ -324,7 +324,7 @@ function ConstructionGanttView() {
 						<PopoverTrigger asChild>
 							<Button
 								variant="outline"
-								size="xs"
+								size="sm"
 								className={cn(
 									"justify-start text-left font-normal",
 									!dateRange.start && "text-muted-foreground",
@@ -353,7 +353,7 @@ function ConstructionGanttView() {
 						<PopoverTrigger asChild>
 							<Button
 								variant="outline"
-								size="xs"
+								size="sm"
 								className={cn(
 									"justify-start text-left font-normal",
 									!dateRange.end && "text-muted-foreground",
@@ -402,7 +402,7 @@ function ConstructionGanttView() {
 							)}
 							<Button
 								variant="ghost"
-								size="xs"
+								size="sm"
 								onClick={() => {
 									useGanttFilterStore.getState().clearFilters();
 									setDateRange({ start: undefined, end: undefined });

@@ -121,7 +121,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 									)}
 								</div>
 								<Button
-									size="xs"
+									size="sm"
 									variant="ghost"
 									onClick={() => handleRemoveSubtask(index)}
 									className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100"
@@ -289,7 +289,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 			) : (
 				<div className="pl-6">
 					<Button
-						size="xs"
+						size="sm"
 						variant="ghost"
 						onClick={() => setIsAdding(true)}
 						className="h-6 px-2"

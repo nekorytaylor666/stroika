@@ -9,14 +9,10 @@ export { getCurrentUser, viewer, me } from "./auth";
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
-		const authUser = await authComponent.getAuthUser(ctx);
-		if (!authUser || !authUser.userId) {
-			console.error("Not authenticated");
-			return [];
-		}
-		const auth = createAuth(ctx);
+		const identity = await ctx.auth.getUserIdentity();
+		console.log("identity", identity);
 
-
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 		// Check if user is authenticated using Better Auth
 
 		try {
@@ -25,7 +21,7 @@ export const getAll = query({
 					limit: 100,
 					offset: 0,
 				},
-				headers: await authComponent.getHeaders(ctx),
+				headers,
 			});
 			return users;
 		} catch (error) {
@@ -57,7 +53,9 @@ export const updateProfile = mutation({
 		// Get user from users table
 		let user = await ctx.db
 			.query("users")
-			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.withIndex("by_betterAuthId", (q) =>
+				q.eq("betterAuthId", authUser.userId),
+			)
 			.first();
 
 		if (!user && authUser.email) {
@@ -90,9 +88,16 @@ export const list = query({
 });
 
 export const getById = query({
-	args: { id: v.id("users") },
+	args: { id: v.string() },
 	handler: async (ctx, args) => {
-		return await ctx.db.get(args.id);
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+		const user = await auth.api.getUser({
+			query: {
+				id: args.id,
+			},
+			headers,
+		});
+		return user;
 	},
 });
 
@@ -123,7 +128,9 @@ export const syncBetterAuthUser = mutation({
 		// Check if user already exists in users table by betterAuthId
 		const existingUser = await ctx.db
 			.query("users")
-			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.withIndex("by_betterAuthId", (q) =>
+				q.eq("betterAuthId", authUser.userId),
+			)
 			.first();
 
 		if (existingUser) {
@@ -156,7 +163,7 @@ export const syncBetterAuthUser = mutation({
 		const newUserId = await ctx.db.insert("users", {
 			betterAuthId: authUser.userId,
 			email: authUser.email!,
-			name: authUser.name || authUser.email!.split('@')[0],
+			name: authUser.name || authUser.email!.split("@")[0],
 			avatarUrl: authUser.image,
 			phone: null,
 			isActive: true,
@@ -184,7 +191,9 @@ export const ensureUserExists = mutation({
 			// Check if user exists in users table by betterAuthId
 			const existingUser = await ctx.db
 				.query("users")
-				.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+				.withIndex("by_betterAuthId", (q) =>
+					q.eq("betterAuthId", authUser.userId),
+				)
 				.first();
 
 			if (!existingUser) {
@@ -206,7 +215,7 @@ export const ensureUserExists = mutation({
 					await ctx.db.insert("users", {
 						betterAuthId: authUser.userId,
 						email: authUser.email!,
-						name: authUser.name || authUser.email!.split('@')[0],
+						name: authUser.name || authUser.email!.split("@")[0],
 						avatarUrl: authUser.image,
 						phone: null,
 						isActive: true,
@@ -234,7 +243,7 @@ export const ensureUserExists = mutation({
 			// Create new user
 			await ctx.db.insert("users", {
 				email: identity.email,
-				name: identity.name || identity.email.split('@')[0],
+				name: identity.name || identity.email.split("@")[0],
 				avatarUrl: identity.pictureUrl,
 				phone: null,
 				isActive: true,
@@ -274,10 +283,13 @@ export const getUsersWithRoles = query({
 		// Get active organization
 		const user = await ctx.db
 			.query("users")
-			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.withIndex("by_betterAuthId", (q) =>
+				q.eq("betterAuthId", authUser.userId),
+			)
 			.first();
 
-		const organizationId = authUser.activeOrganizationId || user?.currentOrganizationId;
+		const organizationId =
+			authUser.activeOrganizationId || user?.currentOrganizationId;
 		if (!organizationId) {
 			return [];
 		}
@@ -286,7 +298,9 @@ export const getUsersWithRoles = query({
 		// TODO: Migrate to Better Auth member table once fully integrated
 		const members = await ctx.db
 			.query("organizationMembers")
-			.withIndex("by_organization", (q) => q.eq("organizationId", organizationId as Id<"organizations">))
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organizationId as Id<"organizations">),
+			)
 			.collect();
 
 		// Get user details with their roles
@@ -348,11 +362,9 @@ export const create = mutation({
 		name: v.string(),
 		email: v.string(),
 		avatarUrl: v.optional(v.string()),
-		status: v.optional(v.union(
-			v.literal("online"),
-			v.literal("offline"),
-			v.literal("away"),
-		)),
+		status: v.optional(
+			v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
+		),
 		joinedDate: v.optional(v.string()),
 		teamIds: v.optional(v.array(v.string())),
 		position: v.optional(v.string()),
@@ -487,12 +499,15 @@ export const updateUserRole = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
-		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+		if (
+			!membership ||
+			(membership.role !== "admin" && membership.role !== "owner")
+		) {
 			throw new Error("Only admins and owners can update member roles");
 		}
 
@@ -502,8 +517,8 @@ export const updateUserRole = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), args.userId)
-				)
+					q.eq(q.field("userId"), args.userId),
+				),
 			)
 			.first();
 

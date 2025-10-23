@@ -14,14 +14,14 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/node": "catalog:",
     "@types/web-push": "^3.6.4",
-    "typescript": "^5.8.3"
+    "typescript": "catalog:"
   },
   "dependencies": {
-    "@convex-dev/auth": "^0.0.87",
-    "@convex-dev/better-auth": "0.9.6",
-    "better-auth": "1.3.27",
-    "convex": "^1.27.0",
+    "convex": "catalog:",
+    "better-auth": "catalog:",
+    "@convex-dev/better-auth": "catalog:",
     "jose": "^6.0.11",
     "web-push": "^3.6.7"
   }

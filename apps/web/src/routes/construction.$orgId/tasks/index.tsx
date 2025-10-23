@@ -28,7 +28,7 @@ function ConstructionTasksPage() {
 					<h1 className="font-semibold text-lg">Все задачи</h1>
 					<div className="flex items-center gap-1">
 						<Button
-							size="xs"
+							size="sm"
 							variant={viewType === "list" ? "default" : "ghost"}
 							onClick={() => setViewType("list")}
 							className="px-2"
@@ -36,7 +36,7 @@ function ConstructionTasksPage() {
 							<List className="h-4 w-4" />
 						</Button>
 						<Button
-							size="xs"
+							size="sm"
 							variant={viewType === "grid" ? "default" : "ghost"}
 							onClick={() => setViewType("grid")}
 							className="px-2"
@@ -69,7 +69,7 @@ function ConstructionTasksPage() {
 							}}
 						/>
 					</div>
-					<Button size="xs" onClick={() => openModal()}>
+					<Button size="sm" onClick={() => openModal()}>
 						<Plus className="mr-1 h-4 w-4" />
 						Новая задача
 					</Button>

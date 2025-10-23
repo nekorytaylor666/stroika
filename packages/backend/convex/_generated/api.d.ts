@@ -53,7 +53,6 @@ import type * as notifications from "../notifications.js";
 import type * as notificationsAction from "../notificationsAction.js";
 import type * as organizationMembers from "../organizationMembers.js";
 import type * as organizations from "../organizations.js";
-import type * as passwordReset from "../passwordReset.js";
 import type * as permissions_checks from "../permissions/checks.js";
 import type * as permissions_constants from "../permissions/constants.js";
 import type * as permissions_hierarchy from "../permissions/hierarchy.js";
@@ -132,7 +131,6 @@ declare const fullApi: ApiFromModules<{
   notificationsAction: typeof notificationsAction;
   organizationMembers: typeof organizationMembers;
   organizations: typeof organizations;
-  passwordReset: typeof passwordReset;
   "permissions/checks": typeof permissions_checks;
   "permissions/constants": typeof permissions_constants;
   "permissions/hierarchy": typeof permissions_hierarchy;

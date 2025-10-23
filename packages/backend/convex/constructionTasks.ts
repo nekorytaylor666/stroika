@@ -1,14 +1,16 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-import { getCurrentUser, getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import {
+	getCurrentUser,
+	getCurrentUserWithOrganization,
+} from "./helpers/getCurrentUser";
 import { authComponent, createAuth } from "./auth";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
 		try {
-
 			// const { user, organization } = await getCurrentUserWithOrganization(ctx);
 			const user = await getCurrentUser(ctx);
 
@@ -72,8 +74,7 @@ export const getAll = query({
 			);
 
 			return populatedTasks;
-		}
-		catch (error) {
+		} catch (error) {
 			console.error("Error in getAll:", error);
 			return [];
 		}
@@ -384,44 +385,42 @@ export const create = mutation({
 		identifier: v.string(),
 		title: v.string(),
 		description: v.string(),
-		statusId: v.id("status"),
-		assigneeId: v.optional(v.id("users")),
-		priorityId: v.id("priorities"),
-		labelIds: v.array(v.id("labels")),
+		statusId: v.string(),
+		assigneeId: v.optional(v.string()),
+		priorityId: v.string(),
+		labelIds: v.array(v.string()),
 		cycleId: v.string(),
-		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
+		projectId: v.optional(v.string()), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
-		parentTaskId: v.optional(v.id("issues")), // For creating subtasks
-		userId: v.id("users"), // User creating the task
+		parentTaskId: v.optional(v.string()), // For creating subtasks
 	},
 	handler: async (ctx, args) => {
-		const { userId, ...taskData } = args;
-		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization)
+			throw new Error("User or organization not found");
 
-		const fullTaskData = {
-			...taskData,
-			organizationId: organization._id,
+		const taskId = await ctx.db.insert("issues", {
+			...args,
+			organizationId: organization.id,
 			createdAt: new Date().toISOString(),
 			isConstructionTask: true,
-		};
-
-		const taskId = await ctx.db.insert("issues", fullTaskData);
+		});
 
 		// Track activity
 		await ctx.runMutation(api.activities.createActivity, {
 			issueId: taskId,
-			userId,
+			userId: user._id,
 			type: "created",
 			newValue: args.title,
 		});
 
 		// Send notification if task is assigned
-		if (args.assigneeId && args.assigneeId !== userId) {
+		if (args.assigneeId && args.assigneeId !== user._id) {
 			await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
 				issueId: taskId,
 				assigneeId: args.assigneeId,
-				assignedBy: userId,
+				assignedBy: user._id,
 			});
 		}
 

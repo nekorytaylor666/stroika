@@ -6,11 +6,11 @@ import { ListFilter, SlidersHorizontal } from "lucide-react";
 export default function HeaderOptions() {
 	return (
 		<div className="flex h-10 w-full items-center justify-between border-b px-6 py-1.5">
-			<Button size="xs" variant="ghost">
+			<Button size="sm" variant="ghost">
 				<ListFilter className="size-4" />
 				<span className="ml-1 hidden sm:inline">Фильтр</span>
 			</Button>
-			<Button className="relative" size="xs" variant="secondary">
+			<Button className="relative" size="sm" variant="secondary">
 				<SlidersHorizontal className="size-4" />
 				<span className="ml-1 hidden sm:inline">Отображение</span>
 			</Button>
