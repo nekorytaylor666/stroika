@@ -62,6 +62,9 @@ export const createAuth = (
     logger: {
       disabled: optionsOnly,
     },
+    session: {
+      expiresIn: 60 * 60 * 24, // 1 day
+    },
     trustedOrigins: [siteUrl],
     database: authComponent.adapter(ctx),
     // Configure simple, non-verified email/password to get started
@@ -91,12 +94,19 @@ export const createAuth = (
 export const getCurrentUser = query({
   args: {},
   handler: async (ctx) => {
-    // Try to get auth user first
-    const authUser = await authComponent.getAuthUser(ctx);
+    // Try to get auth user first - wrap in try/catch to handle unauthenticated state
+    let authUser;
+    try {
+      authUser = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated via Better Auth
+      authUser = null;
+    }
+
     if (!authUser || !authUser.userId) {
       // Fall back to old auth system for backward compatibility
       const identity = await ctx.auth.getUserIdentity();
-      if (!identity) throw new Error("Unauthenticated");
+      if (!identity) return null; // Return null for unauthenticated users
 
       // Try to find user by email from identity
       if (identity.email) {
@@ -104,16 +114,32 @@ export const getCurrentUser = query({
           .query("users")
           .withIndex("by_email", (q) => q.eq("email", identity.email as string))
           .first();
-        if (!user) throw new Error("User not found");
-        return user;
+        return user; // Return null if not found
       }
 
-      throw new Error("No email in identity");
+      return null; // No email in identity
     }
 
-    // Get the full user data from the users table
-    const user = await ctx.db.get(authUser.userId as Id<"users">);
-    if (!user) throw new Error("User not found");
+    // Try multiple methods to get the user from the users table
+    let user = await ctx.db.get(authUser.userId as Id<"users">);
+
+    if (!user) {
+      // Try to find by betterAuthId
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+        .first();
+    }
+
+    if (!user && authUser.email) {
+      // Try to find by email as fallback
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", authUser.email))
+        .first();
+    }
+
+    if (!user) return null; // Return null if user not found
 
     return {
       ...user,
@@ -127,12 +153,19 @@ export const getCurrentUser = query({
 // Alias for backward compatibility
 export const viewer = query({
   handler: async (ctx) => {
-    // Try to get auth user first
-    const authUser = await authComponent.getAuthUser(ctx);
+    // Try to get auth user first - wrap in try/catch to handle unauthenticated state
+    let authUser;
+    try {
+      authUser = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated via Better Auth
+      authUser = null;
+    }
+
     if (!authUser || !authUser.userId) {
       // Fall back to old auth system for backward compatibility
       const identity = await ctx.auth.getUserIdentity();
-      if (!identity) throw new Error("Unauthenticated");
+      if (!identity) return null; // Return null instead of throwing for unauthenticated users
 
       // Try to find user by email from identity
       if (identity.email) {
@@ -140,16 +173,32 @@ export const viewer = query({
           .query("users")
           .withIndex("by_email", (q) => q.eq("email", identity.email as string))
           .first();
-        if (!user) throw new Error("User not found");
-        return user;
+        return user; // Return null if user not found instead of throwing
       }
 
-      throw new Error("No email in identity");
+      return null; // No email in identity
     }
 
-    // Get the full user data from the users table
-    const user = await ctx.db.get(authUser.userId as Id<"users">);
-    if (!user) throw new Error("User not found");
+    // Try multiple methods to get the user from the users table
+    let user = await ctx.db.get(authUser.userId as Id<"users">);
+
+    if (!user) {
+      // Try to find by betterAuthId
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+        .first();
+    }
+
+    if (!user && authUser.email) {
+      // Try to find by email as fallback
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", authUser.email))
+        .first();
+    }
+
+    if (!user) return null; // Return null if user not found
 
     return {
       ...user,
@@ -163,12 +212,19 @@ export const viewer = query({
 // Alias for backward compatibility  
 export const me = query({
   handler: async (ctx) => {
-    // Try to get auth user first
-    const authUser = await authComponent.getAuthUser(ctx);
+    // Try to get auth user first - wrap in try/catch to handle unauthenticated state
+    let authUser;
+    try {
+      authUser = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // User is not authenticated via Better Auth
+      authUser = null;
+    }
+
     if (!authUser || !authUser.userId) {
       // Fall back to old auth system for backward compatibility
       const identity = await ctx.auth.getUserIdentity();
-      if (!identity) throw new Error("Unauthenticated");
+      if (!identity) return null; // Return null instead of throwing for unauthenticated users
 
       // Try to find user by email from identity
       if (identity.email) {
@@ -176,16 +232,32 @@ export const me = query({
           .query("users")
           .withIndex("by_email", (q) => q.eq("email", identity.email as string))
           .first();
-        if (!user) throw new Error("User not found");
-        return user;
+        return user; // Return null if user not found instead of throwing
       }
 
-      throw new Error("No email in identity");
+      return null; // No email in identity
     }
 
-    // Get the full user data from the users table
-    const user = await ctx.db.get(authUser.userId as Id<"users">);
-    if (!user) throw new Error("User not found");
+    // Try multiple methods to get the user from the users table
+    let user = await ctx.db.get(authUser.userId as Id<"users">);
+
+    if (!user) {
+      // Try to find by betterAuthId
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+        .first();
+    }
+
+    if (!user && authUser.email) {
+      // Try to find by email as fallback
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", authUser.email))
+        .first();
+    }
+
+    if (!user) return null; // Return null if user not found
 
     return {
       ...user,

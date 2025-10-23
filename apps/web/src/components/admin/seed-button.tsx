@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { api } from "@stroika/backend";
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { Database, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function SeedButton() {
 	const [isSeeding, setIsSeeding] = useState(false);
-	const seedAll = useMutation(api.seedDatabase.seedDatabase);
+	const seedAll = useAction(api.seedDatabase.seedDatabase);
 	// const cleanupUsers = useMutation(api.migrations.cleanupUsers.cleanupUsers);
 
 	const handleSeed = async () => {

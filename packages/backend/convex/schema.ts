@@ -73,30 +73,33 @@ export default defineSchema({
 	users: defineTable({
 		name: v.string(),
 		email: v.string(),
-		avatarUrl: v.string(),
+		avatarUrl: v.optional(v.string()),
 		phone: v.optional(v.string()),
-		status: v.union(
+		status: v.optional(v.union(
 			v.literal("online"),
 			v.literal("offline"),
 			v.literal("away"),
-		),
+		)),
 		roleId: v.optional(v.id("roles")), // Changed from string to reference roles table
-		joinedDate: v.string(),
-		teamIds: v.array(v.string()),
+		joinedDate: v.optional(v.string()),
+		teamIds: v.optional(v.array(v.string())),
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
 		// Organization fields
 		currentOrganizationId: v.optional(v.string()), // Current active organization (Better Auth ID)
 		// Auth fields
-		authId: v.optional(v.string()), // External auth provider ID
-		tokenIdentifier: v.optional(v.string()), // Clerk token identifier
+		betterAuthId: v.optional(v.string()), // Better Auth user ID
+		authId: v.optional(v.string()), // External auth provider ID (legacy)
+		tokenIdentifier: v.optional(v.string()), // Clerk token identifier (legacy)
 		isActive: v.optional(v.boolean()), // Account active status
+		createdAt: v.optional(v.string()), // Creation timestamp
 		lastLogin: v.optional(v.string()), // Last login timestamp
 	})
 		.index("by_email", ["email"])
 		.index("by_auth_id", ["authId"])
 		.index("by_token", ["tokenIdentifier"])
-		.index("by_role", ["roleId"]),
+		.index("by_role", ["roleId"])
+		.index("by_betterAuthId", ["betterAuthId"]),
 
 	// Labels table
 	labels: defineTable({

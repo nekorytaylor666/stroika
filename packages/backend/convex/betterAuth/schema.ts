@@ -81,7 +81,7 @@ export const tables = {
     .index("userId", ["userId"]),
   organization: defineTable({
     name: v.string(),
-    slug: v.optional(v.union(v.null(), v.string())),
+    slug: v.string(),
     logo: v.optional(v.union(v.null(), v.string())),
     createdAt: v.number(),
     metadata: v.optional(v.union(v.null(), v.string())),
@@ -94,7 +94,7 @@ export const tables = {
     role: v.string(),
     createdAt: v.number(),
   })
-    .index("organizationId_userId", ["organizationId","userId"])
+    .index("organizationId", ["organizationId"])
     .index("userId", ["userId"])
     .index("role", ["role"]),
   invitation: defineTable({
@@ -106,8 +106,8 @@ export const tables = {
     expiresAt: v.number(),
     inviterId: v.string(),
   })
-    .index("email_organizationId_status", ["email","organizationId","status"])
-    .index("organizationId_status", ["organizationId","status"])
+    .index("organizationId", ["organizationId"])
+    .index("email", ["email"])
     .index("role", ["role"])
     .index("teamId", ["teamId"])
     .index("status", ["status"])

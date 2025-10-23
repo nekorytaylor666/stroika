@@ -131,15 +131,15 @@ export const getProjectTeamWithStats = query({
 					isLead: user._id === project.leadId,
 					department: department
 						? {
-								_id: department._id,
-								name: department.displayName || department.name,
-							}
+							_id: department._id,
+							name: department.displayName || department.name,
+						}
 						: null,
 					position: position
 						? {
-								_id: position._id,
-								name: position.displayName || position.name,
-							}
+							_id: position._id,
+							name: position.displayName || position.name,
+						}
 						: null,
 					taskStats: {
 						...taskStats,
@@ -348,18 +348,18 @@ export const list = query({
 				const projects =
 					team.projectIds.length > 0
 						? await ctx.db
-								.query("constructionProjects")
-								.filter((q) =>
-									q.or(
-										...team.projectIds.map((projectId) =>
-											q.eq(q.field("_id"), projectId),
-										),
-										...(team.memberIds || []).map((memberId) =>
-											q.eq(q.field("leadId"), memberId),
-										),
+							.query("constructionProjects")
+							.filter((q) =>
+								q.or(
+									...team.projectIds.map((projectId) =>
+										q.eq(q.field("_id"), projectId),
 									),
-								)
-								.collect()
+									...(team.memberIds || []).map((memberId) =>
+										q.eq(q.field("leadId"), memberId),
+									),
+								),
+							)
+							.collect()
 						: [];
 
 				// Get statuses to check completion
@@ -376,18 +376,18 @@ export const list = query({
 				// Get tasks for team members
 				const tasks = team.memberIds
 					? await ctx.db
-							.query("issues")
-							.filter((q) =>
-								q.and(
-									q.eq(q.field("isConstructionTask"), true),
-									q.or(
-										...team.memberIds.map((id) =>
-											q.eq(q.field("assigneeId"), id),
-										),
+						.query("issues")
+						.filter((q) =>
+							q.and(
+								q.eq(q.field("isConstructionTask"), true),
+								q.or(
+									...team.memberIds.map((id) =>
+										q.eq(q.field("assigneeId"), id),
 									),
 								),
-							)
-							.collect()
+							),
+						)
+						.collect()
 					: [];
 
 				// Get status for completed tasks
@@ -507,25 +507,25 @@ export const getTeamWithStats = query({
 		);
 		const activeProjectsCount = completedProjectStatus
 			? teamProjects.filter((p) => p.statusId !== completedProjectStatus._id)
-					.length
+				.length
 			: teamProjects.length;
 
 		// Get all tasks for team members
 		const tasks =
 			team.memberIds && team.memberIds.length > 0
 				? await ctx.db
-						.query("issues")
-						.filter((q) =>
-							q.and(
-								q.eq(q.field("isConstructionTask"), true),
-								q.or(
-									...team.memberIds.map((id) =>
-										q.eq(q.field("assigneeId"), id),
-									),
+					.query("issues")
+					.filter((q) =>
+						q.and(
+							q.eq(q.field("isConstructionTask"), true),
+							q.or(
+								...team.memberIds.map((id) =>
+									q.eq(q.field("assigneeId"), id),
 								),
 							),
-						)
-						.collect()
+						),
+					)
+					.collect()
 				: [];
 
 		// Get statuses
@@ -724,14 +724,14 @@ export const getTeamStatistics = query({
 		const tasks =
 			memberIds.length > 0
 				? await ctx.db
-						.query("issues")
-						.filter((q) =>
-							q.and(
-								q.eq(q.field("isConstructionTask"), true),
-								q.or(...memberIds.map((id) => q.eq(q.field("assigneeId"), id))),
-							),
-						)
-						.collect()
+					.query("issues")
+					.filter((q) =>
+						q.and(
+							q.eq(q.field("isConstructionTask"), true),
+							q.or(...memberIds.map((id) => q.eq(q.field("assigneeId"), id))),
+						),
+					)
+					.collect()
 				: [];
 
 		// Get statuses
@@ -781,11 +781,11 @@ export const getTeamStatistics = query({
 		const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 		const completedThisMonth = doneStatus
 			? tasks.filter(
-					(t) =>
-						t.statusId === doneStatus._id &&
-						t._creationTime &&
-						new Date(t._creationTime) > thirtyDaysAgo,
-				).length
+				(t) =>
+					t.statusId === doneStatus._id &&
+					t._creationTime &&
+					new Date(t._creationTime) > thirtyDaysAgo,
+			).length
 			: 0;
 
 		// Calculate member statistics
@@ -822,9 +822,9 @@ export const getTeamStatistics = query({
 		const teamWorkload =
 			memberIds.length > 0
 				? Math.min(
-						100,
-						Math.round((activeTasks / (memberIds.length * 5)) * 100),
-					)
+					100,
+					Math.round((activeTasks / (memberIds.length * 5)) * 100),
+				)
 				: 0;
 
 		return {

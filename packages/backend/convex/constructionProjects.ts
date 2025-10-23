@@ -19,7 +19,7 @@ export const getAll = query({
 
 		// Get projects accessible to the user using the permission system
 		try {
-			const accessibleProjects = await getAccessibleProjects(ctx);
+			const accessibleProjects = await ctx.db.query("constructionProjects").withIndex("by_organization", (q) => q.eq("organizationId", identity.organizationId as string)).collect();
 
 			// Populate related data
 			const populatedProjects = await Promise.all(

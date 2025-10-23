@@ -1,623 +1,366 @@
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth";
+import { authComponent } from "./auth";
+import { getCurrentUser } from "./helpers/getCurrentUser";
 
-// Get organization members
+// List organization members (wrapper around Better Auth members)
 export const list = query({
 	args: {
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth uses string IDs
 		includeInactive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
 			throw new Error("Not authenticated");
 		}
 
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
+		// Check if user is a member
+		const userMembership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
 			)
 			.first();
 
-		if (!membership || !membership.isActive) {
+		if (!userMembership) {
 			throw new Error("Not a member of this organization");
 		}
 
-		// Get members
-		let membersQuery = ctx.db
-			.query("organizationMembers")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", args.organizationId),
-			);
-
-		if (!args.includeInactive) {
-			membersQuery = membersQuery.filter((q) =>
-				q.eq(q.field("isActive"), true),
-			);
-		}
-
-		const members = await membersQuery.collect();
+		// Get all members from Better Auth
+		const members = await ctx.db
+			.query("member")
+			.filter((q) => q.eq(q.field("organizationId"), args.organizationId))
+			.collect();
 
 		// Enrich member data
 		const enrichedMembers = await Promise.all(
 			members.map(async (member) => {
-				const user = await ctx.db.get(member.userId);
-				const role = await ctx.db.get(member.roleId);
-				const invitedBy = member.invitedBy
-					? await ctx.db.get(member.invitedBy)
-					: null;
-
-				// Get teams
-				const teamMemberships = await ctx.db
-					.query("teamMembers")
-					.withIndex("by_user", (q) => q.eq("userId", member.userId))
-					.collect();
-
-				const teams = await Promise.all(
-					teamMemberships.map(async (tm) => {
-						const team = await ctx.db.get(tm.teamId);
-						if (team && team.organizationId === args.organizationId) {
-							return {
-								_id: team._id,
-								name: team.name,
-								role: tm.role,
-							};
-						}
-						return null;
-					}),
-				);
+				// Get user from Better Auth user table
+				const betterAuthUser = await ctx.db
+					.query("user")
+					.filter((q) => q.eq(q.field("_id"), member.userId))
+					.first();
+				
+				// Try to get user from users table as well for custom data
+				let customUser = null;
+				if (betterAuthUser) {
+					customUser = await ctx.db
+						.query("users")
+						.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", member.userId))
+						.first();
+					
+					if (!customUser && betterAuthUser.email) {
+						// Fallback to email lookup
+						customUser = await ctx.db
+							.query("users")
+							.withIndex("by_email", (q) => q.eq("email", betterAuthUser.email))
+							.first();
+					}
+				}
 
 				return {
 					_id: member._id,
-					user: user
-						? {
-								_id: user._id,
-								name: user.name,
-								email: user.email,
-								avatarUrl: user.avatarUrl,
-								status: user.status,
-								position: user.position,
-							}
-						: null,
-					role: role
-						? {
-								_id: role._id,
-								name: role.name,
-								displayName: role.displayName,
-							}
-						: null,
-					teams: teams.filter(Boolean),
-					joinedAt: member.joinedAt,
-					invitedBy: invitedBy
-						? {
-								name: invitedBy.name,
-								email: invitedBy.email,
-							}
-						: null,
-					isActive: member.isActive,
+					userId: member.userId,
+					organizationId: member.organizationId,
+					role: member.role,
+					joinedAt: member.createdAt,
+					user: betterAuthUser ? {
+						_id: betterAuthUser._id,
+						name: betterAuthUser.name,
+						email: betterAuthUser.email,
+						image: betterAuthUser.image,
+						// Include custom user data if available
+						avatarUrl: customUser?.avatarUrl || betterAuthUser.image,
+						phone: customUser?.phone,
+						position: customUser?.position,
+						status: customUser?.status,
+					} : null,
 				};
-			}),
+			})
 		);
 
 		return enrichedMembers.filter((m) => m.user !== null);
 	},
 });
 
-// Get member details
-export const getMemberDetails = query({
+// Get member by user ID
+export const getByUserId = query({
 	args: {
-		organizationId: v.id("organizations"),
-		memberId: v.id("organizationMembers"),
+		organizationId: v.string(),
+		userId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
 			throw new Error("Not authenticated");
 		}
 
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		// Check if the requester is a member of the organization
+		// Check if requester is a member
 		const requesterMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
 			)
 			.first();
 
-		if (!requesterMembership || !requesterMembership.isActive) {
+		if (!requesterMembership) {
 			throw new Error("Not a member of this organization");
 		}
 
-		// Get the member details
-		const member = await ctx.db.get(args.memberId);
-		if (!member || member.organizationId !== args.organizationId) {
-			throw new Error("Member not found");
+		// Get the requested member
+		const member = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), args.userId)
+				)
+			)
+			.first();
+
+		if (!member) {
+			return null;
 		}
 
 		// Get user details
-		const memberUser = await ctx.db.get(member.userId);
-		const role = await ctx.db.get(member.roleId);
-		const invitedBy = member.invitedBy
-			? await ctx.db.get(member.invitedBy)
-			: null;
-
-		// Get teams
-		const teamMemberships = await ctx.db
-			.query("teamMembers")
-			.withIndex("by_user", (q) => q.eq("userId", member.userId))
-			.collect();
-
-		const teams = await Promise.all(
-			teamMemberships.map(async (tm) => {
-				const team = await ctx.db.get(tm.teamId);
-				if (team && team.organizationId === args.organizationId) {
-					return {
-						_id: team._id,
-						name: team.name,
-						description: team.description,
-						role: tm.role,
-					};
-				}
-				return null;
-			}),
-		);
+		const betterAuthUser = await ctx.db
+			.query("user")
+			.filter((q) => q.eq(q.field("_id"), member.userId))
+			.first();
+		
+		let customUser = null;
+		if (betterAuthUser) {
+			customUser = await ctx.db
+				.query("users")
+				.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", member.userId))
+				.first();
+		}
 
 		return {
-			_id: member._id,
-			user: memberUser
-				? {
-						_id: memberUser._id,
-						name: memberUser.name,
-						email: memberUser.email,
-						avatarUrl: memberUser.avatarUrl,
-						status: memberUser.status,
-						position: memberUser.position,
-						lastLogin: memberUser.lastLogin,
-					}
-				: null,
-			role: role
-				? {
-						_id: role._id,
-						name: role.name,
-						displayName: role.displayName,
-					}
-				: null,
-			teams: teams.filter(Boolean),
-			joinedAt: member.joinedAt,
-			invitedBy: invitedBy
-				? {
-						_id: invitedBy._id,
-						name: invitedBy.name,
-						email: invitedBy.email,
-					}
-				: null,
-			isActive: member.isActive,
+			...member,
+			user: betterAuthUser ? {
+				_id: betterAuthUser._id,
+				name: betterAuthUser.name,
+				email: betterAuthUser.email,
+				image: betterAuthUser.image,
+				customData: customUser,
+			} : null,
 		};
 	},
 });
 
-// Update member role
-export const updateRole = mutation({
+// Get current user's membership in an organization
+export const getCurrentUserMembership = query({
 	args: {
-		organizationId: v.id("organizations"),
-		userId: v.id("users"),
-		roleId: v.id("roles"),
+		organizationId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
 			throw new Error("Not authenticated");
 		}
 
-		// Check if user has permission
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
 		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
 			)
 			.first();
 
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
-
-		// Check if user has admin role
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || role.name !== "admin") {
-			throw new Error("Insufficient permissions");
-		}
-
-		// Get target member
-		const targetMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", args.userId),
-			)
-			.first();
-
-		if (!targetMembership) {
-			throw new Error("Member not found");
-		}
-
-		// Prevent removing the last admin
-		if (role.name === "admin") {
-			const adminCount = await ctx.db
-				.query("organizationMembers")
-				.withIndex("by_organization", (q) =>
-					q.eq("organizationId", args.organizationId),
-				)
-				.filter((q) =>
-					q.and(
-						q.eq(q.field("isActive"), true),
-						q.eq(q.field("roleId"), membership.roleId),
-					),
-				)
-				.collect();
-
-			const newRole = await ctx.db.get(args.roleId);
-			if (adminCount.length === 1 && newRole?.name !== "admin") {
-				throw new Error("Cannot remove the last admin");
-			}
-		}
-
-		// Update member role
-		await ctx.db.patch(targetMembership._id, {
-			roleId: args.roleId,
-		});
-
-		// Log the change
-		await ctx.db.insert("permissionAuditLog", {
-			userId: user._id,
-			targetUserId: args.userId,
-			action: "role_changed",
-			details: JSON.stringify({
-				organizationId: args.organizationId,
-				oldRoleId: targetMembership.roleId,
-				newRoleId: args.roleId,
-			}),
-			createdAt: new Date().toISOString(),
-		});
-
-		return { success: true };
+		return membership;
 	},
 });
 
-// Remove member from organization
-export const removeMember = mutation({
+// Check if user is admin or owner
+export const isAdminOrOwner = query({
 	args: {
-		organizationId: v.id("organizations"),
-		userId: v.id("users"),
+		organizationId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Check if user has permission
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			return false;
 		}
 
 		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
 			)
 			.first();
 
-		if (!membership || !membership.isActive) {
+		if (!membership) {
+			return false;
+		}
+
+		return membership.role === "admin" || membership.role === "owner";
+	},
+});
+
+// Check if user is member
+export const isMember = query({
+	args: {
+		organizationId: v.string(),
+		userId: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			return false;
+		}
+
+		const userIdToCheck = args.userId || authUser.userId;
+
+		const membership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), userIdToCheck)
+				)
+			)
+			.first();
+
+		return !!membership;
+	},
+});
+
+// Get user's role in organization
+export const getUserRole = query({
+	args: {
+		organizationId: v.string(),
+		userId: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		const userIdToCheck = args.userId || authUser.userId;
+
+		const membership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), userIdToCheck)
+				)
+			)
+			.first();
+
+		if (!membership) {
+			return null;
+		}
+
+		return membership.role;
+	},
+});
+
+// Count organization members
+export const count = query({
+	args: {
+		organizationId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		// Check if user is a member
+		const userMembership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
+			)
+			.first();
+
+		if (!userMembership) {
 			throw new Error("Not a member of this organization");
 		}
 
-		// Check if user has admin role
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || role.name !== "admin") {
-			throw new Error("Insufficient permissions");
+		const members = await ctx.db
+			.query("member")
+			.filter((q) => q.eq(q.field("organizationId"), args.organizationId))
+			.collect();
+
+		return members.length;
+	},
+});
+
+// Get members by role
+export const getByRole = query({
+	args: {
+		organizationId: v.string(),
+		role: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
 		}
 
-		// Get target member
-		const targetMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", args.userId),
+		// Check if user is a member
+		const userMembership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
 			)
 			.first();
 
-		if (!targetMembership) {
-			throw new Error("Member not found");
+		if (!userMembership) {
+			throw new Error("Not a member of this organization");
 		}
 
-		// Prevent removing the organization owner
-		const organization = await ctx.db.get(args.organizationId);
-		if (organization && organization.ownerId === args.userId) {
-			throw new Error("Cannot remove the organization owner");
-		}
-
-		// Prevent removing the last admin
-		const targetRole = await ctx.db.get(targetMembership.roleId);
-		if (targetRole?.name === "admin") {
-			const adminCount = await ctx.db
-				.query("organizationMembers")
-				.withIndex("by_organization", (q) =>
-					q.eq("organizationId", args.organizationId),
+		const members = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("role"), args.role)
 				)
-				.filter((q) =>
-					q.and(
-						q.eq(q.field("isActive"), true),
-						q.eq(q.field("roleId"), targetMembership.roleId),
-					),
-				)
-				.collect();
-
-			if (adminCount.length === 1) {
-				throw new Error("Cannot remove the last admin");
-			}
-		}
-
-		// Soft delete - mark as inactive
-		await ctx.db.patch(targetMembership._id, {
-			isActive: false,
-		});
-
-		// Remove from all teams in this organization
-		const teams = await ctx.db
-			.query("teams")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", args.organizationId),
 			)
 			.collect();
 
-		for (const team of teams) {
-			const teamMembership = await ctx.db
-				.query("teamMembers")
-				.withIndex("by_team_user", (q) =>
-					q.eq("teamId", team._id).eq("userId", args.userId),
-				)
-				.first();
+		// Enrich with user data
+		const enrichedMembers = await Promise.all(
+			members.map(async (member) => {
+				const betterAuthUser = await ctx.db
+					.query("user")
+					.filter((q) => q.eq(q.field("_id"), member.userId))
+					.first();
 
-			if (teamMembership) {
-				await ctx.db.delete(teamMembership._id);
-			}
-		}
+				return {
+					...member,
+					user: betterAuthUser,
+				};
+			})
+		);
 
-		// If this was the user's current organization, clear it
-		const targetUser = await ctx.db.get(args.userId);
-		if (
-			targetUser &&
-			targetUser.currentOrganizationId === args.organizationId
-		) {
-			await ctx.db.patch(args.userId, {
-				currentOrganizationId: undefined,
-			});
-		}
-
-		// Log the change
-		await ctx.db.insert("permissionAuditLog", {
-			userId: user._id,
-			targetUserId: args.userId,
-			action: "member_removed",
-			details: JSON.stringify({
-				organizationId: args.organizationId,
-			}),
-			createdAt: new Date().toISOString(),
-		});
-
-		return { success: true };
+		return enrichedMembers;
 	},
 });
 
-// Deactivate member (soft delete)
-export const deactivateMember = mutation({
-	args: {
-		memberId: v.id("organizationMembers"),
-	},
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const member = await ctx.db.get(args.memberId);
-		if (!member) {
-			throw new Error("Member not found");
-		}
-
-		// Check if requester has permission (must be admin)
-		const requesterMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", member.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!requesterMembership || !requesterMembership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
-
-		const requesterRole = await ctx.db.get(requesterMembership.roleId);
-		if (!requesterRole || requesterRole.name !== "admin") {
-			throw new Error("Only admins can deactivate members");
-		}
-
-		// Cannot deactivate self
-		if (member.userId === user._id) {
-			throw new Error("Cannot deactivate yourself");
-		}
-
-		// Deactivate member
-		await ctx.db.patch(args.memberId, {
-			isActive: false,
-		});
-
-		// Also update user's isActive status
-		await ctx.db.patch(member.userId, {
-			isActive: false,
-		});
-
-		// Log the change
-		await ctx.db.insert("permissionAuditLog", {
-			userId: user._id,
-			targetUserId: member.userId,
-			action: "member_deactivated",
-			details: JSON.stringify({
-				organizationId: member.organizationId,
-			}),
-			createdAt: new Date().toISOString(),
-		});
-
-		return { success: true };
-	},
-});
-
-// Leave organization
-export const leaveOrganization = mutation({
-	args: {
-		organizationId: v.id("organizations"),
-	},
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		// Get membership
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
-
-		// Prevent owner from leaving
-		const organization = await ctx.db.get(args.organizationId);
-		if (organization && organization.ownerId === user._id) {
-			throw new Error(
-				"Organization owner cannot leave. Transfer ownership first.",
-			);
-		}
-
-		// Prevent last admin from leaving
-		const role = await ctx.db.get(membership.roleId);
-		if (role?.name === "admin") {
-			const adminCount = await ctx.db
-				.query("organizationMembers")
-				.withIndex("by_organization", (q) =>
-					q.eq("organizationId", args.organizationId),
-				)
-				.filter((q) =>
-					q.and(
-						q.eq(q.field("isActive"), true),
-						q.eq(q.field("roleId"), membership.roleId),
-					),
-				)
-				.collect();
-
-			if (adminCount.length === 1) {
-				throw new Error(
-					"Cannot leave as the last admin. Promote another member first.",
-				);
-			}
-		}
-
-		// Soft delete membership
-		await ctx.db.patch(membership._id, {
-			isActive: false,
-		});
-
-		// Remove from all teams
-		const teams = await ctx.db
-			.query("teams")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", args.organizationId),
-			)
-			.collect();
-
-		for (const team of teams) {
-			const teamMembership = await ctx.db
-				.query("teamMembers")
-				.withIndex("by_team_user", (q) =>
-					q.eq("teamId", team._id).eq("userId", user._id),
-				)
-				.first();
-
-			if (teamMembership) {
-				await ctx.db.delete(teamMembership._id);
-			}
-		}
-
-		// If this was the current organization, clear it
-		if (user.currentOrganizationId === args.organizationId) {
-			await ctx.db.patch(user._id, {
-				currentOrganizationId: undefined,
-			});
-		}
-
-		return { success: true };
-	},
-});
+// Legacy support - map old function names
+export const get = getByUserId;
+export const checkMembership = isMember;

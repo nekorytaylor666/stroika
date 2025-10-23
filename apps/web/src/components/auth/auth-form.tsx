@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import { api } from "@stroika/backend";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useConvex } from "convex/react";
+import { useConvex, useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -45,7 +45,7 @@ export function AuthForm() {
 					password: formData.get("password") as string,
 				});
 			}
-			
+
 			toast.success(
 				flow === "signIn" ? "Вход выполнен" : "Регистрация успешна",
 			);
@@ -54,17 +54,63 @@ export function AuthForm() {
 			if (returnTo) {
 				navigate({ to: returnTo });
 			} else {
-				// Otherwise, redirect to the default organization
-				const organizations = await convex.query(
-					api.organizations.getUserOrganizations,
-				);
-				console.log("organizations", organizations);
+				try {
+					// Get organizations directly from Better Auth API
+					const { data, error } = await authClient.useListOrganizations();
+					console.log("Better Auth organizations:", data);
+					console.log("Better Auth organizations error:", error);
 
-				// No organizations, redirect to organization setup
-				navigate({
-					to: "/construction/$orgId/inbox",
-					params: { orgId: "q975mm4ant52hw0nwc6afz2x3h7perjg" },
-				});
+					if (data && data.length > 0) {
+						// Get the active organization from Better Auth
+
+						const orgToUse = data[0];
+						console.log("Using organization:", orgToUse);
+
+						// Set as active if not already
+						if (data[0]) {
+							await authClient.organization.setActive({
+								organizationId: data[0].id,
+							});
+						}
+
+						// Redirect to the active organization
+						navigate({
+							to: "/construction/$orgId/inbox",
+							params: { orgId: orgToUse.id },
+						});
+					} else {
+						// No organizations found, redirect to organization setup
+						console.log("No organizations found, redirecting to org setup");
+						toast.info("Настройте свою первую организацию");
+
+						// Redirect to organization setup page
+						navigate({ to: "/auth/organization-setup" });
+					}
+				} catch (orgError) {
+					console.error(
+						"Failed to get organizations from Better Auth:",
+						orgError,
+					);
+					// Fallback to Convex query
+					try {
+						const organizations = await convex.query(
+							api.organizations.getUserOrganizations,
+						);
+
+						if (organizations && organizations.length > 0) {
+							navigate({
+								to: "/construction/$orgId/inbox",
+								params: { orgId: organizations[0]._id },
+							});
+						} else {
+							navigate({ to: "/auth/organization-setup" });
+						}
+					} catch (fallbackError) {
+						console.error("Fallback also failed:", fallbackError);
+						toast.info("Настройте свою организацию");
+						navigate({ to: "/auth/organization-setup" });
+					}
+				}
 			}
 		} catch (error) {
 			toast.error(

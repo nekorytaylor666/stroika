@@ -1,82 +1,82 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import { getCurrentUser, getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import { authComponent, createAuth } from "./auth";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
-		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		try {
 
-		// Now safe to get organization data
+			// const { user, organization } = await getCurrentUserWithOrganization(ctx);
+			const user = await getCurrentUser(ctx);
 
-		// Check membership
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", user._id),
-			)
-			.first();
+			console.log("user:", JSON.stringify(user, null, 2));
+			const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+			const organization = await auth.api.listOrganizations({
+				headers,
+			});
+			const tasks = await ctx.db
+				.query("issues")
+				.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
+				.filter((q) => q.eq(q.field("organizationId"), organization.id))
+				.collect();
 
-		if (!membership || !membership.isActive) {
+			// Populate related datauth
+			const populatedTasks = await Promise.all(
+				tasks.map(async (task) => {
+					const [status, assignee, priority, labels, attachments, subtasks] =
+						await Promise.all([
+							ctx.db.get(task.statusId),
+							task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+							ctx.db.get(task.priorityId),
+							Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+							ctx.db
+								.query("issueAttachments")
+								.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+								.collect(),
+							ctx.db
+								.query("issues")
+								.withIndex("by_parent_task", (q) =>
+									q.eq("parentTaskId", task._id),
+								)
+								.collect(),
+						]);
+
+					// Get uploader info for attachments and resolve URLs
+					const attachmentsWithUsers = await Promise.all(
+						attachments.map(async (attachment) => {
+							const [uploader, fileUrl] = await Promise.all([
+								ctx.db.get(attachment.uploadedBy),
+								ctx.storage.getUrl(attachment.fileUrl as any),
+							]);
+							return {
+								...attachment,
+								fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+								uploader,
+							};
+						}),
+					);
+
+					return {
+						...task,
+						status,
+						assignee,
+						priority,
+						labels: labels.filter((label) => label !== null),
+						attachments: attachmentsWithUsers,
+						subtaskCount: subtasks.length,
+					};
+				}),
+			);
+
+			return populatedTasks;
+		}
+		catch (error) {
+			console.error("Error in getAll:", error);
 			return [];
 		}
-
-		const tasks = await ctx.db
-			.query("issues")
-			.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
-			.filter((q) => q.eq(q.field("organizationId"), organization._id))
-			.collect();
-
-		// Populate related data
-		const populatedTasks = await Promise.all(
-			tasks.map(async (task) => {
-				const [status, assignee, priority, labels, attachments, subtasks] =
-					await Promise.all([
-						ctx.db.get(task.statusId),
-						task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-						ctx.db.get(task.priorityId),
-						Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
-						ctx.db
-							.query("issueAttachments")
-							.withIndex("by_issue", (q) => q.eq("issueId", task._id))
-							.collect(),
-						ctx.db
-							.query("issues")
-							.withIndex("by_parent_task", (q) =>
-								q.eq("parentTaskId", task._id),
-							)
-							.collect(),
-					]);
-
-				// Get uploader info for attachments and resolve URLs
-				const attachmentsWithUsers = await Promise.all(
-					attachments.map(async (attachment) => {
-						const [uploader, fileUrl] = await Promise.all([
-							ctx.db.get(attachment.uploadedBy),
-							ctx.storage.getUrl(attachment.fileUrl as any),
-						]);
-						return {
-							...attachment,
-							fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-							uploader,
-						};
-					}),
-				);
-
-				return {
-					...task,
-					status,
-					assignee,
-					priority,
-					labels: labels.filter((label) => label !== null),
-					attachments: attachmentsWithUsers,
-					subtaskCount: subtasks.length,
-				};
-			}),
-		);
-
-		return populatedTasks;
 	},
 });
 

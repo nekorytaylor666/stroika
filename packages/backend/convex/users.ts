@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { authComponent, createAuth } from "./auth";
 
 // Get current authenticated user (now uses the one from auth.ts)
 export { getCurrentUser, viewer, me } from "./auth";
@@ -8,40 +9,29 @@ export { getCurrentUser, viewer, me } from "./auth";
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
-		// Check if user is authenticated
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		const userId = identity.subject as Id<"users">;
-		const user = await ctx.db.get(userId);
-
-		if (!user || !user.currentOrganizationId) {
-			// Return empty array if user doesn't exist or has no organization
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser.userId) {
+			console.error("Not authenticated");
 			return [];
 		}
+		const auth = createAuth(ctx);
 
-		// Get all members of the user's current organization
-		const orgMembers = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", user.currentOrganizationId!),
-			)
-			.filter((q) => q.eq(q.field("isActive"), true))
-			.collect();
 
-		// Get user details for each member
-		const users = await Promise.all(
-			orgMembers.map(async (member) => {
-				const memberUser = await ctx.db.get(member.userId);
-				return memberUser;
-			}),
-		);
+		// Check if user is authenticated using Better Auth
 
-		const filteredUsers = users.filter(Boolean);
-
-		return filteredUsers;
+		try {
+			const { users } = await auth.api.listUsers({
+				query: {
+					limit: 100,
+					offset: 0,
+				},
+				headers: await authComponent.getHeaders(ctx),
+			});
+			return users;
+		} catch (error) {
+			console.error("Failed to list users:", error);
+			return [];
+		}
 	},
 });
 
@@ -52,14 +42,32 @@ export const updateProfile = mutation({
 		phone: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		// Get user ID from identity
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
+		// Get user from Better Auth
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
 			throw new Error("Not authenticated");
 		}
 
-		const userId = identity.subject as Id<"users">;
-		const user = await ctx.db.get(userId);
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		// Get user from users table
+		let user = await ctx.db
+			.query("users")
+			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.first();
+
+		if (!user && authUser.email) {
+			// Fallback to email lookup
+			user = await ctx.db
+				.query("users")
+				.withIndex("by_email", (q) => q.eq("email", authUser.email))
+				.first();
+		}
+
 		if (!user) {
 			throw new Error("User not found");
 		}
@@ -96,6 +104,149 @@ export const get = query({
 	},
 });
 
+// Sync Better Auth user to users table
+export const syncBetterAuthUser = mutation({
+	args: {},
+	handler: async (ctx) => {
+		// Get the Better Auth user
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("No authenticated user found");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("No authenticated user found");
+		}
+
+		// Check if user already exists in users table by betterAuthId
+		const existingUser = await ctx.db
+			.query("users")
+			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.first();
+
+		if (existingUser) {
+			// User already synced, update if needed
+			await ctx.db.patch(existingUser._id, {
+				email: authUser.email || existingUser.email,
+				name: authUser.name || existingUser.name,
+				avatarUrl: authUser.image || existingUser.avatarUrl,
+			});
+			return existingUser;
+		}
+
+		// Check if user exists by email (fallback for old users)
+		const userByEmail = await ctx.db
+			.query("users")
+			.withIndex("by_email", (q) => q.eq("email", authUser.email!))
+			.first();
+
+		if (userByEmail) {
+			// Update existing user with Better Auth ID
+			await ctx.db.patch(userByEmail._id, {
+				betterAuthId: authUser.userId,
+				name: authUser.name || userByEmail.name,
+				avatarUrl: authUser.image || userByEmail.avatarUrl,
+			});
+			return userByEmail;
+		}
+
+		// Create new user in users table
+		const newUserId = await ctx.db.insert("users", {
+			betterAuthId: authUser.userId,
+			email: authUser.email!,
+			name: authUser.name || authUser.email!.split('@')[0],
+			avatarUrl: authUser.image,
+			phone: null,
+			isActive: true,
+			createdAt: new Date().toISOString(),
+			currentOrganizationId: null, // Will be set when they join an organization
+		});
+
+		return await ctx.db.get(newUserId);
+	},
+});
+
+// Ensure user exists in users table (call after authentication)
+export const ensureUserExists = mutation({
+	args: {},
+	handler: async (ctx) => {
+		// Try Better Auth first
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			// User not authenticated via Better Auth
+			authUser = null;
+		}
+		if (authUser && authUser.userId) {
+			// Check if user exists in users table by betterAuthId
+			const existingUser = await ctx.db
+				.query("users")
+				.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+				.first();
+
+			if (!existingUser) {
+				// Check if user exists by email (fallback for old users)
+				const userByEmail = await ctx.db
+					.query("users")
+					.withIndex("by_email", (q) => q.eq("email", authUser.email!))
+					.first();
+
+				if (userByEmail) {
+					// Update existing user with Better Auth ID
+					await ctx.db.patch(userByEmail._id, {
+						betterAuthId: authUser.userId,
+						name: authUser.name || userByEmail.name,
+						avatarUrl: authUser.image || userByEmail.avatarUrl,
+					});
+				} else {
+					// Create the user in users table
+					await ctx.db.insert("users", {
+						betterAuthId: authUser.userId,
+						email: authUser.email!,
+						name: authUser.name || authUser.email!.split('@')[0],
+						avatarUrl: authUser.image,
+						phone: null,
+						isActive: true,
+						createdAt: new Date().toISOString(),
+						currentOrganizationId: null,
+					});
+				}
+			}
+			return { success: true };
+		}
+
+		// Fallback to identity
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity || !identity.email) {
+			throw new Error("No authenticated user found");
+		}
+
+		// Check if user exists by email
+		const existingUser = await ctx.db
+			.query("users")
+			.withIndex("by_email", (q) => q.eq("email", identity.email!))
+			.first();
+
+		if (!existingUser) {
+			// Create new user
+			await ctx.db.insert("users", {
+				email: identity.email,
+				name: identity.name || identity.email.split('@')[0],
+				avatarUrl: identity.pictureUrl,
+				phone: null,
+				isActive: true,
+				createdAt: new Date().toISOString(),
+				currentOrganizationId: null,
+			});
+		}
+
+		return { success: true };
+	},
+});
+
 export const getByEmail = query({
 	args: { email: v.string() },
 	handler: async (ctx, args) => {
@@ -108,20 +259,55 @@ export const getByEmail = query({
 
 export const getUsersWithRoles = query({
 	handler: async (ctx) => {
-		const users = await ctx.db.query("users").collect();
+		// Get authenticated user using Better Auth
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
 
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		// Get active organization
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", authUser.userId))
+			.first();
+
+		const organizationId = authUser.activeOrganizationId || user?.currentOrganizationId;
+		if (!organizationId) {
+			return [];
+		}
+
+		// Get all members from organization members table (temporary compatibility)
+		// TODO: Migrate to Better Auth member table once fully integrated
+		const members = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organization", (q) => q.eq("organizationId", organizationId as Id<"organizations">))
+			.collect();
+
+		// Get user details with their roles
 		const usersWithRoles = await Promise.all(
-			users.map(async (user) => {
-				const role = user.roleId ? await ctx.db.get(user.roleId) : null;
+			members.map(async (member) => {
+				// Get user from users table directly
+				const memberUser = await ctx.db.get(member.userId);
+				if (!memberUser) return null;
+
+				// Get role information
+				const role = await ctx.db.get(member.roleId);
+
 				return {
-					...user,
-					role: role ? role.displayName : null,
-					roleName: role ? role.name : null,
+					...memberUser,
+					role: role?.name || "member",
+					roleName: role?.displayName || role?.name || "Member",
 				};
 			}),
 		);
 
-		return usersWithRoles;
+		return usersWithRoles.filter(Boolean);
 	},
 });
 
@@ -161,24 +347,36 @@ export const create = mutation({
 	args: {
 		name: v.string(),
 		email: v.string(),
-		avatarUrl: v.string(),
-		status: v.union(
+		avatarUrl: v.optional(v.string()),
+		status: v.optional(v.union(
 			v.literal("online"),
 			v.literal("offline"),
 			v.literal("away"),
-		),
-		roleId: v.optional(v.id("roles")),
-		joinedDate: v.string(),
-		teamIds: v.array(v.string()),
+		)),
+		joinedDate: v.optional(v.string()),
+		teamIds: v.optional(v.array(v.string())),
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
-		authId: v.optional(v.string()),
+		betterAuthId: v.optional(v.string()),
 		isActive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
+		// Check if user is authenticated and has permission
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
 		return await ctx.db.insert("users", {
 			...args,
 			isActive: args.isActive ?? true,
+			createdAt: new Date().toISOString(),
 		});
 	},
 });
@@ -191,13 +389,24 @@ export const update = mutation({
 		status: v.optional(
 			v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
 		),
-		roleId: v.optional(v.id("roles")),
 		teamIds: v.optional(v.array(v.string())),
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
 		isActive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
 		const { id, ...updates } = args;
 		await ctx.db.patch(id, updates);
 		return { success: true };
@@ -214,6 +423,18 @@ export const updateStatus = mutation({
 		),
 	},
 	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
 		await ctx.db.patch(args.id, { status: args.status });
 		return { success: true };
 	},
@@ -222,6 +443,20 @@ export const updateStatus = mutation({
 export const deleteUser = mutation({
 	args: { id: v.id("users") },
 	handler: async (ctx, args) => {
+		// Check if user is authenticated and has admin permissions
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		// TODO: Check if user has admin permissions in their organization
+
 		await ctx.db.delete(args.id);
 		return { success: true };
 	},
@@ -230,10 +465,53 @@ export const deleteUser = mutation({
 export const updateUserRole = mutation({
 	args: {
 		userId: v.id("users"),
-		roleId: v.id("roles"),
+		organizationId: v.string(),
+		role: v.string(), // Better Auth uses string roles (owner, admin, member)
 	},
 	handler: async (ctx, args) => {
-		await ctx.db.patch(args.userId, { roleId: args.roleId });
+		// Check if user is authenticated and has permission
+		let authUser;
+		try {
+			authUser = await authComponent.getAuthUser(ctx);
+		} catch (error) {
+			throw new Error("Not authenticated");
+		}
+
+		if (!authUser || !authUser.userId) {
+			throw new Error("Not authenticated");
+		}
+
+		// Check if user has permission to update roles
+		const membership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), authUser.userId)
+				)
+			)
+			.first();
+
+		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+			throw new Error("Only admins and owners can update member roles");
+		}
+
+		// Update the member's role in Better Auth member table
+		const targetMembership = await ctx.db
+			.query("member")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("organizationId"), args.organizationId),
+					q.eq(q.field("userId"), args.userId)
+				)
+			)
+			.first();
+
+		if (!targetMembership) {
+			throw new Error("Member not found in organization");
+		}
+
+		await ctx.db.patch(targetMembership._id, { role: args.role });
 		return { success: true };
 	},
 });
