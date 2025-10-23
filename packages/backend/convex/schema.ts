@@ -1,38 +1,16 @@
-import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-	...authTables,
-
-	// Organizations table
-	organizations: defineTable({
-		name: v.string(),
-		slug: v.string(), // URL-friendly unique identifier
-		description: v.optional(v.string()),
-		logoUrl: v.optional(v.string()),
-		website: v.optional(v.string()),
-		ownerId: v.id("users"), // Organization owner
-		settings: v.optional(
-			v.object({
-				allowInvites: v.boolean(),
-				requireEmailVerification: v.boolean(),
-				defaultRoleId: v.optional(v.id("roles")),
-			}),
-		),
-		createdAt: v.number(),
-		updatedAt: v.number(),
-	})
-		.index("by_slug", ["slug"])
-		.index("by_owner", ["ownerId"]),
+	// NOTE: Organizations are now managed by Better Auth - see betterAuth/schema.ts
 
 	// Organization members
 	organizationMembers: defineTable({
-		organizationId: v.id("organizations"),
-		userId: v.id("users"),
-		roleId: v.id("roles"),
+		organizationId: v.string(), // Better Auth organization ID
+		userId: v.string(),
+		roleId: v.string(),
 		joinedAt: v.number(),
-		invitedBy: v.optional(v.id("users")),
+		invitedBy: v.optional(v.string()),
 		isActive: v.boolean(),
 	})
 		.index("by_organization", ["organizationId"])
@@ -41,14 +19,14 @@ export default defineSchema({
 
 	// Organization invites
 	organizationInvites: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		email: v.string(),
 		inviteCode: v.string(), // Unique invite code
-		roleId: v.id("roles"), // Role to assign when accepted
-		invitedBy: v.id("users"),
+		roleId: v.string(), // Role to assign when accepted
+		invitedBy: v.string(),
 		expiresAt: v.number(),
 		acceptedAt: v.optional(v.number()),
-		acceptedBy: v.optional(v.id("users")),
+		acceptedBy: v.optional(v.string()),
 		status: v.union(
 			v.literal("pending"),
 			v.literal("accepted"),
@@ -64,11 +42,11 @@ export default defineSchema({
 
 	// Organization teams
 	teams: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		name: v.string(),
 		description: v.optional(v.string()),
-		parentTeamId: v.optional(v.id("teams")), // For nested teams
-		leaderId: v.optional(v.id("users")),
+		parentTeamId: v.optional(v.string()), // For nested teams
+		leaderId: v.optional(v.string()),
 		isActive: v.boolean(),
 		createdAt: v.number(),
 		updatedAt: v.number(),
@@ -79,8 +57,8 @@ export default defineSchema({
 
 	// Team members
 	teamMembers: defineTable({
-		teamId: v.id("teams"),
-		userId: v.id("users"),
+		teamId: v.string(),
+		userId: v.string(),
 		joinedAt: v.number(),
 		role: v.optional(v.string()), // Role within the team
 	})
@@ -92,30 +70,31 @@ export default defineSchema({
 	users: defineTable({
 		name: v.string(),
 		email: v.string(),
-		avatarUrl: v.string(),
+		avatarUrl: v.optional(v.string()),
 		phone: v.optional(v.string()),
-		status: v.union(
-			v.literal("online"),
-			v.literal("offline"),
-			v.literal("away"),
+		status: v.optional(
+			v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
 		),
-		roleId: v.optional(v.id("roles")), // Changed from string to reference roles table
-		joinedDate: v.string(),
-		teamIds: v.array(v.string()),
+		roleId: v.optional(v.string()), // Changed from string to reference roles table
+		joinedDate: v.optional(v.string()),
+		teamIds: v.optional(v.array(v.string())),
 		position: v.optional(v.string()),
 		workload: v.optional(v.number()),
 		// Organization fields
-		currentOrganizationId: v.optional(v.id("organizations")), // Current active organization
+		currentOrganizationId: v.optional(v.string()), // Current active organization (Better Auth ID)
 		// Auth fields
-		authId: v.optional(v.string()), // External auth provider ID
-		tokenIdentifier: v.optional(v.string()), // Clerk token identifier
+		betterAuthId: v.optional(v.string()), // Better Auth user ID
+		authId: v.optional(v.string()), // External auth provider ID (legacy)
+		tokenIdentifier: v.optional(v.string()), // Clerk token identifier (legacy)
 		isActive: v.optional(v.boolean()), // Account active status
+		createdAt: v.optional(v.string()), // Creation timestamp
 		lastLogin: v.optional(v.string()), // Last login timestamp
 	})
 		.index("by_email", ["email"])
 		.index("by_auth_id", ["authId"])
 		.index("by_token", ["tokenIdentifier"])
-		.index("by_role", ["roleId"]),
+		.index("by_role", ["roleId"])
+		.index("by_betterAuthId", ["betterAuthId"]),
 
 	// Labels table
 	labels: defineTable({
@@ -140,17 +119,17 @@ export default defineSchema({
 
 	// Construction Projects table
 	constructionProjects: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(),
 		client: v.string(),
-		statusId: v.id("status"),
+		statusId: v.string(),
 		iconName: v.string(),
 		percentComplete: v.number(),
 		contractValue: v.number(),
 		startDate: v.string(),
 		targetDate: v.optional(v.string()),
-		leadId: v.id("users"),
-		priorityId: v.id("priorities"),
+		leadId: v.string(),
+		priorityId: v.string(),
 		healthId: v.string(),
 		healthName: v.string(),
 		healthColor: v.string(),
@@ -163,12 +142,12 @@ export default defineSchema({
 			v.literal("infrastructure"),
 		),
 		notes: v.optional(v.string()),
-		teamMemberIds: v.array(v.id("users")),
+		teamMemberIds: v.array(v.string()),
 	}).index("by_organization", ["organizationId"]),
 
 	// Monthly Revenue table
 	monthlyRevenue: defineTable({
-		constructionProjectId: v.id("constructionProjects"),
+		constructionProjectId: v.string(),
 		month: v.string(),
 		planned: v.number(),
 		actual: v.number(),
@@ -176,23 +155,23 @@ export default defineSchema({
 
 	// Work Categories table
 	workCategories: defineTable({
-		constructionProjectId: v.id("constructionProjects"),
+		constructionProjectId: v.string(),
 		name: v.string(),
 		percentComplete: v.number(),
-		responsibleId: v.id("users"),
+		responsibleId: v.string(),
 		workload: v.number(),
 	}).index("by_project", ["constructionProjectId"]),
 
 	// Construction Teams table
 	constructionTeams: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(),
 		shortName: v.string(),
 		icon: v.string(),
 		joined: v.boolean(),
 		color: v.string(),
-		memberIds: v.array(v.id("users")),
-		projectIds: v.array(v.id("constructionProjects")),
+		memberIds: v.array(v.string()),
+		projectIds: v.array(v.string()),
 		department: v.union(
 			v.literal("design"),
 			v.literal("construction"),
@@ -204,21 +183,21 @@ export default defineSchema({
 
 	// Issues/Tasks table
 	issues: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		identifier: v.string(),
 		title: v.string(),
 		description: v.string(),
-		statusId: v.id("status"),
-		assigneeId: v.optional(v.id("users")),
-		priorityId: v.id("priorities"),
-		labelIds: v.array(v.id("labels")),
+		statusId: v.string(),
+		assigneeId: v.optional(v.string()),
+		priorityId: v.string(),
+		labelIds: v.array(v.string()),
 		createdAt: v.string(),
 		cycleId: v.string(),
-		projectId: v.optional(v.id("constructionProjects")),
+		projectId: v.optional(v.string()),
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
 		isConstructionTask: v.boolean(), // Flag to distinguish construction tasks
-		parentTaskId: v.optional(v.id("issues")), // For subtask hierarchy
+		parentTaskId: v.optional(v.string()), // For subtask hierarchy
 	})
 		.index("by_organization", ["organizationId"])
 		.index("by_status", ["statusId"])
@@ -230,7 +209,7 @@ export default defineSchema({
 
 	// Roles table
 	roles: defineTable({
-		organizationId: v.optional(v.id("organizations")), // null for system roles
+		organizationId: v.optional(v.string()), // null for system roles (Better Auth organization ID)
 		name: v.string(), // e.g., "owner", "director", "admin", "project_manager", "team_lead", "member", "viewer"
 		displayName: v.string(), // e.g., "Owner", "Director", "Administrator", etc.
 		description: v.optional(v.string()),
@@ -263,8 +242,8 @@ export default defineSchema({
 
 	// Role-Permission mapping table
 	rolePermissions: defineTable({
-		roleId: v.id("roles"),
-		permissionId: v.id("permissions"),
+		roleId: v.string(),
+		permissionId: v.string(),
 		createdAt: v.string(),
 	})
 		.index("by_role", ["roleId"])
@@ -273,8 +252,8 @@ export default defineSchema({
 
 	// User custom permissions (for specific overrides)
 	userPermissions: defineTable({
-		userId: v.id("users"),
-		permissionId: v.id("permissions"),
+		userId: v.string(),
+		permissionId: v.string(),
 		granted: v.boolean(), // true = grant, false = revoke (override role permission)
 		createdAt: v.string(),
 		expiresAt: v.optional(v.string()), // Optional expiration for temporary permissions
@@ -285,9 +264,9 @@ export default defineSchema({
 
 	// Audit log for permission changes
 	permissionAuditLog: defineTable({
-		userId: v.id("users"), // Who made the change
-		targetUserId: v.optional(v.id("users")), // User affected (if applicable)
-		targetRoleId: v.optional(v.id("roles")), // Role affected (if applicable)
+		userId: v.string(), // Who made the change
+		targetUserId: v.optional(v.string()), // User affected (if applicable)
+		targetRoleId: v.optional(v.string()), // Role affected (if applicable)
 		action: v.string(), // e.g., "role_assigned", "permission_granted", "role_created"
 		details: v.optional(v.string()), // JSON string with additional details
 		createdAt: v.string(),
@@ -298,13 +277,13 @@ export default defineSchema({
 
 	// Departments table - hierarchical structure
 	departments: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		name: v.string(), // e.g., "Engineering", "Design", "Construction"
 		displayName: v.string(), // Display name in Russian
 		description: v.optional(v.string()),
-		parentId: v.optional(v.id("departments")), // Parent department for hierarchy
+		parentId: v.optional(v.string()), // Parent department for hierarchy
 		level: v.number(), // Hierarchy level (0 = root, 1 = first level, etc.)
-		headUserId: v.optional(v.id("users")), // Department head
+		headUserId: v.optional(v.string()), // Department head
 		isActive: v.boolean(),
 		createdAt: v.string(),
 		updatedAt: v.string(),
@@ -328,9 +307,9 @@ export default defineSchema({
 
 	// User department assignments
 	userDepartments: defineTable({
-		userId: v.id("users"),
-		departmentId: v.id("departments"),
-		positionId: v.optional(v.id("organizationalPositions")), // Organizational position
+		userId: v.string(),
+		departmentId: v.string(),
+		positionId: v.optional(v.string()), // Organizational position
 		isPrimary: v.boolean(), // Primary department assignment
 		startDate: v.string(),
 		endDate: v.optional(v.string()), // null = current assignment
@@ -343,13 +322,13 @@ export default defineSchema({
 
 	// Documents table
 	documents: defineTable({
-		organizationId: v.id("organizations"), // Link to organization
+		organizationId: v.string(), // Better Auth organization ID // Link to organization
 		title: v.string(),
 		content: v.string(),
-		projectId: v.optional(v.id("constructionProjects")),
-		parentId: v.union(v.id("documents"), v.null()), // For hierarchical documents
-		authorId: v.id("users"),
-		assignedTo: v.optional(v.id("users")),
+		projectId: v.optional(v.string()),
+		parentId: v.union(v.string(), v.null()), // For hierarchical documents
+		authorId: v.string(),
+		assignedTo: v.optional(v.string()),
 		status: v.union(
 			v.literal("draft"),
 			v.literal("in_progress"),
@@ -359,7 +338,7 @@ export default defineSchema({
 		dueDate: v.optional(v.string()),
 		tags: v.array(v.string()),
 		version: v.number(),
-		lastEditedBy: v.id("users"),
+		lastEditedBy: v.string(),
 		lastEditedAt: v.number(),
 	})
 		.index("by_organization", ["organizationId"])
@@ -371,10 +350,10 @@ export default defineSchema({
 
 	// Document versions for history
 	documentVersions: defineTable({
-		documentId: v.id("documents"),
+		documentId: v.string(),
 		version: v.number(),
 		content: v.string(),
-		editedBy: v.id("users"),
+		editedBy: v.string(),
 		editedAt: v.number(),
 	})
 		.index("by_document", ["documentId"])
@@ -382,21 +361,21 @@ export default defineSchema({
 
 	// Document attachments
 	documentAttachments: defineTable({
-		documentId: v.id("documents"),
+		documentId: v.string(),
 		fileName: v.string(),
 		fileUrl: v.string(),
 		fileSize: v.number(),
 		mimeType: v.string(),
-		uploadedBy: v.id("users"),
+		uploadedBy: v.string(),
 		uploadedAt: v.number(),
 	}).index("by_document", ["documentId"]),
 
 	// Document comments
 	documentComments: defineTable({
-		documentId: v.id("documents"),
-		authorId: v.id("users"),
+		documentId: v.string(),
+		authorId: v.string(),
 		content: v.string(),
-		parentCommentId: v.optional(v.id("documentComments")),
+		parentCommentId: v.optional(v.string()),
 		isResolved: v.boolean(),
 		createdAt: v.number(),
 		updatedAt: v.number(),
@@ -406,9 +385,9 @@ export default defineSchema({
 
 	// Document assignments (for task management)
 	documentAssignments: defineTable({
-		documentId: v.id("documents"),
-		assigneeId: v.id("users"),
-		assignedBy: v.id("users"),
+		documentId: v.string(),
+		assigneeId: v.string(),
+		assignedBy: v.string(),
 		taskDescription: v.string(),
 		status: v.union(
 			v.literal("pending"),
@@ -433,8 +412,8 @@ export default defineSchema({
 
 	// Document activity log
 	documentActivity: defineTable({
-		documentId: v.id("documents"),
-		userId: v.id("users"),
+		documentId: v.string(),
+		userId: v.string(),
 		action: v.union(
 			v.literal("created"),
 			v.literal("edited"),
@@ -459,7 +438,7 @@ export default defineSchema({
 		content: v.string(),
 		category: v.string(),
 		tags: v.array(v.string()),
-		createdBy: v.id("users"),
+		createdBy: v.string(),
 		isPublic: v.boolean(),
 		usageCount: v.number(),
 		createdAt: v.number(),
@@ -470,10 +449,10 @@ export default defineSchema({
 
 	// Document mentions for notifications
 	documentMentions: defineTable({
-		commentId: v.id("documentComments"),
-		documentId: v.id("documents"),
-		mentionedUserId: v.id("users"),
-		mentionedBy: v.id("users"),
+		commentId: v.string(),
+		documentId: v.string(),
+		mentionedUserId: v.string(),
+		mentionedBy: v.string(),
 		isRead: v.boolean(),
 		createdAt: v.number(),
 	})
@@ -484,8 +463,8 @@ export default defineSchema({
 
 	// Document-Task relationships
 	documentTasks: defineTable({
-		documentId: v.id("documents"),
-		taskId: v.id("issues"),
+		documentId: v.string(),
+		taskId: v.string(),
 		relationshipType: v.union(
 			v.literal("attachment"),
 			v.literal("reference"),
@@ -493,7 +472,7 @@ export default defineSchema({
 			v.literal("requirement"),
 		),
 		description: v.optional(v.string()),
-		createdBy: v.id("users"),
+		createdBy: v.string(),
 		createdAt: v.number(),
 	})
 		.index("by_document", ["documentId"])
@@ -502,13 +481,13 @@ export default defineSchema({
 
 	// Issue attachments
 	issueAttachments: defineTable({
-		issueId: v.optional(v.id("issues")),
-		projectId: v.optional(v.id("constructionProjects")),
+		issueId: v.optional(v.string()),
+		projectId: v.optional(v.string()),
 		fileName: v.string(),
 		fileUrl: v.string(),
 		fileSize: v.number(),
 		mimeType: v.string(),
-		uploadedBy: v.id("users"),
+		uploadedBy: v.string(),
 		uploadedAt: v.number(),
 	})
 		.index("by_issue", ["issueId"])
@@ -516,10 +495,10 @@ export default defineSchema({
 
 	// Issue comments
 	issueComments: defineTable({
-		issueId: v.id("issues"),
-		authorId: v.id("users"),
+		issueId: v.string(),
+		authorId: v.string(),
 		content: v.string(),
-		parentCommentId: v.optional(v.id("issueComments")),
+		parentCommentId: v.optional(v.string()),
 		isResolved: v.boolean(),
 		createdAt: v.number(),
 		updatedAt: v.number(),
@@ -529,10 +508,10 @@ export default defineSchema({
 
 	// Issue mentions for notifications
 	issueMentions: defineTable({
-		commentId: v.id("issueComments"),
-		issueId: v.id("issues"),
-		mentionedUserId: v.id("users"),
-		mentionedBy: v.id("users"),
+		commentId: v.string(),
+		issueId: v.string(),
+		mentionedUserId: v.string(),
+		mentionedBy: v.string(),
 		isRead: v.boolean(),
 		createdAt: v.number(),
 	})
@@ -543,8 +522,8 @@ export default defineSchema({
 
 	// Activity tracking for issues
 	issueActivities: defineTable({
-		issueId: v.id("issues"),
-		userId: v.id("users"),
+		issueId: v.string(),
+		userId: v.string(),
 		type: v.union(
 			v.literal("status_changed"),
 			v.literal("assignee_changed"),
@@ -560,14 +539,14 @@ export default defineSchema({
 		newValue: v.optional(v.string()),
 		metadata: v.optional(
 			v.object({
-				oldStatusId: v.optional(v.id("status")),
-				newStatusId: v.optional(v.id("status")),
-				oldAssigneeId: v.optional(v.id("users")),
-				newAssigneeId: v.optional(v.id("users")),
-				oldPriorityId: v.optional(v.id("priorities")),
-				newPriorityId: v.optional(v.id("priorities")),
-				commentId: v.optional(v.id("issueComments")),
-				subtaskId: v.optional(v.id("issues")),
+				oldStatusId: v.optional(v.string()),
+				newStatusId: v.optional(v.string()),
+				oldAssigneeId: v.optional(v.string()),
+				newAssigneeId: v.optional(v.string()),
+				oldPriorityId: v.optional(v.string()),
+				newPriorityId: v.optional(v.string()),
+				commentId: v.optional(v.string()),
+				subtaskId: v.optional(v.string()),
 			}),
 		),
 		createdAt: v.number(),
@@ -579,7 +558,7 @@ export default defineSchema({
 
 	// Push notification subscriptions
 	pushSubscriptions: defineTable({
-		userId: v.id("users"),
+		userId: v.string(),
 		endpoint: v.string(),
 		keys: v.object({
 			p256dh: v.string(),
@@ -594,7 +573,7 @@ export default defineSchema({
 
 	// Notification preferences
 	notificationPreferences: defineTable({
-		userId: v.id("users"),
+		userId: v.string(),
 		// Notification types
 		taskAssigned: v.boolean(),
 		taskStatusChanged: v.boolean(),
@@ -610,7 +589,7 @@ export default defineSchema({
 
 	// Notifications log
 	notifications: defineTable({
-		userId: v.id("users"),
+		userId: v.string(),
 		title: v.string(),
 		body: v.string(),
 		type: v.union(
@@ -623,9 +602,9 @@ export default defineSchema({
 		),
 		data: v.optional(
 			v.object({
-				issueId: v.optional(v.id("issues")),
-				projectId: v.optional(v.id("constructionProjects")),
-				commentId: v.optional(v.id("issueComments")),
+				issueId: v.optional(v.string()),
+				projectId: v.optional(v.string()),
+				commentId: v.optional(v.string()),
 				url: v.optional(v.string()),
 			}),
 		),
@@ -637,7 +616,7 @@ export default defineSchema({
 
 	// Password reset tokens
 	passwordResetTokens: defineTable({
-		userId: v.id("users"),
+		userId: v.string(),
 		token: v.string(),
 		email: v.string(),
 		expiresAt: v.number(),
@@ -650,10 +629,10 @@ export default defineSchema({
 
 	// User generated passwords (for admin-created accounts)
 	userGeneratedPasswords: defineTable({
-		userId: v.id("users"),
+		userId: v.string(),
 		temporaryPassword: v.string(),
 		mustChangePassword: v.boolean(),
-		generatedBy: v.id("users"),
+		generatedBy: v.string(),
 		generatedAt: v.number(),
 		changedAt: v.optional(v.number()),
 	}).index("by_user", ["userId"]),
@@ -662,7 +641,7 @@ export default defineSchema({
 
 	// Chart of Accounts (План счетов)
 	accounts: defineTable({
-		organizationId: v.id("organizations"),
+		organizationId: v.string(), // Better Auth organization ID
 		code: v.string(), // Account code (e.g., "51" for bank accounts)
 		name: v.string(), // Russian name (e.g., "Расчетные счета")
 		type: v.union(
@@ -673,7 +652,7 @@ export default defineSchema({
 			v.literal("expense"), // Расходы
 		),
 		category: v.optional(v.string()), // Sub-category
-		parentAccountId: v.optional(v.id("accounts")), // For hierarchical accounts
+		parentAccountId: v.optional(v.string()), // For hierarchical accounts
 		isActive: v.boolean(),
 		description: v.optional(v.string()),
 		createdAt: v.number(),
@@ -686,8 +665,8 @@ export default defineSchema({
 
 	// Journal Entries (Журнал проводок)
 	journalEntries: defineTable({
-		organizationId: v.id("organizations"),
-		projectId: v.optional(v.id("constructionProjects")),
+		organizationId: v.string(), // Better Auth organization ID
+		projectId: v.optional(v.string()),
 		entryNumber: v.string(), // Unique entry number
 		date: v.string(), // Transaction date
 		description: v.string(), // Entry description
@@ -703,9 +682,9 @@ export default defineSchema({
 			v.literal("posted"), // Проведено
 			v.literal("cancelled"), // Отменено
 		),
-		relatedPaymentId: v.optional(v.id("payments")),
-		createdBy: v.id("users"),
-		approvedBy: v.optional(v.id("users")),
+		relatedPaymentId: v.optional(v.string()),
+		createdBy: v.string(),
+		approvedBy: v.optional(v.string()),
 		createdAt: v.number(),
 		postedAt: v.optional(v.number()),
 	})
@@ -717,8 +696,8 @@ export default defineSchema({
 
 	// Journal Lines (Строки проводок)
 	journalLines: defineTable({
-		journalEntryId: v.id("journalEntries"),
-		accountId: v.id("accounts"),
+		journalEntryId: v.string(),
+		accountId: v.string(),
 		debit: v.number(), // Дебет
 		credit: v.number(), // Кредит
 		description: v.optional(v.string()),
@@ -731,8 +710,8 @@ export default defineSchema({
 
 	// Payments (Платежи)
 	payments: defineTable({
-		organizationId: v.id("organizations"),
-		projectId: v.id("constructionProjects"),
+		organizationId: v.string(), // Better Auth organization ID
+		projectId: v.string(),
 		paymentNumber: v.string(), // Unique payment number
 		type: v.union(
 			v.literal("incoming"), // Входящий платеж
@@ -759,8 +738,8 @@ export default defineSchema({
 			v.literal("other"), // Другое
 		),
 		notes: v.optional(v.string()),
-		createdBy: v.id("users"),
-		confirmedBy: v.optional(v.id("users")),
+		createdBy: v.string(),
+		confirmedBy: v.optional(v.string()),
 		createdAt: v.number(),
 		confirmedAt: v.optional(v.number()),
 	})
@@ -773,7 +752,7 @@ export default defineSchema({
 
 	// Payment Documents (Документы платежей)
 	paymentDocuments: defineTable({
-		paymentId: v.id("payments"),
+		paymentId: v.string(),
 		documentType: v.union(
 			v.literal("invoice"), // Счет
 			v.literal("act"), // Акт
@@ -786,7 +765,7 @@ export default defineSchema({
 		fileUrl: v.string(), // Storage ID
 		fileSize: v.number(),
 		mimeType: v.string(),
-		uploadedBy: v.id("users"),
+		uploadedBy: v.string(),
 		uploadedAt: v.number(),
 	})
 		.index("by_payment", ["paymentId"])
@@ -794,8 +773,8 @@ export default defineSchema({
 
 	// Project Budgets (Бюджеты проектов)
 	projectBudgets: defineTable({
-		organizationId: v.id("organizations"),
-		projectId: v.id("constructionProjects"),
+		organizationId: v.string(), // Better Auth organization ID
+		projectId: v.string(),
 		name: v.string(), // Budget name/version
 		totalBudget: v.number(), // Total budget amount
 		status: v.union(
@@ -805,8 +784,8 @@ export default defineSchema({
 		),
 		effectiveDate: v.string(),
 		notes: v.optional(v.string()),
-		createdBy: v.id("users"),
-		approvedBy: v.optional(v.id("users")),
+		createdBy: v.string(),
+		approvedBy: v.optional(v.string()),
 		createdAt: v.number(),
 		approvedAt: v.optional(v.number()),
 	})
@@ -817,8 +796,8 @@ export default defineSchema({
 
 	// Budget Lines (Статьи бюджета)
 	budgetLines: defineTable({
-		budgetId: v.id("projectBudgets"),
-		accountId: v.id("accounts"), // Link to expense account
+		budgetId: v.string(),
+		accountId: v.string(), // Link to expense account
 		category: v.string(), // Budget category
 		description: v.string(),
 		plannedAmount: v.number(), // Planned amount
@@ -832,8 +811,8 @@ export default defineSchema({
 
 	// Expenses (Расходы)
 	expenses: defineTable({
-		organizationId: v.id("organizations"),
-		projectId: v.id("constructionProjects"),
+		organizationId: v.string(), // Better Auth organization ID
+		projectId: v.string(),
 		expenseNumber: v.string(), // Unique expense number
 		category: v.union(
 			v.literal("materials"), // Материалы
@@ -866,11 +845,11 @@ export default defineSchema({
 			v.literal("card"), // Карта
 			v.literal("other"), // Другое
 		),
-		relatedPaymentId: v.optional(v.id("payments")), // Link to payment if paid
+		relatedPaymentId: v.optional(v.string()), // Link to payment if paid
 		notes: v.optional(v.string()),
-		createdBy: v.id("users"),
-		approvedBy: v.optional(v.id("users")),
-		paidBy: v.optional(v.id("users")),
+		createdBy: v.string(),
+		approvedBy: v.optional(v.string()),
+		paidBy: v.optional(v.string()),
 		createdAt: v.number(),
 		approvedAt: v.optional(v.number()),
 		paidAt: v.optional(v.number()),
@@ -885,7 +864,7 @@ export default defineSchema({
 
 	// Expense Documents (Документы расходов)
 	expenseDocuments: defineTable({
-		expenseId: v.id("expenses"),
+		expenseId: v.string(),
 		documentType: v.union(
 			v.literal("invoice"), // Счет
 			v.literal("receipt"), // Квитанция
@@ -898,7 +877,7 @@ export default defineSchema({
 		fileUrl: v.string(), // Storage ID
 		fileSize: v.number(),
 		mimeType: v.string(),
-		uploadedBy: v.id("users"),
+		uploadedBy: v.string(),
 		uploadedAt: v.number(),
 	})
 		.index("by_expense", ["expenseId"])
@@ -906,13 +885,13 @@ export default defineSchema({
 
 	// Budget Revisions (Изменения бюджета)
 	budgetRevisions: defineTable({
-		projectId: v.id("constructionProjects"),
-		originalBudgetId: v.id("projectBudgets"),
-		newBudgetId: v.id("projectBudgets"),
+		projectId: v.string(),
+		originalBudgetId: v.string(),
+		newBudgetId: v.string(),
 		reason: v.string(), // Reason for revision
 		changeAmount: v.number(), // Positive for increase, negative for decrease
-		revisedBy: v.id("users"),
-		approvedBy: v.optional(v.id("users")),
+		revisedBy: v.string(),
+		approvedBy: v.optional(v.string()),
 		createdAt: v.number(),
 		approvedAt: v.optional(v.number()),
 	})
@@ -922,8 +901,8 @@ export default defineSchema({
 
 	// Account Balances (for performance - cached balances)
 	accountBalances: defineTable({
-		accountId: v.id("accounts"),
-		projectId: v.optional(v.id("constructionProjects")),
+		accountId: v.string(),
+		projectId: v.optional(v.string()),
 		period: v.string(), // YYYY-MM format
 		openingBalance: v.number(),
 		totalDebits: v.number(),
@@ -937,16 +916,16 @@ export default defineSchema({
 		.index("by_account_period", ["accountId", "period"]),
 	// Project Access Control - defines who has access to specific projects
 	projectAccess: defineTable({
-		projectId: v.id("constructionProjects"),
-		userId: v.optional(v.id("users")), // Either user or team, not both
-		teamId: v.optional(v.id("constructionTeams")), // Either team or user, not both
+		projectId: v.string(),
+		userId: v.optional(v.string()), // Either user or team, not both
+		teamId: v.optional(v.string()), // Either team or user, not both
 		accessLevel: v.union(
 			v.literal("owner"), // Full control
 			v.literal("admin"), // Can manage project settings and members
 			v.literal("write"), // Can create/edit tasks and documents
 			v.literal("read"), // View-only access
 		),
-		grantedBy: v.id("users"),
+		grantedBy: v.string(),
 		grantedAt: v.number(),
 		expiresAt: v.optional(v.number()), // Optional expiration date
 	})
@@ -965,10 +944,10 @@ export default defineSchema({
 			v.literal("team"),
 		),
 		resourceId: v.string(), // ID of the specific resource
-		userId: v.optional(v.id("users")),
-		teamId: v.optional(v.id("teams")),
+		userId: v.optional(v.string()),
+		teamId: v.optional(v.string()),
 		permissions: v.array(v.string()), // Array of permission strings like "read", "write", "delete"
-		grantedBy: v.id("users"),
+		grantedBy: v.string(),
 		grantedAt: v.number(),
 		expiresAt: v.optional(v.number()),
 	})
@@ -982,7 +961,7 @@ export default defineSchema({
 		name: v.string(), // e.g., "project_manager_permissions"
 		displayName: v.string(),
 		description: v.string(),
-		permissionIds: v.array(v.id("permissions")),
+		permissionIds: v.array(v.string()),
 		isSystem: v.boolean(),
 		createdAt: v.string(),
 		updatedAt: v.string(),
@@ -990,15 +969,15 @@ export default defineSchema({
 
 	// Team project access for bulk team assignments
 	teamProjectAccess: defineTable({
-		teamId: v.id("constructionTeams"),
-		projectId: v.id("constructionProjects"),
+		teamId: v.string(),
+		projectId: v.string(),
 		accessLevel: v.union(
 			v.literal("admin"),
 			v.literal("write"),
 			v.literal("read"),
 		),
 		inheritToMembers: v.boolean(), // Whether team members inherit this access
-		grantedBy: v.id("users"),
+		grantedBy: v.string(),
 		grantedAt: v.number(),
 	})
 		.index("by_team", ["teamId"])
@@ -1007,9 +986,9 @@ export default defineSchema({
 
 	// Document access control
 	documentAccess: defineTable({
-		documentId: v.id("documents"),
-		userId: v.optional(v.id("users")),
-		teamId: v.optional(v.id("teams")),
+		documentId: v.string(),
+		userId: v.optional(v.string()),
+		teamId: v.optional(v.string()),
 		accessLevel: v.union(
 			v.literal("owner"),
 			v.literal("editor"),
@@ -1017,7 +996,7 @@ export default defineSchema({
 			v.literal("viewer"),
 		),
 		canShare: v.boolean(), // Can share with others
-		grantedBy: v.id("users"),
+		grantedBy: v.string(),
 		grantedAt: v.number(),
 		expiresAt: v.optional(v.number()),
 	})
@@ -1028,8 +1007,8 @@ export default defineSchema({
 
 	// Legal documents for construction projects
 	projectLegalDocuments: defineTable({
-		constructionProjectId: v.id("constructionProjects"),
-		organizationId: v.id("organizations"),
+		constructionProjectId: v.string(),
+		organizationId: v.string(), // Better Auth organization ID
 		documentType: v.union(
 			v.literal("contract"),
 			v.literal("invoice"),
@@ -1045,7 +1024,7 @@ export default defineSchema({
 		fileSize: v.number(),
 		mimeType: v.string(),
 		description: v.optional(v.string()),
-		uploadedBy: v.id("users"),
+		uploadedBy: v.string(),
 		uploadedAt: v.number(),
 		status: v.union(
 			v.literal("draft"),
@@ -1064,9 +1043,9 @@ export default defineSchema({
 			v.union(v.literal("pending"), v.literal("partial"), v.literal("paid")),
 		),
 		notes: v.optional(v.string()),
-		reviewedBy: v.optional(v.id("users")),
+		reviewedBy: v.optional(v.string()),
 		reviewedAt: v.optional(v.number()),
-		approvedBy: v.optional(v.id("users")),
+		approvedBy: v.optional(v.string()),
 		approvedAt: v.optional(v.number()),
 	})
 		.index("by_project", ["constructionProjectId"])

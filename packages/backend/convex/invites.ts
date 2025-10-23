@@ -34,9 +34,8 @@ export const createInvite = mutation({
 
 		// Check if user has permission to invite
 
-		// Check if user has admin role or invite permission
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || (role.name !== "admin" && role.name !== "manager")) {
+		// Check if user has permission to invite
+		if (membership.role !== "admin" && membership.role !== "owner") {
 			throw new Error("Insufficient permissions to invite users");
 		}
 
@@ -464,9 +463,8 @@ export const cancelInvite = mutation({
 			invite.organizationId,
 		);
 
-		// Check if user has admin role
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || (role.name !== "admin" && invite.invitedBy !== user._id)) {
+		// Check if user has permission to cancel
+		if (membership.role !== "admin" && membership.role !== "owner" && invite.invitedBy !== user._id) {
 			throw new Error("Insufficient permissions");
 		}
 

@@ -17,7 +17,7 @@ export default function HeaderNav() {
 				</div>
 			</div>
 			<div className="flex items-center gap-2">
-				<Button className="relative" size="xs" variant="secondary">
+				<Button className="relative" size="sm" variant="secondary">
 					<Plus className="size-4" />
 					<span className="ml-1 hidden sm:inline">Create project</span>
 				</Button>

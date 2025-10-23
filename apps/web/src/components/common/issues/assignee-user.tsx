@@ -80,7 +80,7 @@ export function AssigneeUser({ user }: AssigneeUserProps) {
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				{users
-					.filter((user) => user.teamIds.includes("CORE"))
+					?.filter((user) => user.teamIds?.includes("CORE"))
 					.map((user) => (
 						<DropdownMenuItem
 							key={user.id}

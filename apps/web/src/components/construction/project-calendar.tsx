@@ -152,7 +152,7 @@ export function ConstructionProjectCalendar({
 							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
 					</div>
-					<Button size="xs" onClick={() => openModal({ projectId })}>
+					<Button size="sm" onClick={() => openModal({ projectId })}>
 						<Plus className="mr-1 h-4 w-4" />
 						Новая задача
 					</Button>

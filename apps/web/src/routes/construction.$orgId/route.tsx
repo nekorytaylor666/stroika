@@ -9,10 +9,10 @@ export const Route = createFileRoute("/construction/$orgId")({
 
 function RouteComponent() {
 	return (
-		<MainLayout headersNumber={1}>
-			<AuthGuard>
+		<AuthGuard>
+			<MainLayout headersNumber={1}>
 				<Outlet />
-			</AuthGuard>
-		</MainLayout>
+			</MainLayout>
+		</AuthGuard>
 	);
 }

@@ -93,7 +93,7 @@ export default function Notifications() {
 						<RiSlackLine className="size-4" />
 						<span className="font-medium text-xs">Slack notifications</span>
 					</div>
-					<Button size="xs" variant="outline">
+					<Button size="sm" variant="outline">
 						Configure
 					</Button>
 				</div>

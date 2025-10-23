@@ -1,567 +1,523 @@
 import type { Id } from "./_generated/dataModel";
-import { mutation } from "./_generated/server";
-import type { MutationCtx } from "./_generated/server";
+import { action, mutation } from "./_generated/server";
+import type { MutationCtx, ActionCtx } from "./_generated/server";
+import { authComponent, createAuth } from "./auth";
+import { api } from "./_generated/api";
+import { v } from "convex/values";
 
-// Main seed function that orchestrates all seeding
-export const seedDatabase = mutation({
+// Utility function to cast Better Auth string IDs to Convex user IDs
+// This is needed because Better Auth uses string IDs but Convex expects typed IDs
+function asUserId(stringId: string): Id<"users"> {
+	return stringId as Id<"users">;
+}
+
+function asUserIdArray(stringIds: string[]): Id<"users">[] {
+	return stringIds as Id<"users">[];
+}
+
+// Helper function to clear all data from the database
+async function clearAllData(ctx: MutationCtx) {
+	const results = [];
+
+	try {
+		// Get all table names from schema (excluding auth tables)
+		const tablesToClear = [
+			// Main data tables
+			"constructionProjects",
+			"monthlyRevenue",
+			"workCategories",
+			"constructionTeams",
+			"issues",
+			"documents",
+			"documentVersions",
+			"documentAttachments",
+			"documentComments",
+			"documentAssignments",
+			"documentActivity",
+			"documentTemplates",
+			"documentMentions",
+			"documentTasks",
+			"issueAttachments",
+			"issueComments",
+			"issueMentions",
+			"issueActivities",
+			"pushSubscriptions",
+			"notificationPreferences",
+			"notifications",
+			"passwordResetTokens",
+			"userGeneratedPasswords",
+
+			// Finance tables
+			"accounts",
+			"journalEntries",
+			"journalLines",
+			"payments",
+			"paymentDocuments",
+			"projectBudgets",
+			"budgetLines",
+			"expenses",
+			"expenseDocuments",
+			"budgetRevisions",
+			"accountBalances",
+
+			// Access control tables (keeping some for now)
+			"documentAccess",
+			"projectLegalDocuments",
+
+			// Organization and role tables (keeping some for internal structure)
+			"userDepartments",
+			"departments",
+			"organizationalPositions",
+
+			// Base data tables
+			"labels",
+			"priorities",
+			"status",
+
+			// Users table (custom schema)
+			"users",
+		];
+
+		for (const tableName of tablesToClear) {
+			try {
+				const docs = await ctx.db.query(tableName as any).collect();
+				let deletedCount = 0;
+
+				for (const doc of docs) {
+					await ctx.db.delete(doc._id);
+					deletedCount++;
+				}
+
+				results.push({
+					table: tableName,
+					deletedCount,
+					status: "success" as const
+				});
+			} catch (error) {
+				results.push({
+					table: tableName,
+					error: error instanceof Error ? error.message : String(error),
+					status: "error" as const
+				});
+			}
+		}
+
+		// Clear Better Auth tables
+		try {
+			const authTables = ["user", "session", "account", "verification", "organization", "member", "invitation", "jwks"];
+
+			for (const tableName of authTables) {
+				try {
+					const docs = await ctx.db.query(tableName as any).collect();
+					let deletedCount = 0;
+
+					for (const doc of docs) {
+						await ctx.db.delete(doc._id);
+						deletedCount++;
+					}
+
+					results.push({
+						table: `auth.${tableName}`,
+						deletedCount,
+						status: "success" as const
+					});
+				} catch (error) {
+					results.push({
+						table: `auth.${tableName}`,
+						error: error instanceof Error ? error.message : String(error),
+						status: "error" as const
+					});
+				}
+			}
+		} catch (error) {
+			results.push({
+				table: "auth_tables",
+				error: error instanceof Error ? error.message : String(error),
+				status: "error"
+			});
+		}
+
+		const totalDeleted = results.reduce((sum, result) => sum + (result.deletedCount || 0), 0);
+		const errors = results.filter(result => result.status === "error");
+
+		return {
+			message: "Database cleared",
+			totalDeleted,
+			tablesCleared: results.length,
+			errors: errors.length,
+			results,
+		};
+
+	} catch (error) {
+		return {
+			message: "Failed to clear database",
+			error: error instanceof Error ? error.message : String(error),
+			results,
+		};
+	}
+}
+
+// Action function that orchestrates all seeding by calling individual mutations
+async function performSeedingAction(ctx: ActionCtx) {
+	const results = [];
+
+	try {
+		console.log("🌱 Starting database seeding process...");
+
+		// Skip permissions and roles - using Better Auth built-in roles
+
+		// 1. Create organization with Better Auth
+		console.log("🏢 Creating organization...");
+		let orgResult: any;
+		try {
+			// Use a predefined owner user ID
+			const ownerId = "j5704yk0nwh8aczceyvz0t6nvh7swn77"; // Replace with actual user ID
+			console.log(`✅ Using owner user: ${ownerId}`);
+
+			orgResult = await ctx.runMutation(api.seedDatabase.createOrganizationMutation, {
+				ownerId: ownerId,
+			});
+			console.log("🏢 Organization creation result:", orgResult);
+			results.push({ step: "Organization", ...orgResult });
+		} catch (userCreationError) {
+			console.error("❌ Failed to create organization:", userCreationError);
+			throw new Error(`Organization creation failed: ${userCreationError instanceof Error ? userCreationError.message : String(userCreationError)}`);
+		}
+
+		// 2. Create organizational positions and departments (keeping these for internal structure)
+		console.log("🏗️ Creating organizational positions...");
+		const positionsResult = await ctx.runMutation(api.seedDatabase.createOrganizationalPositionsMutation, {});
+		console.log(`✅ Created ${positionsResult.positionsCreated} positions`);
+		results.push({ step: "Organizational Positions", ...positionsResult });
+
+		console.log("🏢 Creating departments...");
+		const departmentsResult = await ctx.runMutation(api.seedDatabase.createDepartmentsMutation, {
+			organizationId: orgResult.organizationId,
+		});
+		console.log(`✅ Created ${departmentsResult.departmentsCreated} departments`);
+		results.push({ step: "Departments", ...departmentsResult });
+
+		// 3. Create base data (statuses, priorities, labels)
+		console.log("📊 Creating base data (statuses, priorities, labels)...");
+		const baseDataResult = await ctx.runMutation(api.seedDatabase.createBaseDataMutation, {});
+		console.log(`✅ Created base data: ${baseDataResult.statusIds.length} statuses, ${baseDataResult.priorityIds.length} priorities, ${baseDataResult.labelIds.length} labels`);
+		results.push({ step: "Base Data", ...baseDataResult });
+
+		// 4. Create additional users with Better Auth (simplified roles)
+		console.log("👥 Creating additional users...");
+		const usersResult = await createUsersWithAction(
+			ctx,
+			orgResult.organizationId,
+		);
+		console.log(`✅ Created ${usersResult.usersCreated} additional users (total: ${usersResult.userIds.length})`);
+		results.push({ step: "Users", ...usersResult });
+
+		// 5. Create teams using Better Auth only
+		console.log("🤝 Creating Better Auth teams...");
+		const teamsResult = await createTeamsWithBetterAuth(
+			ctx,
+			orgResult.organizationId,
+			usersResult.userIds,
+		);
+		console.log(`✅ Created ${teamsResult.teamsCreated} teams`);
+		results.push({ step: "Teams", ...teamsResult });
+
+		// 6. Create construction projects (simplified without custom permissions)
+		console.log("🏗️ Creating construction projects...");
+		const projectsResult = await ctx.runMutation(api.seedDatabase.createConstructionProjectsMutation, {
+			organizationId: orgResult.organizationId,
+			userIds: usersResult.userIds,
+			statusIds: baseDataResult.statusIds,
+			priorityIds: baseDataResult.priorityIds,
+		});
+		console.log(`✅ Created ${projectsResult.projectsCreated} construction projects`);
+		results.push({ step: "Construction Projects", ...projectsResult });
+
+		// 7. Create sample tasks
+		console.log("📋 Creating sample tasks...");
+		const tasksResult = await ctx.runMutation(api.seedDatabase.createTasksMutation, {
+			organizationId: orgResult.organizationId,
+			userIds: usersResult.userIds,
+			projectIds: projectsResult.projectIds,
+			statusIds: baseDataResult.statusIds,
+			priorityIds: baseDataResult.priorityIds,
+			labelIds: baseDataResult.labelIds,
+		});
+		console.log(`✅ Created ${tasksResult.tasksCreated} tasks`);
+		results.push({ step: "Tasks", ...tasksResult });
+
+		// 8. Create sample documents
+		console.log("📄 Creating sample documents...");
+		const documentsResult = await ctx.runMutation(api.seedDatabase.createDocumentsMutation, {
+			organizationId: orgResult.organizationId,
+			userIds: usersResult.userIds,
+			projectIds: projectsResult.projectIds,
+		});
+		console.log(`✅ Created ${documentsResult.documentsCreated} documents`);
+		results.push({ step: "Documents", ...documentsResult });
+
+		console.log("🎉 Database seeding completed successfully!");
+		console.log(`📊 Summary: ${usersResult.userIds.length} users, ${projectsResult.projectIds.length} projects, ${tasksResult.taskIds.length} tasks, ${teamsResult.teamIds.length} teams`);
+
+		return {
+			message: "Database seeded successfully",
+			organizationId: orgResult.organizationId,
+			results,
+			summary: {
+				users: usersResult.userIds.length,
+				projects: projectsResult.projectIds.length,
+				tasks: tasksResult.taskIds.length,
+				teams: teamsResult.teamIds.length,
+			},
+		};
+	} catch (error) {
+		console.error("❌ SEEDING FAILED:", error);
+		console.error("📍 Error details:", {
+			message: error instanceof Error ? error.message : String(error),
+			stack: error instanceof Error ? error.stack : undefined,
+			resultsBeforeError: results.map(r => r.step)
+		});
+
+		return {
+			message: "Seeding failed",
+			error: error instanceof Error ? error.message : String(error),
+			errorStack: error instanceof Error ? error.stack : undefined,
+			completedSteps: results.map(r => r.step),
+			results,
+		};
+	}
+}
+
+// Clear all data from the database
+export const clearDatabase = mutation({
+	args: {},
+	handler: async (ctx) => {
+		return await clearAllData(ctx);
+	},
+});
+
+export const seedAdmin = mutation({
+	args: {},
+
+	handler: async (ctx) => {
+		try {
+			const auth = createAuth(ctx);
+
+			const res = await auth.api.signUpEmail({
+				body: {
+					email: "akmt.me23@gmail.com",
+					password: "nekorytaylor123!",
+					name: "Akmt Owner",
+					rememberMe: true,
+
+				},
+				headers: await authComponent.getHeaders(ctx),
+			});
+
+			await auth.api.setRole({
+				body: {
+					userId: res.user.id,
+					role: "admin",
+				},
+				headers: await authComponent.getHeaders(ctx),
+			})
+
+			return {
+				message: "Admin user created",
+			}
+		} catch (error) {
+			console.error("❌ SEEDING FAILED:", error);
+			throw new Error(`User creation failed: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	},
+});
+
+// Clear database and then seed action
+export const clearAndSeed = action({
 	args: {},
 	handler: async (ctx) => {
 		const results = [];
 
-		// Check if data already exists
-		const existingOrg = await ctx.db.query("organizations").first();
-		if (existingOrg) {
-			return {
-				message: "Database already seeded",
-				skipped: true,
-				organizationId: existingOrg._id,
-			};
-		}
-
 		try {
-			// 1. Create permissions first (needed for roles)
-			const permissionsResult = await createPermissions(ctx);
-			results.push({ step: "Permissions", ...permissionsResult });
+			console.log("🗑️ Starting database clear and seed process...");
 
-			// 2. Create system roles with permissions
-			const rolesResult = await createSystemRoles(
-				ctx,
-				permissionsResult.permissionMap,
-			);
-			results.push({ step: "System Roles", ...rolesResult });
+			// 1. Clear all data first
+			console.log("🧹 Clearing existing data...");
+			const clearResult = await ctx.runMutation(api.seedDatabase.clearDatabase, {});
+			console.log(`✅ Cleared ${clearResult.totalDeleted} records from ${clearResult.tablesCleared} tables`);
+			results.push({ step: "Clear Database", ...clearResult });
 
-			// 3. Create organization with proper owner
-			const orgResult = await createOrganization(ctx, rolesResult.roleIds);
-			results.push({ step: "Organization", ...orgResult });
+			// 2. Run the seeding process
+			console.log("🌱 Starting seeding process...");
+			const seedResult = await performSeedingAction(ctx);
+			results.push({ step: "Seed Database", ...seedResult });
 
-			// 4. Create organizational positions
-			const positionsResult = await createOrganizationalPositions(ctx);
-			results.push({ step: "Organizational Positions", ...positionsResult });
-
-			// 5. Create departments
-			const departmentsResult = await createDepartments(
-				ctx,
-				orgResult.organizationId,
-			);
-			results.push({ step: "Departments", ...departmentsResult });
-
-			// 6. Create base data (statuses, priorities, labels)
-			const baseDataResult = await createBaseData(ctx);
-			results.push({ step: "Base Data", ...baseDataResult });
-
-			// 7. Create sample users with proper roles
-			const usersResult = await createUsers(
-				ctx,
-				orgResult.organizationId,
-				rolesResult.roleIds,
-			);
-			results.push({ step: "Users", ...usersResult });
-
-			// 8. Create teams
-			const teamsResult = await createTeams(
-				ctx,
-				orgResult.organizationId,
-				usersResult.userIds,
-			);
-			results.push({ step: "Teams", ...teamsResult });
-
-			// 9. Create construction teams
-			const constructionTeamsResult = await createConstructionTeams(
-				ctx,
-				orgResult.organizationId,
-				usersResult.userIds,
-			);
-			results.push({ step: "Construction Teams", ...constructionTeamsResult });
-
-			// 10. Create construction projects with proper access
-			const projectsResult = await createConstructionProjects(
-				ctx,
-				orgResult.organizationId,
-				usersResult.userIds,
-				baseDataResult.statusIds,
-				baseDataResult.priorityIds,
-			);
-			results.push({ step: "Construction Projects", ...projectsResult });
-
-			// 11. Create sample tasks
-			const tasksResult = await createTasks(
-				ctx,
-				orgResult.organizationId,
-				usersResult.userIds,
-				projectsResult.projectIds,
-				baseDataResult.statusIds,
-				baseDataResult.priorityIds,
-				baseDataResult.labelIds,
-			);
-			results.push({ step: "Tasks", ...tasksResult });
-
-			// 12. Create sample documents
-			const documentsResult = await createDocuments(
-				ctx,
-				orgResult.organizationId,
-				usersResult.userIds,
-				projectsResult.projectIds,
-			);
-			results.push({ step: "Documents", ...documentsResult });
-
+			console.log("🎉 Clear and seed process completed successfully!");
 			return {
-				message: "Database seeded successfully",
-				organizationId: orgResult.organizationId,
+				message: "Database cleared and seeded successfully",
 				results,
-				summary: {
-					users: usersResult.userIds.length,
-					projects: projectsResult.projectIds.length,
-					tasks: tasksResult.taskIds.length,
-					teams: teamsResult.teamIds.length,
-				},
 			};
+
 		} catch (error) {
+			console.error("❌ CLEAR AND SEED FAILED:", error);
+			console.error("📍 Error details:", {
+				message: error instanceof Error ? error.message : String(error),
+				stack: error instanceof Error ? error.stack : undefined,
+				completedSteps: results.map(r => r.step)
+			});
+
 			return {
-				message: "Seeding failed",
+				message: "Failed to clear and seed database",
 				error: error instanceof Error ? error.message : String(error),
+				errorStack: error instanceof Error ? error.stack : undefined,
+				completedSteps: results.map(r => r.step),
 				results,
 			};
 		}
 	},
 });
 
-// Create all permissions
-async function createPermissions(ctx: MutationCtx) {
-	const now = new Date().toISOString();
-	const permissionMap: Record<string, Id<"permissions">> = {};
+// Individual mutation functions for each seeding step
 
-	const permissions = [
-		// Project permissions
-		{
-			resource: "constructionProjects",
-			action: "create",
-			scope: "organization",
-			description: "Create new projects",
-		},
-		{
-			resource: "constructionProjects",
-			action: "read",
-			scope: "organization",
-			description: "View projects",
-		},
-		{
-			resource: "constructionProjects",
-			action: "update",
-			scope: "organization",
-			description: "Edit projects",
-		},
-		{
-			resource: "constructionProjects",
-			action: "delete",
-			scope: "organization",
-			description: "Delete projects",
-		},
-		{
-			resource: "constructionProjects",
-			action: "manage",
-			scope: "organization",
-			description: "Full project management",
-		},
+export const createOrganizationMutation = mutation({
+	args: {
+		ownerId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		return await createOrganization(ctx, args.ownerId);
+	},
+});
 
-		// User permissions
-		{
-			resource: "users",
-			action: "create",
-			scope: "organization",
-			description: "Create new users",
-		},
-		{
-			resource: "users",
-			action: "read",
-			scope: "organization",
-			description: "View user profiles",
-		},
-		{
-			resource: "users",
-			action: "update",
-			scope: "organization",
-			description: "Edit user profiles",
-		},
-		{
-			resource: "users",
-			action: "delete",
-			scope: "organization",
-			description: "Delete users",
-		},
-		{
-			resource: "users",
-			action: "manage",
-			scope: "organization",
-			description: "Full user management",
-		},
+export const createOrganizationalPositionsMutation = mutation({
+	args: {},
+	handler: async (ctx) => {
+		return await createOrganizationalPositions(ctx);
+	},
+});
 
-		// Team permissions
-		{
-			resource: "teams",
-			action: "create",
-			scope: "organization",
-			description: "Create teams",
-		},
-		{
-			resource: "teams",
-			action: "read",
-			scope: "organization",
-			description: "View teams",
-		},
-		{
-			resource: "teams",
-			action: "update",
-			scope: "organization",
-			description: "Edit teams",
-		},
-		{
-			resource: "teams",
-			action: "delete",
-			scope: "organization",
-			description: "Delete teams",
-		},
-		{
-			resource: "teams",
-			action: "manage",
-			scope: "organization",
-			description: "Full team management",
-		},
+export const createDepartmentsMutation = mutation({
+	args: {
+		organizationId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		return await createDepartments(ctx, args.organizationId);
+	},
+});
 
-		// Document permissions
-		{
-			resource: "documents",
-			action: "create",
-			scope: "project",
-			description: "Create documents",
-		},
-		{
-			resource: "documents",
-			action: "read",
-			scope: "project",
-			description: "View documents",
-		},
-		{
-			resource: "documents",
-			action: "update",
-			scope: "project",
-			description: "Edit documents",
-		},
-		{
-			resource: "documents",
-			action: "delete",
-			scope: "project",
-			description: "Delete documents",
-		},
-		{
-			resource: "documents",
-			action: "manage",
-			scope: "project",
-			description: "Full document management",
-		},
+export const createBaseDataMutation = mutation({
+	args: {},
+	handler: async (ctx) => {
+		return await createBaseData(ctx);
+	},
+});
 
-		// Issue permissions
-		{
-			resource: "issues",
-			action: "create",
-			scope: "project",
-			description: "Create tasks/issues",
-		},
-		{
-			resource: "issues",
-			action: "read",
-			scope: "project",
-			description: "View tasks/issues",
-		},
-		{
-			resource: "issues",
-			action: "update",
-			scope: "project",
-			description: "Edit tasks/issues",
-		},
-		{
-			resource: "issues",
-			action: "delete",
-			scope: "project",
-			description: "Delete tasks/issues",
-		},
-		{
-			resource: "issues",
-			action: "manage",
-			scope: "project",
-			description: "Full task management",
-		},
+export const createUsersAction = action({
+	args: {
+		organizationId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		return await createUsersWithAction(ctx, args.organizationId);
+	},
+});
 
-		// Member permissions
-		{
-			resource: "members",
-			action: "invite",
-			scope: "organization",
-			description: "Invite new members",
-		},
-		{
-			resource: "members",
-			action: "remove",
-			scope: "organization",
-			description: "Remove members",
-		},
-		{
-			resource: "members",
-			action: "manage",
-			scope: "organization",
-			description: "Full member management",
-		},
+export const createConstructionProjectsMutation = mutation({
+	args: {
+		organizationId: v.string(),
+		userIds: v.array(v.string()),
+		statusIds: v.array(v.id("status")),
+		priorityIds: v.array(v.id("priorities")),
+	},
+	handler: async (ctx, args) => {
+		return await createConstructionProjects(
+			ctx,
+			args.organizationId,
+			args.userIds,
+			args.statusIds,
+			args.priorityIds
+		);
+	},
+});
 
-		// Role permissions
-		{
-			resource: "roles",
-			action: "create",
-			scope: "organization",
-			description: "Create roles",
-		},
-		{
-			resource: "roles",
-			action: "read",
-			scope: "organization",
-			description: "View roles",
-		},
-		{
-			resource: "roles",
-			action: "update",
-			scope: "organization",
-			description: "Edit roles",
-		},
-		{
-			resource: "roles",
-			action: "delete",
-			scope: "organization",
-			description: "Delete roles",
-		},
-		{
-			resource: "roles",
-			action: "manage",
-			scope: "organization",
-			description: "Full role management",
-		},
-	];
+export const createTasksMutation = mutation({
+	args: {
+		organizationId: v.string(),
+		userIds: v.array(v.string()),
+		projectIds: v.array(v.id("constructionProjects")),
+		statusIds: v.array(v.id("status")),
+		priorityIds: v.array(v.id("priorities")),
+		labelIds: v.array(v.id("labels")),
+	},
+	handler: async (ctx, args) => {
+		return await createTasks(
+			ctx,
+			args.organizationId,
+			args.userIds,
+			args.projectIds,
+			args.statusIds,
+			args.priorityIds,
+			args.labelIds
+		);
+	},
+});
 
-	for (const perm of permissions) {
-		const id = await ctx.db.insert("permissions", {
-			...perm,
-			createdAt: now,
-		});
-		permissionMap[`${perm.resource}_${perm.action}`] = id;
-	}
+export const createDocumentsMutation = mutation({
+	args: {
+		organizationId: v.string(),
+		userIds: v.array(v.string()),
+		projectIds: v.array(v.id("constructionProjects")),
+	},
+	handler: async (ctx, args) => {
+		return await createDocuments(
+			ctx,
+			args.organizationId,
+			args.userIds,
+			args.projectIds
+		);
+	},
+});
 
-	return {
-		message: "Permissions created",
-		permissionsCreated: permissions.length,
-		permissionMap,
-	};
-}
+// Main seed action that orchestrates all seeding by calling individual mutations
+export const seedDatabase = action({
+	args: {},
+	handler: async (ctx) => {
+		return await performSeedingAction(ctx);
+	},
+});
 
-// Create system roles
-async function createSystemRoles(
-	ctx: MutationCtx,
-	permissionMap: Record<string, Id<"permissions">>,
-) {
-	const now = new Date().toISOString();
-	const roleIds: Record<string, Id<"roles">> = {};
+// Removed permissions system - using Better Auth roles instead
 
-	const roles = [
-		{
-			name: "owner",
-			displayName: "Владелец",
-			description: "Полный доступ к системе",
-			isSystem: true,
-			isDirector: true,
-			priority: 100,
-			permissions: Object.values(permissionMap), // All permissions
-		},
-		{
-			name: "director",
-			displayName: "Директор",
-			description: "Полный доступ ко всем проектам и управлению",
-			isSystem: true,
-			isDirector: true,
-			priority: 90,
-			permissions: Object.values(permissionMap), // All permissions
-		},
-		{
-			name: "admin",
-			displayName: "Администратор",
-			description: "Управление организацией и членами",
-			isSystem: true,
-			isDirector: false,
-			priority: 80,
-			permissions: [
-				permissionMap.constructionProjects_manage,
-				permissionMap.users_manage,
-				permissionMap.teams_manage,
-				permissionMap.members_manage,
-				permissionMap.documents_manage,
-				permissionMap.issues_manage,
-				permissionMap.roles_read,
-			].filter(Boolean),
-		},
-		{
-			name: "project_manager",
-			displayName: "Руководитель проекта",
-			description: "Управление назначенными проектами",
-			isSystem: true,
-			isDirector: false,
-			priority: 70,
-			permissions: [
-				permissionMap.constructionProjects_read,
-				permissionMap.constructionProjects_update,
-				permissionMap.teams_read,
-				permissionMap.teams_update,
-				permissionMap.documents_manage,
-				permissionMap.issues_manage,
-				permissionMap.users_read,
-			].filter(Boolean),
-		},
-		{
-			name: "team_lead",
-			displayName: "Руководитель команды",
-			description: "Управление командными задачами и документами",
-			isSystem: true,
-			isDirector: false,
-			priority: 60,
-			permissions: [
-				permissionMap.constructionProjects_read,
-				permissionMap.teams_read,
-				permissionMap.documents_create,
-				permissionMap.documents_read,
-				permissionMap.documents_update,
-				permissionMap.issues_create,
-				permissionMap.issues_read,
-				permissionMap.issues_update,
-				permissionMap.users_read,
-			].filter(Boolean),
-		},
-		{
-			name: "member",
-			displayName: "Участник",
-			description: "Стандартный член команды",
-			isSystem: true,
-			isDirector: false,
-			priority: 50,
-			permissions: [
-				permissionMap.constructionProjects_read,
-				permissionMap.teams_read,
-				permissionMap.documents_read,
-				permissionMap.documents_create,
-				permissionMap.issues_read,
-				permissionMap.issues_create,
-				permissionMap.issues_update,
-				permissionMap.users_read,
-			].filter(Boolean),
-		},
-		{
-			name: "viewer",
-			displayName: "Наблюдатель",
-			description: "Только просмотр назначенных ресурсов",
-			isSystem: true,
-			isDirector: false,
-			priority: 40,
-			permissions: [
-				permissionMap.constructionProjects_read,
-				permissionMap.teams_read,
-				permissionMap.documents_read,
-				permissionMap.issues_read,
-				permissionMap.users_read,
-			].filter(Boolean),
-		},
-	];
+// Removed custom roles system - using Better Auth roles instead
 
-	for (const roleData of roles) {
-		const roleId = await ctx.db.insert("roles", {
-			organizationId: undefined, // System roles
-			name: roleData.name,
-			displayName: roleData.displayName,
-			description: roleData.description,
-			isSystem: roleData.isSystem,
-			isDirector: roleData.isDirector,
-			priority: roleData.priority,
-			createdAt: now,
-			updatedAt: now,
-		});
-
-		// Assign permissions to role
-		for (const permissionId of roleData.permissions) {
-			await ctx.db.insert("rolePermissions", {
-				roleId,
-				permissionId,
-				createdAt: now,
-			});
-		}
-
-		roleIds[roleData.name] = roleId;
-	}
-
-	return {
-		message: "System roles created",
-		rolesCreated: roles.length,
-		roleIds,
-	};
-}
-
-// Create organization
+// Create organization using Better Auth organization plugin
 async function createOrganization(
 	ctx: MutationCtx,
-	roleIds: Record<string, Id<"roles">>,
+	ownerId: string,
 ) {
-	// Create the owner user first
-	const ownerId = await ctx.db.insert("users", {
-		name: "Akmt Owner",
-		email: "akmt.me23@gmail.com",
-		avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=akmt",
-		status: "online",
-		roleId: roleIds.owner,
-		joinedDate: "2020-01-15",
-		teamIds: [],
-		position: "Генеральный директор",
-		currentOrganizationId: undefined as any, // Will be set after org creation
-		isActive: true,
-		lastLogin: new Date().toISOString(),
-	});
+	const auth = createAuth(ctx);
 
-	// Create organization
-	const organizationId = await ctx.db.insert("organizations", {
-		name: "СтройКомплекс",
-		slug: "stroycomplex",
-		description: "Ведущая строительная компания России",
-		logoUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=stroycomplex",
-		website: "https://stroycomplex.ru",
-		ownerId,
-		settings: {
-			allowInvites: true,
-			requireEmailVerification: false,
-			defaultRoleId: roleIds.member,
+
+
+	// Create organization using Better Auth organization plugin
+	const orgResponse = await auth.api.createOrganization({
+		body: {
+			name: "СтройКомплекс",
+			slug: "stroycomplex",
+			userId: ownerId,
+			logo: "https://api.dicebear.com/7.x/shapes/svg?seed=stroycomplex",
 		},
-		createdAt: Date.now(),
-		updatedAt: Date.now(),
+		headers: await authComponent.getHeaders(ctx),
 	});
 
-	// Update owner's organization
-	await ctx.db.patch(ownerId, {
-		currentOrganizationId: organizationId,
-	});
+	if (!orgResponse?.id) {
+		throw new Error("Failed to create organization");
+	}
 
-	// Add owner as organization member
-	await ctx.db.insert("organizationMembers", {
-		organizationId,
-		userId: ownerId,
-		roleId: roleIds.owner,
-		joinedAt: Date.now(),
-		invitedBy: undefined,
-		isActive: true,
-	});
+
 
 	return {
 		message: "Organization created",
-		organizationId,
-		ownerId,
+		organizationId: orgResponse?.id,
+		ownerId: ownerId,
 	};
 }
 
@@ -603,7 +559,7 @@ async function createOrganizationalPositions(ctx: MutationCtx) {
 // Create departments
 async function createDepartments(
 	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
+	organizationId: string, // Better Auth organization ID
 ) {
 	const now = new Date().toISOString();
 
@@ -729,103 +685,143 @@ async function createBaseData(ctx: MutationCtx) {
 	};
 }
 
-// Create users
+// Create users using Better Auth admin plugin
 async function createUsers(
 	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
+	organizationId: string, // Better Auth organization ID
 	roleIds: Record<string, Id<"roles">>,
 ) {
-	const now = new Date().toISOString();
-	const userIds: Id<"users">[] = [];
+	const userIds: string[] = [];
+	const auth = createAuth(ctx);
 
-	// Get owner (already created)
-	const owner = await ctx.db
-		.query("users")
-		.withIndex("by_email", (q) => q.eq("email", "akmt.me23@gmail.com"))
-		.first();
 
-	if (owner) {
-		userIds.push(owner._id);
-	}
-
-	// Additional users
+	// Additional users based on organizational chart
 	const users = [
 		{
-			name: "Мария Иванова",
-			email: "maria@stroycomplex.ru",
-			position: "Руководитель проектов",
-			roleId: roleIds.project_manager,
-		},
-		{
-			name: "Дмитрий Сидоров",
-			email: "dmitry@stroycomplex.ru",
-			position: "Главный инженер",
+			name: "omirbek.zhanserik@mail.ru",
+			email: "omirbek.zhanserik@mail.ru",
+			position: "Директор отдела продаж",
 			roleId: roleIds.director,
+			password: "password123",
 		},
 		{
-			name: "Елена Козлова",
-			email: "elena@stroycomplex.ru",
-			position: "Архитектор",
-			roleId: roleIds.team_lead,
+			name: "reinaamet@mail.ru",
+			email: "reinaamet@mail.ru",
+			position: "Технический директор",
+			roleId: roleIds.director,
+			password: "password123",
 		},
 		{
-			name: "Андрей Волков",
-			email: "andrey@stroycomplex.ru",
-			position: "Инженер-конструктор",
+			name: "ssako.05@mail.ru",
+			email: "ssako.05@mail.ru",
+			position: "Специалист отдела продаж",
 			roleId: roleIds.member,
+			password: "password123",
 		},
 		{
-			name: "Ольга Новикова",
-			email: "olga@stroycomplex.ru",
-			position: "Менеджер по закупкам",
+			name: "yernursss@gmail.com",
+			email: "yernursss@gmail.com",
+			position: "Специалист отдела продаж",
 			roleId: roleIds.member,
+			password: "password123",
 		},
 		{
-			name: "Сергей Петров",
-			email: "sergey@stroycomplex.ru",
-			position: "Прораб",
-			roleId: roleIds.team_lead,
-		},
-		{
-			name: "Наталья Смирнова",
-			email: "natalia@stroycomplex.ru",
-			position: "Экономист",
+			name: "amir211194@gmail.com",
+			email: "amir211194@gmail.com",
+			position: "Специалист отдела продаж",
 			roleId: roleIds.member,
+			password: "password123",
 		},
 		{
-			name: "Игорь Федоров",
-			email: "igor@stroycomplex.ru",
-			position: "Начальник участка",
-			roleId: roleIds.team_lead,
+			name: "bolatbek.sabitov.02@mail.ru",
+			email: "bolatbek.sabitov.02@mail.ru",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "alzada-03@bk.ru",
+			email: "alzada-03@bk.ru",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "jrisani@mail.ru",
+			email: "jrisani@mail.ru",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "ganlormenov1@gmail.com",
+			email: "ganlormenov1@gmail.com",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "Zaicev120406@mail.ru",
+			email: "Zaicev120406@mail.ru",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "kadyrbayzhuldyz@gmail.com",
+			email: "kadyrbayzhuldyz@gmail.com",
+			position: "Технический специалист",
+			roleId: roleIds.member,
+			password: "password123",
+		},
+		{
+			name: "kakenov.talgat@mail.ru",
+			email: "kakenov.talgat@mail.ru",
+			position: "Главный инженер проекта (ГИП)",
+			roleId: roleIds.project_manager,
+			password: "password123",
+		},
+		{
+			name: "botakoz_02_04@bk.ru",
+			email: "botakoz_02_04@bk.ru",
+			position: "Офис менеджер",
+			roleId: roleIds.admin,
+			password: "password123",
 		},
 	];
 
 	for (const userData of users) {
-		const userId = await ctx.db.insert("users", {
-			name: userData.name,
-			email: userData.email,
-			avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.email}`,
-			status: "online",
-			roleId: userData.roleId,
-			joinedDate: "2021-01-15",
-			teamIds: [],
-			position: userData.position,
-			currentOrganizationId: organizationId,
-			isActive: true,
-			lastLogin: now,
+		// Create user using Better Auth
+		const userResponse = await auth.api.createUser({
+			body: {
+				email: userData.email,
+				name: userData.name,
+				password: userData.password,
+				role: "user",
+				data: {
+					position: userData.position,
+				}
+			},
+			headers: await authComponent.getHeaders(ctx),
 		});
 
-		// Add as organization member
-		await ctx.db.insert("organizationMembers", {
-			organizationId,
-			userId,
-			roleId: userData.roleId,
-			joinedAt: Date.now(),
-			invitedBy: owner?._id,
-			isActive: true,
-		});
+		if (!userResponse?.user) {
+			console.error(`Failed to create user ${userData.email}`);
+			continue;
+		}
+		// Add user to organization using Better Auth organization plugin
+		await auth.api.addMember({
+			body: {
+				organizationId,
+				userId: userResponse.user.id,
+				role: userData.roleId === roleIds.director ? "admin" : "member",
 
-		userIds.push(userId);
+			},
+			headers: await authComponent.getHeaders(ctx),
+		},
+		);
+
+		userIds.push(userResponse.user.id);
 	}
 
 	return {
@@ -835,138 +831,251 @@ async function createUsers(
 	};
 }
 
-// Create teams
-async function createTeams(
-	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
-	userIds: Id<"users">[],
+// Create users using Better Auth admin plugin - Action version to handle timeouts
+async function createUsersWithAction(
+	ctx: ActionCtx,
+	organizationId: string, // Better Auth organization ID
 ) {
-	const teams = [
+	const userIds: string[] = [];
+	const auth = createAuth(ctx);
+
+	// Additional users based on organizational chart (simplified with Better Auth roles)
+	const users = [
 		{
-			name: "Команда проектирования",
-			description: "Архитектурное и инженерное проектирование",
-			leaderId: userIds[3], // Елена Козлова
-			memberIds: [userIds[3], userIds[4], userIds[7]],
+			name: "omirbek.zhanserik@mail.ru",
+			email: "omirbek.zhanserik@mail.ru",
+			position: "Директор отдела продаж",
+			betterAuthRole: "admin", // Better Auth role
+			password: "password123",
 		},
 		{
-			name: "Строительная бригада №1",
-			description: "Основная строительная бригада",
-			leaderId: userIds[6], // Сергей Петров
-			memberIds: [userIds[6], userIds[4], userIds[8]],
+			name: "reinaamet@mail.ru",
+			email: "reinaamet@mail.ru",
+			position: "Технический директор",
+			betterAuthRole: "admin", // Better Auth role
+			password: "password123",
 		},
 		{
-			name: "Инженерная группа",
-			description: "Техническое сопровождение проектов",
-			leaderId: userIds[2], // Дмитрий Сидоров
-			memberIds: [userIds[2], userIds[4], userIds[8]],
+			name: "ssako.05@mail.ru",
+			email: "ssako.05@mail.ru",
+			position: "Специалист отдела продаж",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
 		},
 		{
-			name: "Отдел закупок",
-			description: "Закупка материалов и оборудования",
-			leaderId: userIds[5], // Ольга Новикова
-			memberIds: [userIds[5], userIds[7]],
+			name: "yernursss@gmail.com",
+			email: "yernursss@gmail.com",
+			position: "Специалист отдела продаж",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "amir211194@gmail.com",
+			email: "amir211194@gmail.com",
+			position: "Специалист отдела продаж",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "bolatbek.sabitov.02@mail.ru",
+			email: "bolatbek.sabitov.02@mail.ru",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "alzada-03@bk.ru",
+			email: "alzada-03@bk.ru",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "jrisani@mail.ru",
+			email: "jrisani@mail.ru",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "ganlormenov1@gmail.com",
+			email: "ganlormenov1@gmail.com",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "Zaicev120406@mail.ru",
+			email: "Zaicev120406@mail.ru",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "kadyrbayzhuldyz@gmail.com",
+			email: "kadyrbayzhuldyz@gmail.com",
+			position: "Технический специалист",
+			betterAuthRole: "member", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "kakenov.talgat@mail.ru",
+			email: "kakenov.talgat@mail.ru",
+			position: "Главный инженер проекта (ГИП)",
+			betterAuthRole: "admin", // Better Auth role
+			password: "password123",
+		},
+		{
+			name: "botakoz_02_04@bk.ru",
+			email: "botakoz_02_04@bk.ru",
+			position: "Офис менеджер",
+			betterAuthRole: "admin", // Better Auth role
+			password: "password123",
 		},
 	];
 
-	const teamIds: Id<"teams">[] = [];
+	// Create users in smaller batches to avoid timeout
+	const batchSize = 3; // Process 3 users at a time
+	for (let i = 0; i < users.length; i += batchSize) {
+		const batch = users.slice(i, i + batchSize);
 
-	for (const team of teams) {
-		const teamId = await ctx.db.insert("teams", {
-			organizationId,
-			name: team.name,
-			description: team.description,
-			parentTeamId: undefined,
-			leaderId: team.leaderId,
-			isActive: true,
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
-		});
+		for (const userData of batch) {
+			try {
+				// Create user using Better Auth
+				const userResponse = await auth.api.createUser({
+					body: {
+						email: userData.email,
+						name: userData.name,
+						password: userData.password,
+						role: "user",
+						data: {
+							position: userData.position,
+						}
+					},
+					headers: await authComponent.getHeaders(ctx),
+				});
 
-		// Add team members
-		for (const userId of team.memberIds) {
-			await ctx.db.insert("teamMembers", {
-				teamId,
-				userId,
-				joinedAt: Date.now(),
-				role: userId === team.leaderId ? "leader" : "member",
-			});
+				if (!userResponse?.user) {
+					console.error(`Failed to create user ${userData.email}`);
+					continue;
+				}
+
+				// Add user to organization using Better Auth organization plugin
+				await auth.api.addMember({
+					body: {
+						organizationId,
+						userId: userResponse.user.id,
+						role: userData.betterAuthRole,
+					},
+					headers: await authComponent.getHeaders(ctx),
+				});
+
+				userIds.push(userResponse.user.id);
+				console.log(`✅ Created user: ${userData.email}`);
+			} catch (error) {
+				console.error(`Failed to create user ${userData.email}:`, error);
+			}
 		}
 
-		teamIds.push(teamId);
+		// Small delay between batches to prevent overwhelming the system
+		if (i + batchSize < users.length) {
+			await new Promise(resolve => setTimeout(resolve, 100));
+		}
+	}
+
+	console.log(`🔍 Debug - Created users (action):`, userIds);
+	return {
+		message: "Users created",
+		usersCreated: userIds.length,
+		userIds,
+	};
+}
+
+// Create teams using only Better Auth
+async function createTeamsWithBetterAuth(
+	ctx: ActionCtx,
+	organizationId: string, // Better Auth organization ID
+	userIds: string[],
+) {
+	const auth = createAuth(ctx);
+
+	const teams = [
+		{
+			name: "Отдел продаж",
+			memberIds: [userIds[0], userIds[2], userIds[3], userIds[4]], // Sales team
+		},
+		{
+			name: "Технический отдел",
+			memberIds: [userIds[1], userIds[5], userIds[6], userIds[7], userIds[8], userIds[9], userIds[10]], // Technical team
+		},
+		{
+			name: "ГИП группа",
+			memberIds: [userIds[11], userIds[5], userIds[6]], // GIP team with some technical specialists
+		},
+		{
+			name: "Офис-менеджмент",
+			memberIds: [userIds[12]], // Office management
+		},
+	];
+
+	const teamIds: string[] = [];
+
+	for (const team of teams) {
+		try {
+			// Create team using Better Auth
+			const teamResponse = await auth.api.createTeam({
+				body: {
+					organizationId,
+					name: team.name,
+				},
+				headers: await authComponent.getHeaders(ctx),
+			});
+
+			if (!teamResponse?.id) {
+				console.error(`Failed to create team ${team.name}`);
+				continue;
+			}
+
+			// Add team members using Better Auth
+			for (const userId of team.memberIds) {
+				try {
+					await auth.api.addTeamMember({
+						body: {
+							teamId: teamResponse.id,
+							userId,
+						},
+						headers: await authComponent.getHeaders(ctx),
+					});
+				} catch (error) {
+					console.error(`Failed to add user ${userId} to team ${team.name}:`, error);
+				}
+			}
+
+			teamIds.push(teamResponse.id);
+			console.log(`✅ Created team: ${team.name} with ${team.memberIds.length} members`);
+		} catch (error) {
+			console.error(`Failed to create team ${team.name}:`, error);
+		}
 	}
 
 	return {
 		message: "Teams created",
-		teamsCreated: teams.length,
+		teamsCreated: teamIds.length,
 		teamIds,
 	};
 }
 
-// Create construction teams
-async function createConstructionTeams(
-	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
-	userIds: Id<"users">[],
-) {
-	const teams = [
-		{
-			name: "Бригада монтажников",
-			shortName: "БМ-1",
-			icon: "Wrench",
-			color: "#3B82F6",
-			department: "construction" as const,
-			memberIds: [userIds[6], userIds[4], userIds[8]],
-		},
-		{
-			name: "Группа проектировщиков",
-			shortName: "ГП-1",
-			icon: "Pencil",
-			color: "#10B981",
-			department: "design" as const,
-			memberIds: [userIds[3], userIds[4]],
-		},
-		{
-			name: "Инженерная служба",
-			shortName: "ИС-1",
-			icon: "Settings",
-			color: "#F59E0B",
-			department: "engineering" as const,
-			memberIds: [userIds[2], userIds[4], userIds[8]],
-		},
-	];
+// Removed custom teams - using Better Auth teams only
 
-	const teamIds: Id<"constructionTeams">[] = [];
-
-	for (const team of teams) {
-		const teamId = await ctx.db.insert("constructionTeams", {
-			organizationId,
-			name: team.name,
-			shortName: team.shortName,
-			icon: team.icon,
-			joined: true,
-			color: team.color,
-			memberIds: team.memberIds,
-			projectIds: [],
-			department: team.department,
-			workload: Math.floor(Math.random() * 50) + 30,
-		});
-		teamIds.push(teamId);
-	}
-
-	return {
-		message: "Construction teams created",
-		teamsCreated: teams.length,
-		teamIds,
-	};
-}
+// Removed construction teams - using Better Auth teams only
 
 // Create construction projects
 async function createConstructionProjects(
 	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
-	userIds: Id<"users">[],
-	statusIds: Record<string, Id<"status">>,
-	priorityIds: Record<string, Id<"priorities">>,
+	organizationId: string, // Better Auth organization ID
+	userIds: string[],
+	statusIds: Id<"status">[],
+	priorityIds: Id<"priorities">[],
 ) {
 	const projects = [
 		{
@@ -978,7 +1087,7 @@ async function createConstructionProjects(
 			contractValue: 150000000,
 			startDate: "2024-01-15",
 			targetDate: "2025-06-30",
-			leadId: userIds[1], // Мария Иванова
+			leadId: userIds[11], // kakenov.talgat@mail.ru (ГИП)
 			priorityId: priorityIds[1], // Высокий
 			healthId: "healthy",
 			healthName: "В норме",
@@ -987,7 +1096,7 @@ async function createConstructionProjects(
 			location: "г. Москва, ул. Садовая, 15",
 			projectType: "residential" as const,
 			notes: "Строительство 3 корпусов по 12 этажей",
-			teamMemberIds: [userIds[1], userIds[3], userIds[4]],
+			teamMemberIds: [userIds[11], userIds[1], userIds[5], userIds[6]], // ГИП, Technical Director, Technical specialists
 		},
 		{
 			name: "ТЦ Вертикаль",
@@ -998,7 +1107,7 @@ async function createConstructionProjects(
 			contractValue: 85000000,
 			startDate: "2024-03-01",
 			targetDate: "2024-12-15",
-			leadId: userIds[2], // Дмитрий Сидоров
+			leadId: userIds[1], // reinaamet@mail.ru (Technical Director)
 			priorityId: priorityIds[1], // Высокий
 			healthId: "warning",
 			healthName: "Требует внимания",
@@ -1007,7 +1116,7 @@ async function createConstructionProjects(
 			location: "г. Москва, Ленинский проспект, 45",
 			projectType: "commercial" as const,
 			notes: "Современный торговый центр с подземной парковкой",
-			teamMemberIds: [userIds[2], userIds[4], userIds[5]],
+			teamMemberIds: [userIds[1], userIds[7], userIds[8], userIds[9]], // Technical team
 		},
 		{
 			name: "Бизнес-центр Альфа",
@@ -1018,7 +1127,7 @@ async function createConstructionProjects(
 			contractValue: 200000000,
 			startDate: "2024-06-01",
 			targetDate: "2026-03-31",
-			leadId: userIds[1], // Мария Иванова
+			leadId: userIds[11], // kakenov.talgat@mail.ru (ГИП)
 			priorityId: priorityIds[2], // Средний
 			healthId: "healthy",
 			healthName: "В норме",
@@ -1027,7 +1136,7 @@ async function createConstructionProjects(
 			location: "г. Санкт-Петербург, Невский проспект, 100",
 			projectType: "commercial" as const,
 			notes: "15-этажный бизнес-центр класса А",
-			teamMemberIds: [userIds[1], userIds[3], userIds[6]],
+			teamMemberIds: [userIds[11], userIds[1], userIds[10], userIds[12]], // ГИП, Technical Director, Technical specialist, Office Manager
 		},
 		{
 			name: "Реконструкция завода",
@@ -1038,7 +1147,7 @@ async function createConstructionProjects(
 			contractValue: 120000000,
 			startDate: "2023-10-01",
 			targetDate: "2024-08-31",
-			leadId: userIds[2], // Дмитрий Сидоров
+			leadId: userIds[1], // reinaamet@mail.ru (Technical Director)
 			priorityId: priorityIds[0], // Критический
 			healthId: "warning",
 			healthName: "Требует внимания",
@@ -1047,45 +1156,33 @@ async function createConstructionProjects(
 			location: "г. Екатеринбург, Промышленная зона",
 			projectType: "industrial" as const,
 			notes: "Модернизация производственных цехов",
-			teamMemberIds: [userIds[2], userIds[6], userIds[8]],
+			teamMemberIds: [userIds[1], userIds[5], userIds[6], userIds[7]], // Technical team
 		},
 	];
 
 	const projectIds: Id<"constructionProjects">[] = [];
-	const creatorId = userIds[0]; // Owner
+	const creatorId = asUserId(userIds[0]); // Owner
 
 	for (const project of projects) {
+		// Debug: Log the lead ID to see what we're getting
+		console.log(`🔍 Debug - Project: ${project.name}, leadId: ${project.leadId}, type: ${typeof project.leadId}`);
+
+		// Cast the project data to fix type issues
+		const projectData = {
+			...project,
+			leadId: asUserId(project.leadId),
+			teamMemberIds: asUserIdArray(project.teamMemberIds),
+		};
+
+		console.log(`🔍 Debug - After casting leadId: ${projectData.leadId}`);
+
 		const projectId = await ctx.db.insert("constructionProjects", {
 			organizationId,
-			...project,
+			...projectData,
 		});
 		projectIds.push(projectId);
 
-		// Grant project access to lead
-		await ctx.db.insert("projectAccess", {
-			projectId,
-			userId: project.leadId,
-			teamId: undefined,
-			accessLevel: "admin",
-			grantedBy: creatorId,
-			grantedAt: Date.now(),
-			expiresAt: undefined,
-		});
-
-		// Grant project access to team members
-		for (const memberId of project.teamMemberIds) {
-			if (memberId !== project.leadId) {
-				await ctx.db.insert("projectAccess", {
-					projectId,
-					userId: memberId,
-					teamId: undefined,
-					accessLevel: "write",
-					grantedBy: creatorId,
-					grantedAt: Date.now(),
-					expiresAt: undefined,
-				});
-			}
-		}
+		// Removed project access logic - using Better Auth permissions instead
 
 		// Create monthly revenue data
 		const months = [
@@ -1118,8 +1215,8 @@ async function createConstructionProjects(
 // Create tasks
 async function createTasks(
 	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
-	userIds: Id<"users">[],
+	organizationId: string, // Better Auth organization ID
+	userIds: string[],
 	projectIds: Id<"constructionProjects">[],
 	statusIds: Id<"status">[],
 	priorityIds: Id<"priorities">[],
@@ -1132,7 +1229,7 @@ async function createTasks(
 			description:
 				"Необходимо провести инспекцию качества заложенного фундамента корпуса А жилого комплекса",
 			statusId: statusIds[1], // В работе
-			assigneeId: userIds[6], // Сергей Петров
+			assigneeId: userIds[5], // bolatbek.sabitov.02@mail.ru (Technical specialist)
 			priorityId: priorityIds[1], // Высокий
 			labelIds: [labelIds[2], labelIds[3]].filter(Boolean),
 			projectId: projectIds[0],
@@ -1144,7 +1241,7 @@ async function createTasks(
 			description:
 				"Получить одобрение электрической схемы от надзорных органов",
 			statusId: statusIds[0], // К выполнению
-			assigneeId: userIds[4], // Андрей Волков
+			assigneeId: userIds[7], // jrisani@mail.ru (Technical specialist)
 			priorityId: priorityIds[0], // Критический
 			labelIds: [labelIds[0], labelIds[1]].filter(Boolean),
 			projectId: projectIds[0],
@@ -1156,7 +1253,7 @@ async function createTasks(
 			description:
 				"Заказать цемент, арматуру и кирпич для следующего этапа строительства",
 			statusId: statusIds[2], // На проверке
-			assigneeId: userIds[5], // Ольга Новикова
+			assigneeId: userIds[12], // botakoz_02_04@bk.ru (Office Manager)
 			priorityId: priorityIds[2], // Средний
 			labelIds: [labelIds[4]].filter(Boolean),
 			projectId: projectIds[1],
@@ -1168,7 +1265,7 @@ async function createTasks(
 			description:
 				"Провести еженедельную проверку соблюдения норм техники безопасности на строительной площадке",
 			statusId: statusIds[3], // Завершено
-			assigneeId: userIds[2], // Дмитрий Сидоров
+			assigneeId: userIds[1], // reinaamet@mail.ru (Technical Director)
 			priorityId: priorityIds[1], // Высокий
 			labelIds: [labelIds[2]].filter(Boolean),
 			projectId: projectIds[3],
@@ -1179,7 +1276,7 @@ async function createTasks(
 			title: "Установка башенного крана",
 			description: "Монтаж и ввод в эксплуатацию башенного крана для корпуса Б",
 			statusId: statusIds[0], // К выполнению
-			assigneeId: userIds[8], // Игорь Федоров
+			assigneeId: userIds[8], // ganlormenov1@gmail.com (Technical specialist)
 			priorityId: priorityIds[1], // Высокий
 			labelIds: [labelIds[5], labelIds[2]].filter(Boolean),
 			projectId: projectIds[0],
@@ -1191,7 +1288,7 @@ async function createTasks(
 			description:
 				"Подготовить полный комплект проектной документации для согласования",
 			statusId: statusIds[1], // В работе
-			assigneeId: userIds[3], // Елена Козлова
+			assigneeId: userIds[11], // kakenov.talgat@mail.ru (ГИП)
 			priorityId: priorityIds[2], // Средний
 			labelIds: [labelIds[1]].filter(Boolean),
 			projectId: projectIds[2],
@@ -1203,7 +1300,7 @@ async function createTasks(
 			description:
 				"Провести комплексное тестирование систем вентиляции и кондиционирования",
 			statusId: statusIds[0], // К выполнению
-			assigneeId: userIds[4], // Андрей Волков
+			assigneeId: userIds[6], // alzada-03@bk.ru (Technical specialist)
 			priorityId: priorityIds[2], // Средний
 			labelIds: [labelIds[3]].filter(Boolean),
 			projectId: projectIds[1],
@@ -1215,7 +1312,7 @@ async function createTasks(
 			description:
 				"Подготовить финансовый отчет по всем проектам за первый квартал",
 			statusId: statusIds[2], // На проверке
-			assigneeId: userIds[7], // Наталья Смирнова
+			assigneeId: userIds[12], // botakoz_02_04@bk.ru (Office Manager)
 			priorityId: priorityIds[3], // Низкий
 			labelIds: [labelIds[1]].filter(Boolean),
 			projectId: projectIds[0],
@@ -1226,9 +1323,14 @@ async function createTasks(
 	const taskIds: Id<"issues">[] = [];
 
 	for (const task of tasks) {
+		const taskData = {
+			...task,
+			assigneeId: task.assigneeId ? asUserId(task.assigneeId) : undefined,
+		};
+
 		const taskId = await ctx.db.insert("issues", {
 			organizationId,
-			...task,
+			...taskData,
 			createdAt: new Date().toISOString(),
 			cycleId: "cycle-1",
 			rank: `a${taskIds.length}`,
@@ -1248,8 +1350,8 @@ async function createTasks(
 // Create sample documents
 async function createDocuments(
 	ctx: MutationCtx,
-	organizationId: Id<"organizations">,
-	userIds: Id<"users">[],
+	organizationId: string, // Better Auth organization ID
+	userIds: string[],
 	projectIds: Id<"constructionProjects">[],
 ) {
 	const documents = [
@@ -1258,8 +1360,8 @@ async function createDocuments(
 			content:
 				"Подробное техническое задание на разработку проектной документации для ЖК Садовый",
 			projectId: projectIds[0],
-			authorId: userIds[1],
-			assignedTo: userIds[3],
+			authorId: userIds[11], // kakenov.talgat@mail.ru (ГИП)
+			assignedTo: userIds[5], // bolatbek.sabitov.02@mail.ru (Technical specialist)
 			status: "completed" as const,
 		},
 		{
@@ -1267,8 +1369,8 @@ async function createDocuments(
 			content:
 				"График выполнения строительных работ с указанием основных этапов и контрольных точек",
 			projectId: projectIds[0],
-			authorId: userIds[2],
-			assignedTo: userIds[6],
+			authorId: userIds[1], // reinaamet@mail.ru (Technical Director)
+			assignedTo: userIds[6], // alzada-03@bk.ru (Technical specialist)
 			status: "in_progress" as const,
 		},
 		{
@@ -1276,23 +1378,23 @@ async function createDocuments(
 			content:
 				"Детальная смета на закупку строительных материалов для первого этапа",
 			projectId: projectIds[1],
-			authorId: userIds[5],
-			assignedTo: userIds[7],
+			authorId: userIds[12], // botakoz_02_04@bk.ru (Office Manager)
+			assignedTo: userIds[0], // omirbek.zhanserik@mail.ru (Sales Director)
 			status: "review" as const,
 		},
 		{
 			title: "Протокол совещания",
 			content: "Протокол еженедельного совещания по проекту от 01.04.2024",
 			projectId: projectIds[0],
-			authorId: userIds[1],
+			authorId: userIds[11], // kakenov.talgat@mail.ru (ГИП)
 			status: "completed" as const,
 		},
 		{
 			title: "Акт выполненных работ",
 			content: "Акт приемки выполненных работ по устройству фундамента",
 			projectId: projectIds[3],
-			authorId: userIds[6],
-			assignedTo: userIds[2],
+			authorId: userIds[1], // reinaamet@mail.ru (Technical Director)
+			assignedTo: userIds[7], // jrisani@mail.ru (Technical specialist)
 			status: "review" as const,
 		},
 	];
@@ -1306,41 +1408,17 @@ async function createDocuments(
 			content: doc.content,
 			projectId: doc.projectId,
 			parentId: null,
-			authorId: doc.authorId,
-			assignedTo: doc.assignedTo,
+			authorId: asUserId(doc.authorId),
+			assignedTo: doc.assignedTo ? asUserId(doc.assignedTo) : undefined,
 			status: doc.status,
 			dueDate: undefined,
 			tags: [],
 			version: 1,
-			lastEditedBy: doc.authorId,
+			lastEditedBy: asUserId(doc.authorId),
 			lastEditedAt: Date.now(),
 		});
 
-		// Grant document access to author
-		await ctx.db.insert("documentAccess", {
-			documentId,
-			userId: doc.authorId,
-			teamId: undefined,
-			accessLevel: "owner",
-			canShare: true,
-			grantedBy: doc.authorId,
-			grantedAt: Date.now(),
-			expiresAt: undefined,
-		});
-
-		// Grant access to assignee if exists
-		if (doc.assignedTo) {
-			await ctx.db.insert("documentAccess", {
-				documentId,
-				userId: doc.assignedTo,
-				teamId: undefined,
-				accessLevel: "editor",
-				canShare: true,
-				grantedBy: doc.authorId,
-				grantedAt: Date.now(),
-				expiresAt: undefined,
-			});
-		}
+		// Removed document access logic - using Better Auth permissions instead
 
 		documentIds.push(documentId);
 	}

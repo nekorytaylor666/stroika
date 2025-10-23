@@ -188,7 +188,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 						<span>Подзадачи</span>
 					</div>
 					<Button
-						size="xs"
+						size="sm"
 						variant="ghost"
 						onClick={() => setIsCreating(true)}
 						className="h-6 px-2"
@@ -363,7 +363,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 						</>
 					)}
 					<Button
-						size="xs"
+						size="sm"
 						variant="ghost"
 						onClick={() => setIsCreating(true)}
 						className="h-6 px-2"
@@ -429,7 +429,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 											toast.error("Ошибка при обновлении статуса");
 										}
 									}}
-									size="xs"
+									size="sm"
 								/>
 
 								{/* Deadline selector */}
@@ -450,7 +450,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 													? "destructive"
 													: "ghost"
 											}
-											size="xs"
+											size="sm"
 											className={cn(
 												"h-6 gap-1 px-2 text-xs",
 												!subtask.dueDate && "text-muted-foreground",
@@ -503,7 +503,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 
 								{/* Remove from parent button - only on hover */}
 								<Button
-									size="xs"
+									size="sm"
 									variant="ghost"
 									onClick={() => handleRemoveFromParent(subtask._id)}
 									className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"

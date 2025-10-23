@@ -166,7 +166,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 				{/* Start date */}
 				<Popover open={isStartDateOpen} onOpenChange={setIsStartDateOpen}>
 					<PopoverTrigger asChild>
-						<Button variant="outline" size="xs" className="h-6 px-2 text-xs">
+						<Button variant="outline" size="sm" className="h-6 px-2 text-xs">
 							{format(startDate, "d MMM yyyy", { locale: ru })}
 						</Button>
 					</PopoverTrigger>
@@ -191,7 +191,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 				{/* End date */}
 				<Popover open={isEndDateOpen} onOpenChange={setIsEndDateOpen}>
 					<PopoverTrigger asChild>
-						<Button variant="outline" size="xs" className="h-6 px-2 text-xs">
+						<Button variant="outline" size="sm" className="h-6 px-2 text-xs">
 							{format(endDate, "d MMM yyyy", { locale: ru })}
 						</Button>
 					</PopoverTrigger>
@@ -215,7 +215,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 				<div className="ml-auto flex gap-1">
 					<Button
 						variant="ghost"
-						size="xs"
+						size="sm"
 						className="h-6 px-2 text-xs"
 						onClick={() => {
 							setCustomStartDate(subDays(new Date(), 7));
@@ -226,7 +226,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 					</Button>
 					<Button
 						variant="ghost"
-						size="xs"
+						size="sm"
 						className="h-6 px-2 text-xs"
 						onClick={() => {
 							setCustomStartDate(subDays(new Date(), 30));
@@ -237,7 +237,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 					</Button>
 					<Button
 						variant="ghost"
-						size="xs"
+						size="sm"
 						className="h-6 px-2 text-xs"
 						onClick={() => {
 							setCustomStartDate(new Date());
@@ -249,7 +249,7 @@ export function TimelineChart({ subtasks, parentTask }: TimelineChartProps) {
 					{(customStartDate || customEndDate) && (
 						<Button
 							variant="ghost"
-							size="xs"
+							size="sm"
 							className="h-6 px-2 text-muted-foreground text-xs"
 							onClick={() => {
 								setCustomStartDate(undefined);

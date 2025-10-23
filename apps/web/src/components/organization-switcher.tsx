@@ -28,6 +28,7 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { authClient } from "@/lib/auth-client";
 
 export function OrganizationSwitcher() {
 	const navigate = useNavigate();
@@ -37,26 +38,27 @@ export function OrganizationSwitcher() {
 	const [newOrgDescription, setNewOrgDescription] = useState("");
 
 	// Get user's organizations
-	const organizations = useQuery(api.organizations.getUserOrganizations);
-	const createOrganization = useMutation(api.organizations.create);
-	const switchOrganization = useMutation(api.organizations.switchOrganization);
+	const { data: organizations, isPending } = authClient.useListOrganizations();
+	const { data: activeOrganization, isPending: isActiveOrganizationPending } =
+		authClient.useActiveOrganization();
 
-	// Get current organization from the first one where user is active
-	// In a real app, this would come from user's currentOrganizationId
-	const currentOrg = organizations?.[0];
-
+	console.log(organizations);
 	const handleCreateOrg = async () => {
 		if (!newOrgName.trim()) return;
 
 		try {
-			const result = await createOrganization({
+			const result = await authClient.organization.create({
 				name: newOrgName,
-				description: newOrgDescription || undefined,
+				slug: newOrgName
+					.toLowerCase()
+					.replace(/\s+/g, "-")
+					.replace(/[^a-z0-9-]/g, ""),
+				metadata: {
+					description: newOrgDescription || undefined,
+				},
 			});
-
-			// Navigate to the new organization
-			navigate({ to: `/construction/${result.slug}` });
-			setCreateOrgOpen(false);
+			navigate({ to: `/construction/${result.data?.id}/inbox` });
+			setOpen(false);
 			setNewOrgName("");
 			setNewOrgDescription("");
 		} catch (error) {
@@ -66,27 +68,12 @@ export function OrganizationSwitcher() {
 
 	const handleSwitchOrg = async (orgId: string, slug: string) => {
 		try {
-			await switchOrganization({ organizationId: orgId as any });
-			navigate({ to: `/construction/${slug}` });
-			setOpen(false);
+			await authClient.organization.setActive({ organizationId: orgId });
+			navigate({ to: "/construction/$orgId/inbox", params: { orgId } });
 		} catch (error) {
 			console.error("Failed to switch organization:", error);
 		}
 	};
-
-	if (!organizations || organizations.length === 0) {
-		return (
-			<Button
-				variant="ghost"
-				onClick={() => setCreateOrgOpen(true)}
-				className="flex items-center gap-2"
-			>
-				<Plus className="h-4 w-4" />
-				Create Organization
-			</Button>
-		);
-	}
-
 	return (
 		<>
 			<Popover open={open} onOpenChange={setOpen}>
@@ -98,17 +85,17 @@ export function OrganizationSwitcher() {
 						className="w-[200px] justify-between"
 					>
 						<div className="flex items-center gap-2 truncate">
-							{currentOrg?.logoUrl ? (
+							{activeOrganization?.logo ? (
 								<Avatar className="h-5 w-5">
-									<AvatarImage src={currentOrg.logoUrl} />
+									<AvatarImage src={activeOrganization.logo} />
 									<AvatarFallback>
-										{currentOrg.name.charAt(0).toUpperCase()}
+										{activeOrganization.name.charAt(0).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 							) : (
 								<Building className="h-4 w-4" />
 							)}
-							<span className="truncate">{currentOrg?.name}</span>
+							<span className="truncate">{activeOrganization?.name}</span>
 						</div>
 						<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 					</Button>
@@ -119,16 +106,16 @@ export function OrganizationSwitcher() {
 						<CommandList>
 							<CommandEmpty>No organization found.</CommandEmpty>
 							<CommandGroup>
-								{organizations.map((org) => (
+								{organizations?.map((org) => (
 									<CommandItem
-										key={org._id}
+										key={org.id}
 										value={org.name}
-										onSelect={() => handleSwitchOrg(org._id, org.slug)}
+										onSelect={() => handleSwitchOrg(org.id, org.slug)}
 									>
 										<div className="flex flex-1 items-center gap-2">
-											{org.logoUrl ? (
+											{org.logo ? (
 												<Avatar className="h-5 w-5">
-													<AvatarImage src={org.logoUrl} />
+													<AvatarImage src={org.logo} />
 													<AvatarFallback>
 														{org.name.charAt(0).toUpperCase()}
 													</AvatarFallback>
@@ -141,7 +128,7 @@ export function OrganizationSwitcher() {
 										<Check
 											className={cn(
 												"ml-auto h-4 w-4",
-												currentOrg?._id === org._id
+												activeOrganization?.id === org.id
 													? "opacity-100"
 													: "opacity-0",
 											)}

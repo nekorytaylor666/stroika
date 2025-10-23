@@ -196,7 +196,7 @@ export function ProjectTimelineChart({
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
-									size="xs"
+									size="sm"
 									className="h-6 px-2 text-xs"
 								>
 									{format(startDate, "d MMM", { locale: ru })}
@@ -225,7 +225,7 @@ export function ProjectTimelineChart({
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
-									size="xs"
+									size="sm"
 									className="h-6 px-2 text-xs"
 								>
 									{format(endDate, "d MMM", { locale: ru })}
@@ -251,7 +251,7 @@ export function ProjectTimelineChart({
 						<div className="ml-2 flex gap-1">
 							<Button
 								variant="ghost"
-								size="xs"
+								size="sm"
 								className="h-6 px-2 text-xs"
 								onClick={() => {
 									setCustomStartDate(subDays(new Date(), 30));
@@ -262,7 +262,7 @@ export function ProjectTimelineChart({
 							</Button>
 							<Button
 								variant="ghost"
-								size="xs"
+								size="sm"
 								className="h-6 px-2 text-xs"
 								onClick={() => {
 									setCustomStartDate(new Date());
@@ -273,7 +273,7 @@ export function ProjectTimelineChart({
 							</Button>
 							<Button
 								variant="ghost"
-								size="xs"
+								size="sm"
 								className="h-6 px-2 text-xs"
 								onClick={() => {
 									setCustomStartDate(undefined);
