@@ -3,8 +3,11 @@ import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
 	getCurrentUser,
+	getCurrentUserWithOrganization,
 	requireOrganizationAccess,
 } from "./helpers/getCurrentUser";
+import { api, components } from "./_generated/api";
+import { authComponent, createAuth } from "./auth";
 
 // Get team members for a specific project with task statistics
 export const getProjectTeamWithStats = query({
@@ -15,11 +18,6 @@ export const getProjectTeamWithStats = query({
 		if (!project) {
 			throw new Error("Project not found");
 		}
-
-		// Get all team members (including lead)
-		const allMemberIds = [
-			...new Set([...(project.teamMemberIds || []), project.leadId]),
-		];
 
 		// Get all tasks for this project
 		const projectTasks = await ctx.db
@@ -36,15 +34,20 @@ export const getProjectTeamWithStats = query({
 		const statuses = await ctx.db.query("status").collect();
 		const statusMap = new Map(statuses.map((s) => [s._id, s]));
 
+		// Get team members by project ID (team name = project ID)
+		const users = await ctx.runQuery(
+			components.betterAuth.team.getTeamMembersByTeamName,
+			{
+				name: args.projectId,
+			},
+		);
+
 		// Calculate statistics for each member
 		const teamMembers = await Promise.all(
-			allMemberIds.map(async (userId) => {
-				const user = await ctx.db.get(userId);
-				if (!user) return null;
-
+			users.map(async (user) => {
 				// Get all tasks assigned to this user
 				const userTasks = projectTasks.filter(
-					(task) => task.assigneeId === userId,
+					(task) => task.assigneeId === user._id,
 				);
 
 				// Calculate task statistics
@@ -112,7 +115,7 @@ export const getProjectTeamWithStats = query({
 				// Get user's department/position from userDepartments table
 				const userDepartment = await ctx.db
 					.query("userDepartments")
-					.withIndex("by_user", (q) => q.eq("userId", userId))
+					.withIndex("by_user", (q) => q.eq("userId", user._id))
 					.filter((q) => q.eq(q.field("isPrimary"), true))
 					.first();
 
@@ -127,8 +130,8 @@ export const getProjectTeamWithStats = query({
 					_id: user._id,
 					name: user.name,
 					email: user.email,
-					avatarUrl: user.avatarUrl,
-					isLead: user._id === project.leadId,
+					avatarUrl: user.image,
+					isLead: false, // Team members are fetched from team structure, lead status handled separately
 					department: department
 						? {
 								_id: department._id,
@@ -204,26 +207,18 @@ export const getProjectTeamWithStats = query({
 });
 
 // Add member to project team
-export const addTeamMember = mutation({
+export const addTeamMembers = mutation({
 	args: {
 		projectId: v.id("constructionProjects"),
-		userId: v.id("users"),
+		userIds: v.array(v.string()),
 	},
 	handler: async (ctx, args) => {
-		const project = await ctx.db.get(args.projectId);
-		if (!project) {
-			throw new Error("Project not found");
-		}
-
-		// Check if user already in team
-		if (project.teamMemberIds?.includes(args.userId)) {
-			throw new Error("User is already a team member");
-		}
-
-		// Add user to team
-		await ctx.db.patch(args.projectId, {
-			teamMemberIds: [...(project.teamMemberIds || []), args.userId],
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		await ctx.runMutation(components.betterAuth.team.addTeamMembersByTeamName, {
+			teamName: args.projectId,
+			userIds: args.userIds,
 		});
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
 		return { success: true };
 	},
@@ -232,26 +227,17 @@ export const addTeamMember = mutation({
 // Remove member from project team
 export const removeTeamMember = mutation({
 	args: {
-		projectId: v.id("constructionProjects"),
-		userId: v.id("users"),
+		teamName: v.string(),
+		userId: v.string(),
 	},
 	handler: async (ctx, args) => {
-		const project = await ctx.db.get(args.projectId);
-		if (!project) {
-			throw new Error("Project not found");
-		}
-
-		// Can't remove the lead
-		if (project.leadId === args.userId) {
-			throw new Error("Cannot remove the project lead");
-		}
-
-		// Remove user from team
-		await ctx.db.patch(args.projectId, {
-			teamMemberIds: (project.teamMemberIds || []).filter(
-				(id) => id !== args.userId,
-			),
-		});
+		await ctx.runMutation(
+			components.betterAuth.team.removeTeamMembersByTeamName,
+			{
+				teamName: args.teamName,
+				userId: args.userId,
+			},
+		);
 
 		// Unassign all tasks from this user in this project
 		const userTasks = await ctx.db
@@ -259,7 +245,7 @@ export const removeTeamMember = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("isConstructionTask"), true),
-					q.eq(q.field("projectId"), args.projectId),
+					q.eq(q.field("projectId"), args.teamName),
 					q.eq(q.field("assigneeId"), args.userId),
 				),
 			)
@@ -272,50 +258,15 @@ export const removeTeamMember = mutation({
 			),
 		);
 
-		return { success: true, unassignedTasks: userTasks.length };
+		return { success: true };
 	},
 });
 
 // Get all teams (existing function remains)
 export const getAll = query({
 	handler: async (ctx) => {
-		try {
-			const user = await getCurrentUser(ctx);
-			
-			if (!user.currentOrganizationId) {
-				// Return empty array if user has no organization
-				return [];
-			}
-
-			// Get teams for the user's organization
-			const teams = await ctx.db
-				.query("constructionTeams")
-				.withIndex("by_organization", (q) =>
-					q.eq("organizationId", user.currentOrganizationId!),
-				)
-				.collect();
-
-			// Enrich with member and project data
-			const enrichedTeams = await Promise.all(
-				teams.map(async (team) => {
-					const members = await Promise.all(
-						team.memberIds.map((id) => ctx.db.get(id)),
-					);
-					const projects = await Promise.all(
-						team.projectIds.map((id) => ctx.db.get(id)),
-					);
-
-					return {
-						...team,
-						members: members.filter(Boolean),
-						projects: projects.filter(Boolean),
-					};
-				}),
-			);
-
-			return enrichedTeams;
-		} catch {
-			// Return empty array if not authenticated
+		const user = await getCurrentUser(ctx);
+		if (!user || !user.currentOrganizationId) {
 			return [];
 		}
 	},

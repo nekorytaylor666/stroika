@@ -1,91 +1,63 @@
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
-import { auth } from "../auth";
-import type {
-	PermissionAction,
-	PermissionResource,
-} from "../permissions/types";
+import { authComponent, createAuth, getUserId } from "../auth";
 
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
-	// First try to get user by auth ID
-	const authUserId = await auth.getUserId(ctx);
-	if (authUserId) {
-		const user = await ctx.db.get(authUserId);
-		if (user) {
-			return user;
+	try {
+		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser._id) {
+			return null;
 		}
+
+		return authUser;
+	} catch (error) {
+		console.error("Error in getCurrentUser:", error);
+		return null;
 	}
-
-	// Fallback to identity-based lookup
-	const identity = await ctx.auth.getUserIdentity();
-	if (!identity) {
-		throw new Error("Not authenticated");
-	}
-
-	const user = await ctx.db
-		.query("users")
-		.withIndex("by_email", (q) => q.eq("email", identity.email!))
-		.first();
-
-	if (!user) {
-		throw new Error("User not found");
-	}
-
-	return user;
 }
-
 
 export async function getCurrentUserWithOrganization(
 	ctx: QueryCtx | MutationCtx,
 ) {
 	const user = await getCurrentUser(ctx);
 
-	if (!user.currentOrganizationId) {
-		throw new Error("User has no current organization");
-	}
+	// Get Better Auth session to access active organization
 
-	const organization = await ctx.db.get(user.currentOrganizationId);
-	if (!organization) {
-		throw new Error("Organization not found");
-	}
-
-	const membership = await ctx.db
-		.query("organizationMembers")
-		.withIndex("by_org_user", (q) =>
-			q
-				.eq("organizationId", user.currentOrganizationId)
-				.eq("userId", user._id),
-		)
-		.first();
-
-	if (!membership || !membership.isActive) {
-		throw new Error("Not an active member of the organization");
-	}
-
-	const role = await ctx.db.get(membership.roleId);
+	const auth = createAuth(ctx);
+	const organizations = await auth.api.listOrganizations({
+		headers: await authComponent.getHeaders(ctx),
+	});
 
 	return {
 		user,
-		organization,
-		membership,
-		role,
+		organization: organizations[0],
 	};
 }
 
 export async function requireOrganizationAccess(
 	ctx: QueryCtx | MutationCtx,
-	organizationId: Id<"organizations">,
+	organizationId: string, // Better Auth uses string IDs for organizations
 ) {
 	const user = await getCurrentUser(ctx);
 
+	// Get Better Auth session
+	const authUser = await authComponent.getAuthUser(ctx);
+	if (!authUser) {
+		throw new Error("Not authenticated");
+	}
+
+	// Check membership in Better Auth member table
 	const membership = await ctx.db
-		.query("organizationMembers")
-		.withIndex("by_org_user", (q) =>
-			q.eq("organizationId", organizationId).eq("userId", user._id),
+		.query("member")
+		.filter((q) =>
+			q.and(
+				q.eq(q.field("organizationId"), organizationId),
+				q.eq(q.field("userId"), authUser.userId),
+			),
 		)
 		.first();
 
-	if (!membership || !membership.isActive) {
+	if (!membership) {
 		throw new Error("Not a member of this organization");
 	}
 

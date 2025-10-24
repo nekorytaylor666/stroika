@@ -5,8 +5,8 @@ import { mutation, query } from "./_generated/server";
 // Create an activity record
 export const createActivity = mutation({
 	args: {
-		issueId: v.id("issues"),
-		userId: v.id("users"),
+		issueId: v.string(),
+		userId: v.string(),
 		type: v.union(
 			v.literal("status_changed"),
 			v.literal("assignee_changed"),

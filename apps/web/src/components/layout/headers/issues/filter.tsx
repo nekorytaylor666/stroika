@@ -51,7 +51,7 @@ export function Filter() {
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
-				<Button size="xs" variant="ghost" className="relative">
+				<Button size="sm" variant="ghost" className="relative">
 					<ListFilter className="mr-1 size-4" />
 					Фильтр
 					{getActiveFiltersCount() > 0 && (

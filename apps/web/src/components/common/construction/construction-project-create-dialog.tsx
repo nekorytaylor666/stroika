@@ -103,6 +103,12 @@ export function ConstructionProjectCreateDialog({
 		setIsSubmitting(true);
 
 		try {
+			// Filter out any undefined or invalid team member IDs
+			const validTeamMemberIds = formData.teamMemberIds.filter(
+				(id): id is Id<"users"> =>
+					id !== undefined && id !== null && id !== "undefined",
+			);
+
 			await createProject({
 				name: formData.name,
 				client: formData.client,
@@ -115,7 +121,7 @@ export function ConstructionProjectCreateDialog({
 				startDate: formData.startDate.toISOString(),
 				targetDate: formData.targetDate?.toISOString(),
 				notes: formData.notes,
-				teamMemberIds: formData.teamMemberIds,
+				teamMemberIds: validTeamMemberIds,
 				percentComplete: 0,
 				iconName: "building",
 				healthId: formData.healthId,
@@ -153,6 +159,15 @@ export function ConstructionProjectCreateDialog({
 	};
 
 	const handleTeamMemberToggle = (userId: Id<"users">) => {
+		// Ensure userId is valid before proceeding
+		if (!userId || userId === "undefined" || userId === undefined) {
+			console.warn(
+				"Invalid userId provided to handleTeamMemberToggle:",
+				userId,
+			);
+			return;
+		}
+
 		setFormData((prev) => ({
 			...prev,
 			teamMemberIds: prev.teamMemberIds.includes(userId)
@@ -427,19 +442,21 @@ export function ConstructionProjectCreateDialog({
 										<SelectValue placeholder="Выберите руководителя" />
 									</SelectTrigger>
 									<SelectContent>
-										{users?.map((user) => (
-											<SelectItem key={user._id} value={user._id}>
-												<div className="flex items-center gap-2">
-													<Avatar className="h-6 w-6">
-														<AvatarImage src={user.avatarUrl || undefined} />
-														<AvatarFallback className="text-xs">
-															{user.name?.charAt(0)}
-														</AvatarFallback>
-													</Avatar>
-													{user.name}
-												</div>
-											</SelectItem>
-										))}
+										{users
+											?.filter((user) => user.id && user.id !== "undefined")
+											.map((user) => (
+												<SelectItem key={user.id} value={user.id}>
+													<div className="flex items-center gap-2">
+														<Avatar className="h-6 w-6">
+															<AvatarImage src={user.image || undefined} />
+															<AvatarFallback className="text-xs">
+																{user.name?.charAt(0)}
+															</AvatarFallback>
+														</Avatar>
+														{user.name}
+													</div>
+												</SelectItem>
+											))}
 									</SelectContent>
 								</Select>
 							</div>
@@ -502,41 +519,43 @@ export function ConstructionProjectCreateDialog({
 							</div>
 							<div className="max-h-64 overflow-y-auto rounded-lg border bg-muted/30 p-3">
 								<div className="grid gap-2">
-									{users?.map((user) => (
-										<motion.label
-											key={user._id}
-											whileHover={{ scale: 1.01 }}
-											whileTap={{ scale: 0.99 }}
-											className={cn(
-												"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors",
-												formData.teamMemberIds.includes(user._id)
-													? "bg-primary/10"
-													: "hover:bg-muted",
-											)}
-										>
-											<input
-												type="checkbox"
-												checked={formData.teamMemberIds.includes(user._id)}
-												onChange={() => handleTeamMemberToggle(user._id)}
-												className="h-4 w-4 rounded border-muted-foreground/30"
-											/>
-											<Avatar className="h-8 w-8">
-												<AvatarImage src={user.avatarUrl || undefined} />
-												<AvatarFallback className="text-xs">
-													{user.name?.charAt(0)}
-												</AvatarFallback>
-											</Avatar>
-											<div className="flex-1">
-												<div className="font-medium text-sm">{user.name}</div>
-												<div className="text-muted-foreground text-xs">
-													{user.email}
+									{users
+										?.filter((user) => user.id && user.id !== "undefined")
+										.map((user) => (
+											<motion.label
+												key={user.id}
+												whileHover={{ scale: 1.01 }}
+												whileTap={{ scale: 0.99 }}
+												className={cn(
+													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors",
+													formData.teamMemberIds.includes(user.id)
+														? "bg-primary/10"
+														: "hover:bg-muted",
+												)}
+											>
+												<input
+													type="checkbox"
+													checked={formData.teamMemberIds.includes(user.id)}
+													onChange={() => handleTeamMemberToggle(user.id)}
+													className="h-4 w-4 rounded border-muted-foreground/30"
+												/>
+												<Avatar className="h-8 w-8">
+													<AvatarImage src={user.image || undefined} />
+													<AvatarFallback className="text-xs">
+														{user.name?.charAt(0)}
+													</AvatarFallback>
+												</Avatar>
+												<div className="flex-1">
+													<div className="font-medium text-sm">{user.name}</div>
+													<div className="text-muted-foreground text-xs">
+														{user.email}
+													</div>
 												</div>
-											</div>
-											{formData.teamMemberIds.includes(user._id) && (
-												<ChevronRight className="h-4 w-4 text-primary" />
-											)}
-										</motion.label>
-									))}
+												{formData.teamMemberIds.includes(user.id) && (
+													<ChevronRight className="h-4 w-4 text-primary" />
+												)}
+											</motion.label>
+										))}
 								</div>
 							</div>
 						</div>

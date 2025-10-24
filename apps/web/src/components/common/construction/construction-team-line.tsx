@@ -127,12 +127,12 @@ export function ConstructionTeamLine({ team }: ConstructionTeamLineProps) {
 
 			<div className="hidden lg:block lg:w-[15%]">
 				{team.joined ? (
-					<Button variant="secondary" size="xs" className="text-xs">
+					<Button variant="secondary" size="sm" className="text-xs">
 						<Check className="mr-1 size-3" />
 						Активная
 					</Button>
 				) : (
-					<Button variant="outline" size="xs" className="text-xs">
+					<Button variant="outline" size="sm" className="text-xs">
 						Неактивная
 					</Button>
 				)}

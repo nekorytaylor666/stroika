@@ -7,6 +7,8 @@ import {
 	getUserProjectAccessLevel,
 } from "./permissions/checks";
 import { getAccessibleProjects } from "./permissions/projectAccess";
+import { authComponent, createAuth } from "./auth";
+import { components } from "./_generated/api";
 
 // Queries - Get all projects the current user has access to
 export const getAll = query({
@@ -17,42 +19,45 @@ export const getAll = query({
 			throw new Error("Not authenticated");
 		}
 
-		// Get projects accessible to the user using the permission system
-		try {
-			const accessibleProjects = await getAccessibleProjects(ctx);
+		// // Get projects accessible to the user using the permission system
+		// try {
+		// 	const accessibleProjects = await ctx.db
+		// 		.query("constructionProjects")
+		// 		.withIndex("by_organization", (q) =>
+		// 			q.eq("organizationId", identity.organizationId as string),
+		// 		)
+		// 		.collect();
 
-			// Populate related data
-			const populatedProjects = await Promise.all(
-				accessibleProjects.map(async (project) => {
-					if (!project) return null;
+		// 	// Populate related data
+		// 	const populatedProjects = await Promise.all(
+		// 		accessibleProjects.map(async (project) => {
+		// 			if (!project) return null;
 
-					const [status, lead, priority, monthlyRevenue] = await Promise.all([
-						ctx.db.get(project.statusId),
-						ctx.db.get(project.leadId),
-						ctx.db.get(project.priorityId),
-						ctx.db
-							.query("monthlyRevenue")
-							.withIndex("by_project", (q) =>
-								q.eq("constructionProjectId", project._id),
-							)
-							.collect(),
-					]);
+		// 			const [status, lead, priority, monthlyRevenue] = await Promise.all([
+		// 				ctx.db.get(project.statusId),
+		// 				ctx.db.get(project.leadId),
+		// 				ctx.db.get(project.priorityId),
+		// 				ctx.db
+		// 					.query("monthlyRevenue")
+		// 					.withIndex("by_project", (q) =>
+		// 						q.eq("constructionProjectId", project._id),
+		// 					)
+		// 					.collect(),
+		// 			]);
 
-					return {
-						...project,
-						status,
-						lead,
-						priority,
-						monthlyRevenue,
-					};
-				}),
-			);
+		// 			return {
+		// 				...project,
+		// 				status,
+		// 				lead,
+		// 				priority,
+		// 				monthlyRevenue,
+		// 			};
+		// 		}),
+		// 	);
+		const projects = await ctx.db.query("constructionProjects").collect();
+		return projects;
 
-			return populatedProjects.filter(Boolean);
-		} catch (error) {
-			// Return empty array if user doesn't have organization
-			return [];
-		}
+		// return populatedProjects.filter(Boolean);
 	},
 });
 
@@ -61,11 +66,11 @@ export const getById = query({
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
 
-		// Check if user has access to this project
-		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
-		if (!hasAccess) {
-			throw new Error("Insufficient permissions to view this project");
-		}
+		// // Check if user has access to this project
+		// const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
+		// if (!hasAccess) {
+		// 	throw new Error("Insufficient permissions to view this project");
+		// }
 
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
@@ -81,7 +86,7 @@ export const getById = query({
 						q.eq("constructionProjectId", project._id),
 					)
 					.collect(),
-				getUserProjectAccessLevel(ctx, user._id, args.id),
+				// getUserProjectAccessLevel(ctx, user._id, args.id),
 			]);
 
 		return {
@@ -96,15 +101,15 @@ export const getById = query({
 });
 
 export const getProjectWithTasks = query({
-	args: { id: v.id("constructionProjects") },
+	args: { id: v.string() },
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
 
 		// Check if user has access to this project
-		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
-		if (!hasAccess) {
-			throw new Error("Insufficient permissions to view this project");
-		}
+		// const hasAccess = await canAccessProject(ctx, user.id, args.id, "read");
+		// if (!hasAccess) {
+		// 	throw new Error("Insufficient permissions to view this project");
+		// }
 
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
@@ -297,14 +302,14 @@ export const create = mutation({
 	args: {
 		name: v.string(),
 		client: v.string(),
-		statusId: v.id("status"),
+		statusId: v.string(),
 		iconName: v.string(),
 		percentComplete: v.number(),
 		contractValue: v.number(),
 		startDate: v.string(),
 		targetDate: v.optional(v.string()),
-		leadId: v.id("users"),
-		priorityId: v.id("priorities"),
+		leadId: v.string(),
+		priorityId: v.string(),
 		healthId: v.string(),
 		healthName: v.string(),
 		healthColor: v.string(),
@@ -317,60 +322,86 @@ export const create = mutation({
 			v.literal("infrastructure"),
 		),
 		notes: v.optional(v.string()),
-		teamMemberIds: v.array(v.id("users")),
+		teamMemberIds: v.array(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		// Check if user can create projects
-		const canCreate = await canCreateProject(ctx, user._id, organization._id);
-		if (!canCreate) {
-			throw new Error("Insufficient permissions to create projects");
-		}
+		console.log("organization", organization);
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
 		const projectId = await ctx.db.insert("constructionProjects", {
 			...args,
-			organizationId: organization._id,
+			organizationId: organization.id,
 		});
 
-		// Grant the creator admin access to the project
-		await ctx.db.insert("projectAccess", {
-			projectId,
-			userId: user._id,
-			teamId: undefined,
-			accessLevel: "admin",
-			grantedBy: user._id,
-			grantedAt: Date.now(),
-			expiresAt: undefined,
+		const team = await auth.api.createTeam({
+			body: {
+				name: projectId,
+				organizationId: organization.id,
+			},
+			headers: await authComponent.getHeaders(ctx),
 		});
 
-		// Grant the project lead admin access
-		if (args.leadId !== user._id) {
-			await ctx.db.insert("projectAccess", {
-				projectId,
-				userId: args.leadId,
-				teamId: undefined,
-				accessLevel: "admin",
-				grantedBy: user._id,
-				grantedAt: Date.now(),
-				expiresAt: undefined,
-			});
-		}
+		await ctx.runMutation(components.betterAuth.team.addTeamMembers, {
+			teamId: team.id,
+			userIds: args.teamMemberIds,
+		});
+
+		const permission = {
+			[`${projectId}:finance`]: ["create", "update", "delete", "view"],
+		};
+		await auth.api.createOrgRole({
+			body: {
+				role: `${projectId}:project-owner`, // required
+				permission: permission,
+				additionalFields: {
+					projectId: projectId,
+				},
+				organizationId: organization.id,
+			},
+			// This endpoint requires session cookies.
+			headers,
+		});
+
+		// // Grant the creator admin access to the project
+		// await ctx.db.insert("projectAccess", {
+		// 	projectId,
+		// 	userId: user.id,
+		// 	teamId: undefined,
+		// 	accessLevel: "admin",
+		// 	grantedBy: user.id,
+		// 	grantedAt: Date.now(),
+		// 	expiresAt: undefined,
+		// });
+
+		// // Grant the project lead admin access
+		// if (args.leadId !== user.id) {
+		// 	await ctx.db.insert("projectAccess", {
+		// 		projectId,
+		// 		userId: args.leadId,
+		// 		teamId: undefined,
+		// 		accessLevel: "admin",
+		// 		grantedBy: user.id,
+		// 		grantedAt: Date.now(),
+		// 		expiresAt: undefined,
+		// 	});
+		// }
 
 		// Grant team members write access
-		for (const memberId of args.teamMemberIds) {
-			if (memberId !== user._id && memberId !== args.leadId) {
-				await ctx.db.insert("projectAccess", {
-					projectId,
-					userId: memberId,
-					teamId: undefined,
-					accessLevel: "write",
-					grantedBy: user._id,
-					grantedAt: Date.now(),
-					expiresAt: undefined,
-				});
-			}
-		}
+		// for (const memberId of args.teamMemberIds) {
+		// 	if (memberId !== user.id && memberId !== args.leadId) {
+		// 		await ctx.db.insert("projectAccess", {
+		// 			projectId,
+		// 			userId: memberId,
+		// 			teamId: undefined,
+		// 			accessLevel: "write",
+		// 			grantedBy: user.id,
+		// 			grantedAt: Date.now(),
+		// 			expiresAt: undefined,
+		// 		});
+		// 	}
+		// }
 
 		return projectId;
 	},

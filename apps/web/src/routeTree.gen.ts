@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SeedRouteImport } from './routes/seed'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteCodeRouteImport } from './routes/invite.$code'
@@ -50,6 +51,11 @@ import { Route as ConstructionOrgIdProjectsProjectIdActivityRouteImport } from '
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SeedRoute = SeedRouteImport.update({
+  id: '/seed',
+  path: '/seed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -261,6 +267,7 @@ const ConstructionOrgIdProjectsProjectIdActivityRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/seed': typeof SeedRoute
   '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/seed': typeof SeedRoute
   '/settings': typeof SettingsRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/organization-setup': typeof AuthOrganizationSetupRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/seed': typeof SeedRoute
   '/settings': typeof SettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdRouteRouteWithChildren
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
@@ -380,6 +389,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/seed'
     | '/settings'
     | '/construction/$orgId'
     | '/auth/forgot-password'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/seed'
     | '/settings'
     | '/auth/forgot-password'
     | '/auth/organization-setup'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/seed'
     | '/settings'
     | '/construction/$orgId'
     | '/auth/forgot-password'
@@ -497,6 +509,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
+  SeedRoute: typeof SeedRoute
   SettingsRoute: typeof SettingsRoute
   ConstructionOrgIdRouteRoute: typeof ConstructionOrgIdRouteRouteWithChildren
   InviteCodeRoute: typeof InviteCodeRoute
@@ -509,6 +522,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seed': {
+      id: '/seed'
+      path: '/seed'
+      fullPath: '/seed'
+      preLoaderRoute: typeof SeedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -882,6 +902,7 @@ const ConstructionOrgIdRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
+  SeedRoute: SeedRoute,
   SettingsRoute: SettingsRoute,
   ConstructionOrgIdRouteRoute: ConstructionOrgIdRouteRouteWithChildren,
   InviteCodeRoute: InviteCodeRoute,

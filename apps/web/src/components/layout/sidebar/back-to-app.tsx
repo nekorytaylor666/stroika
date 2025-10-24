@@ -6,7 +6,7 @@ import { ChevronLeft } from "lucide-react";
 export function BackToApp() {
 	return (
 		<div className="flex w-full items-center justify-between gap-2">
-			<Button className="w-fit" size="xs" variant="outline" asChild>
+			<Button className="w-fit" size="sm" variant="outline" asChild>
 				<Link to="/">
 					<ChevronLeft className="size-4" />
 					Back to app

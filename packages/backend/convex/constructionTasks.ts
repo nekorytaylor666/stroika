@@ -1,82 +1,99 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
-import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
+import {
+	getCurrentUser,
+	getCurrentUserWithOrganization,
+} from "./helpers/getCurrentUser";
+import { authComponent, createAuth } from "./auth";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
-		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		try {
+			const user = await getCurrentUser(ctx);
+			if (!user) {
+				return [];
+			}
 
-		// Now safe to get organization data
+			// Get organization ID - use user's current organization if set
+			let organizationId = user.currentOrganizationId;
 
-		// Check membership
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", organization._id).eq("userId", user._id),
-			)
-			.first();
+			if (!organizationId) {
+				// Fallback: try to get from Better Auth
+				try {
+					const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+					const organizations = await auth.api.listOrganizations({ headers });
+					organizationId = organizations[0]?.id;
+				} catch (error) {
+					console.error("Error getting organization from Better Auth:", error);
+				}
+			}
 
-		if (!membership || !membership.isActive) {
+			// Get all construction tasks
+			let tasks = await ctx.db
+				.query("issues")
+				.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
+				.collect();
+
+			// Filter by organization if we have one
+			if (organizationId) {
+				tasks = tasks.filter((task) => task.organizationId === organizationId);
+			}
+
+			// Populate related data
+			const populatedTasks = await Promise.all(
+				tasks.map(async (task) => {
+					const [status, assignee, priority, labels, attachments, subtasks] =
+						await Promise.all([
+							ctx.db.get(task.statusId),
+							task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+							ctx.db.get(task.priorityId),
+							Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+							ctx.db
+								.query("issueAttachments")
+								.withIndex("by_issue", (q) => q.eq("issueId", task._id))
+								.collect(),
+							ctx.db
+								.query("issues")
+								.withIndex("by_parent_task", (q) =>
+									q.eq("parentTaskId", task._id),
+								)
+								.collect(),
+						]);
+
+					// Get uploader info for attachments and resolve URLs
+					const attachmentsWithUsers = await Promise.all(
+						attachments.map(async (attachment) => {
+							const [uploader, fileUrl] = await Promise.all([
+								ctx.db.get(attachment.uploadedBy),
+								ctx.storage.getUrl(attachment.fileUrl as any),
+							]);
+							return {
+								...attachment,
+								fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
+								uploader,
+							};
+						}),
+					);
+
+					return {
+						...task,
+						status,
+						assignee,
+						priority,
+						labels: labels.filter((label) => label !== null),
+						attachments: attachmentsWithUsers,
+						subtaskCount: subtasks.length,
+					};
+				}),
+			);
+
+			return populatedTasks;
+		} catch (error) {
+			console.error("Error in getAll:", error);
 			return [];
 		}
-
-		const tasks = await ctx.db
-			.query("issues")
-			.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
-			.filter((q) => q.eq(q.field("organizationId"), organization._id))
-			.collect();
-
-		// Populate related data
-		const populatedTasks = await Promise.all(
-			tasks.map(async (task) => {
-				const [status, assignee, priority, labels, attachments, subtasks] =
-					await Promise.all([
-						ctx.db.get(task.statusId),
-						task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-						ctx.db.get(task.priorityId),
-						Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
-						ctx.db
-							.query("issueAttachments")
-							.withIndex("by_issue", (q) => q.eq("issueId", task._id))
-							.collect(),
-						ctx.db
-							.query("issues")
-							.withIndex("by_parent_task", (q) =>
-								q.eq("parentTaskId", task._id),
-							)
-							.collect(),
-					]);
-
-				// Get uploader info for attachments and resolve URLs
-				const attachmentsWithUsers = await Promise.all(
-					attachments.map(async (attachment) => {
-						const [uploader, fileUrl] = await Promise.all([
-							ctx.db.get(attachment.uploadedBy),
-							ctx.storage.getUrl(attachment.fileUrl as any),
-						]);
-						return {
-							...attachment,
-							fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
-							uploader,
-						};
-					}),
-				);
-
-				return {
-					...task,
-					status,
-					assignee,
-					priority,
-					labels: labels.filter((label) => label !== null),
-					attachments: attachmentsWithUsers,
-					subtaskCount: subtasks.length,
-				};
-			}),
-		);
-
-		return populatedTasks;
 	},
 });
 
@@ -384,44 +401,42 @@ export const create = mutation({
 		identifier: v.string(),
 		title: v.string(),
 		description: v.string(),
-		statusId: v.id("status"),
-		assigneeId: v.optional(v.id("users")),
-		priorityId: v.id("priorities"),
-		labelIds: v.array(v.id("labels")),
+		statusId: v.string(),
+		assigneeId: v.optional(v.string()),
+		priorityId: v.string(),
+		labelIds: v.array(v.string()),
 		cycleId: v.string(),
-		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
+		projectId: v.optional(v.string()), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
-		parentTaskId: v.optional(v.id("issues")), // For creating subtasks
-		userId: v.id("users"), // User creating the task
+		parentTaskId: v.optional(v.string()), // For creating subtasks
 	},
 	handler: async (ctx, args) => {
-		const { userId, ...taskData } = args;
-		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization)
+			throw new Error("User or organization not found");
 
-		const fullTaskData = {
-			...taskData,
-			organizationId: organization._id,
+		const taskId = await ctx.db.insert("issues", {
+			...args,
+			organizationId: organization.id,
 			createdAt: new Date().toISOString(),
 			isConstructionTask: true,
-		};
-
-		const taskId = await ctx.db.insert("issues", fullTaskData);
+		});
 
 		// Track activity
 		await ctx.runMutation(api.activities.createActivity, {
 			issueId: taskId,
-			userId,
+			userId: user._id,
 			type: "created",
 			newValue: args.title,
 		});
 
 		// Send notification if task is assigned
-		if (args.assigneeId && args.assigneeId !== userId) {
+		if (args.assigneeId && args.assigneeId !== user._id) {
 			await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
 				issueId: taskId,
 				assigneeId: args.assigneeId,
-				assignedBy: userId,
+				assignedBy: user._id,
 			});
 		}
 

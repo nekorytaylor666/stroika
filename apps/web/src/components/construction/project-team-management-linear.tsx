@@ -62,7 +62,7 @@ export function ProjectTeamManagementLinear({
 }: ProjectTeamManagementLinearProps) {
 	const isMobile = useMobile();
 	const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-	const [selectedUserIds, setSelectedUserIds] = useState<Id<"users">[]>([]);
+	const [selectedUserIds, setSelectedUserIds] = useState<Id<"user">[]>([]);
 	const [memberSearchQuery, setMemberSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -85,7 +85,7 @@ export function ProjectTeamManagementLinear({
 	const departments = useQuery(api.departments.list);
 
 	// Mutations
-	const addTeamMember = useMutation(api.constructionTeams.addTeamMember);
+	const addTeamMembers = useMutation(api.constructionTeams.addTeamMembers);
 	const removeTeamMember = useMutation(api.constructionTeams.removeTeamMember);
 
 	const handleAddMembers = async () => {
@@ -93,15 +93,12 @@ export function ProjectTeamManagementLinear({
 
 		try {
 			// Add all selected members
-			await Promise.all(
-				selectedUserIds.map((userId) =>
-					addTeamMember({
-						projectId,
-						userId,
-					}),
-				),
-			);
-
+			console.log("selectedUserIds", selectedUserIds);
+			console.log("projectId", projectId);
+			await addTeamMembers({
+				projectId,
+				userIds: selectedUserIds,
+			});
 			toast.success(
 				selectedUserIds.length === 1
 					? "Участник добавлен в команду"
@@ -119,7 +116,7 @@ export function ProjectTeamManagementLinear({
 		}
 	};
 
-	const toggleUserSelection = (userId: Id<"users">) => {
+	const toggleUserSelection = (userId: Id<"user">) => {
 		setSelectedUserIds((prev) =>
 			prev.includes(userId)
 				? prev.filter((id) => id !== userId)
@@ -127,10 +124,10 @@ export function ProjectTeamManagementLinear({
 		);
 	};
 
-	const handleRemoveMember = async (userId: Id<"users">) => {
+	const handleRemoveMember = async (userId: Id<"user">) => {
 		try {
 			const result = await removeTeamMember({
-				projectId,
+				teamName: projectId,
 				userId,
 			});
 			toast.success(
@@ -194,7 +191,7 @@ export function ProjectTeamManagementLinear({
 	const availableUsers = allUsers
 		?.filter((user): user is NonNullable<typeof user> => user !== null)
 		.filter(
-			(user) => !teamData?.members.some((member) => member._id === user._id),
+			(user) => !teamData?.members.some((member) => member._id === user.id),
 		)
 		.filter((user) => {
 			if (!memberSearchQuery) return true;
@@ -601,28 +598,28 @@ export function ProjectTeamManagementLinear({
 									<div className="space-y-2">
 										{availableUsers.map((user) => (
 											<div
-												key={user._id}
+												key={user.id}
 												className={cn(
 													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50 active:bg-muted",
-													selectedUserIds.includes(user._id) &&
+													selectedUserIds.includes(user.id) &&
 														"border border-primary/20 bg-primary/10",
 												)}
-												onClick={() => toggleUserSelection(user._id)}
+												onClick={() => toggleUserSelection(user.id)}
 												onKeyDown={(e) => {
 													if (e.key === "Enter" || e.key === " ") {
 														e.preventDefault();
-														toggleUserSelection(user._id);
+														toggleUserSelection(user.id);
 													}
 												}}
 												role="button"
 												tabIndex={0}
 											>
 												<Checkbox
-													checked={selectedUserIds.includes(user._id)}
-													onCheckedChange={() => toggleUserSelection(user._id)}
+													checked={selectedUserIds.includes(user.id)}
+													onCheckedChange={() => toggleUserSelection(user.id)}
 												/>
 												<Avatar className="h-10 w-10">
-													<AvatarImage src={user.avatarUrl || undefined} />
+													<AvatarImage src={user.image || undefined} />
 													<AvatarFallback>
 														{user.name
 															.split(" ")
@@ -741,27 +738,27 @@ export function ProjectTeamManagementLinear({
 									<div className="space-y-2">
 										{availableUsers.map((user) => (
 											<div
-												key={user._id}
+												key={user.id}
 												className={cn(
 													"flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50",
-													selectedUserIds.includes(user._id) && "bg-primary/10",
+													selectedUserIds.includes(user.id) && "bg-primary/10",
 												)}
-												onClick={() => toggleUserSelection(user._id)}
+												onClick={() => toggleUserSelection(user.id)}
 												onKeyDown={(e) => {
 													if (e.key === "Enter" || e.key === " ") {
 														e.preventDefault();
-														toggleUserSelection(user._id);
+														toggleUserSelection(user.id);
 													}
 												}}
 												role="button"
 												tabIndex={0}
 											>
 												<Checkbox
-													checked={selectedUserIds.includes(user._id)}
-													onCheckedChange={() => toggleUserSelection(user._id)}
+													checked={selectedUserIds.includes(user.id)}
+													onCheckedChange={() => toggleUserSelection(user.id)}
 												/>
 												<Avatar className="h-10 w-10">
-													<AvatarImage src={user.avatarUrl || undefined} />
+													<AvatarImage src={user.image || undefined} />
 													<AvatarFallback>
 														{user.name
 															.split(" ")
@@ -775,13 +772,8 @@ export function ProjectTeamManagementLinear({
 													<div className="text-muted-foreground text-sm">
 														{user.email}
 													</div>
-													{user.position && (
-														<Badge variant="outline" className="mt-1">
-															{user.position}
-														</Badge>
-													)}
 												</div>
-												{selectedUserIds.includes(user._id) && (
+												{selectedUserIds.includes(user.id) && (
 													<Check className="h-5 w-5 text-primary" />
 												)}
 											</div>

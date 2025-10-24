@@ -41,9 +41,10 @@ export const createInvite = mutation({
 		// 	"invite"
 		// );
 
-		// if (!hasInvitePermission) {
-		// 	throw new Error("Insufficient permissions to invite users");
-		// }
+		// Check if user has permission to invite
+		if (membership.role !== "admin" && membership.role !== "owner") {
+			throw new Error("Insufficient permissions to invite users");
+		}
 
 		// Check organization settings
 		const organization = await ctx.db.get(args.organizationId);
@@ -469,16 +470,13 @@ export const cancelInvite = mutation({
 			invite.organizationId,
 		);
 
-		// Check if user has permission to manage members or if they created the invite
-		const hasManagePermission = await checkPermission(
-			ctx,
-			user._id,
-			"members",
-			"manage",
-		);
-
-		if (!hasManagePermission && invite.invitedBy !== user._id) {
-			throw new Error("Insufficient permissions to cancel this invite");
+		// Check if user has permission to cancel
+		if (
+			membership.role !== "admin" &&
+			membership.role !== "owner" &&
+			invite.invitedBy !== user._id
+		) {
+			throw new Error("Insufficient permissions");
 		}
 
 		// Update invite status

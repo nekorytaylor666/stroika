@@ -24,7 +24,7 @@ export default function HeaderOptions() {
 			<Filter />
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button className="relative" size="xs" variant="secondary">
+					<Button className="relative" size="sm" variant="secondary">
 						<SlidersHorizontal className="mr-1 size-4" />
 						Отображение
 						{viewType === "grid" && (

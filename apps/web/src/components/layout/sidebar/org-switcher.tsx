@@ -35,7 +35,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@stroika/backend";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
@@ -45,7 +45,6 @@ import { CreateNewIssue } from "./create-new-issue";
 export function OrgSwitcher() {
 	const params = useParams({ from: "/construction/$orgId" });
 	const navigate = useNavigate();
-	const { signOut } = useAuthActions();
 	const [createOrgOpen, setCreateOrgOpen] = useState(false);
 	const [newOrgName, setNewOrgName] = useState("");
 	const [newOrgDescription, setNewOrgDescription] = useState("");
@@ -185,7 +184,7 @@ export function OrgSwitcher() {
 								</DropdownMenuPortal>
 							</DropdownMenuSub>
 							<DropdownMenuSeparator />
-							<DropdownMenuItem onClick={() => signOut()}>
+							<DropdownMenuItem onClick={() => void authClient.signOut()}>
 								<LogOut className="mr-2 h-4 w-4" />
 								Log out
 								<DropdownMenuShortcut>⌥⇧Q</DropdownMenuShortcut>

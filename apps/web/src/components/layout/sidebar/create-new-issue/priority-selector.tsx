@@ -53,7 +53,7 @@ export function PrioritySelector({
 					<Button
 						id={id}
 						className="flex items-center gap-2"
-						size="xs"
+						size="sm"
 						variant="secondary"
 						role="combobox"
 						aria-expanded={open}
