@@ -775,6 +775,14 @@ export const getProjectTimelineData = query({
 			...projectStatusChanges,
 		].sort((a, b) => a.createdAt - b.createdAt);
 
+		// Calculate remaining (planned but not completed) tasks
+		const remainingTasks = tasksWithCreationDates.filter((task) => {
+			// Check if this task is in the completed list
+			return !completedTasks.some(
+				(completedTask) => completedTask._id === task._id,
+			);
+		});
+
 		return {
 			project: {
 				...project,
@@ -782,9 +790,11 @@ export const getProjectTimelineData = query({
 					total: tasks.length,
 					withDueDates: tasksWithDueDates.length,
 					completed: completedTasks.length,
+					remaining: remainingTasks.length,
 				},
 			},
 			tasks: tasksWithCreationDates,
+			remainingTasks, // New field for non-completed tasks
 			tasksWithDueDates,
 			completedTasks: completedTasksWithDates,
 			activities: allProjectActivities,

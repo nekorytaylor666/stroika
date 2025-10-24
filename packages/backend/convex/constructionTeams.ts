@@ -279,50 +279,45 @@ export const removeTeamMember = mutation({
 // Get all teams (existing function remains)
 export const getAll = query({
 	handler: async (ctx) => {
-		// Check if user is authenticated
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
+		try {
+			const user = await getCurrentUser(ctx);
+			
+			if (!user.currentOrganizationId) {
+				// Return empty array if user has no organization
+				return [];
+			}
 
-		// Check if user exists in database
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
+			// Get teams for the user's organization
+			const teams = await ctx.db
+				.query("constructionTeams")
+				.withIndex("by_organization", (q) =>
+					q.eq("organizationId", user.currentOrganizationId!),
+				)
+				.collect();
 
-		if (!user || !user.currentOrganizationId) {
-			// Return empty array if user doesn't exist or has no organization
+			// Enrich with member and project data
+			const enrichedTeams = await Promise.all(
+				teams.map(async (team) => {
+					const members = await Promise.all(
+						team.memberIds.map((id) => ctx.db.get(id)),
+					);
+					const projects = await Promise.all(
+						team.projectIds.map((id) => ctx.db.get(id)),
+					);
+
+					return {
+						...team,
+						members: members.filter(Boolean),
+						projects: projects.filter(Boolean),
+					};
+				}),
+			);
+
+			return enrichedTeams;
+		} catch {
+			// Return empty array if not authenticated
 			return [];
 		}
-
-		// Get teams for the user's organization
-		const teams = await ctx.db
-			.query("constructionTeams")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", user.currentOrganizationId!),
-			)
-			.collect();
-
-		// Enrich with member and project data
-		const enrichedTeams = await Promise.all(
-			teams.map(async (team) => {
-				const members = await Promise.all(
-					team.memberIds.map((id) => ctx.db.get(id)),
-				);
-				const projects = await Promise.all(
-					team.projectIds.map((id) => ctx.db.get(id)),
-				);
-
-				return {
-					...team,
-					members: members.filter(Boolean),
-					projects: projects.filter(Boolean),
-				};
-			}),
-		);
-
-		return enrichedTeams;
 	},
 });
 

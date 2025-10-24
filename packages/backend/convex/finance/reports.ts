@@ -478,12 +478,11 @@ export const getProjectFinancialOverview = query({
 		// Use outgoing payments as the actual money spent
 		// This represents all cash that has left the project
 		const actualMoneySpent = totalOutgoing;
-		
+
 		// Calculate profitability based on actual cash flow
 		const netCashPosition = totalIncoming - actualMoneySpent;
-		const profitMargin = totalIncoming > 0 
-			? (netCashPosition / totalIncoming) * 100
-			: 0;
+		const profitMargin =
+			totalIncoming > 0 ? (netCashPosition / totalIncoming) * 100 : 0;
 
 		return {
 			project: {
@@ -516,10 +515,7 @@ export const getProjectFinancialOverview = query({
 			balance: {
 				currentBalance: totalIncoming - actualMoneySpent, // Actual cash position
 				projectedBalance:
-					totalIncoming +
-					pendingIncoming -
-					actualMoneySpent -
-					pendingOutgoing,
+					totalIncoming + pendingIncoming - actualMoneySpent - pendingOutgoing,
 				profitMargin, // Use calculated profit margin based on cash flow
 			},
 		};

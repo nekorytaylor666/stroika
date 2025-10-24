@@ -1,10 +1,10 @@
-import { PermissionsManagement } from "@/components/settings/permissions-management";
 import { LinearPermissionsManagement } from "@/components/settings/linear-style/permissions-management";
+import { PermissionsManagement } from "@/components/settings/permissions-management";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
-import { Shield, Settings, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Settings, Shield } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/construction/$orgId/permissions")({

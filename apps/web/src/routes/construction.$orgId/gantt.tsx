@@ -1,4 +1,6 @@
 import { GanttFilter } from "@/components/layout/headers/construction/gantt-filter";
+import Loader from "@/components/loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -29,6 +31,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 import { useGanttFilterStore } from "@/store/gantt-filter-store";
 import { api } from "@stroika/backend";
@@ -46,7 +49,7 @@ import {
 } from "date-fns";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon, Lock, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/construction/$orgId/gantt")({
@@ -89,6 +92,7 @@ type ProjectWithTasks = {
 };
 
 function ConstructionGanttView() {
+	const permissions = usePermissions();
 	const projects = useQuery(
 		api.constructionProjects.getAllProjectsWithTasksForGantt,
 	);
@@ -214,10 +218,36 @@ function ConstructionGanttView() {
 	> = new Map();
 
 	// Check loading state after all hooks
-	if (!projects || !statuses) {
+	if (permissions.isLoading || !projects || !statuses) {
 		return (
 			<div className="flex h-full items-center justify-center">
-				<div className="text-muted-foreground">Загрузка проектов...</div>
+				<Loader />
+			</div>
+		);
+	}
+
+	// Check if user can view gantt chart using colon notation
+	const canViewGantt =
+		permissions.hasPermission("projects:read") ||
+		permissions.hasPermission("projects:manage") ||
+		permissions.hasPermission("constructionProjects:read") ||
+		permissions.hasPermission("constructionProjects:manage") ||
+		permissions.hasPermission("gantt:read") ||
+		permissions.hasPermission("gantt:manage") ||
+		permissions.isOwner;
+
+	if (!canViewGantt) {
+		return (
+			<div className="h-full overflow-auto bg-background">
+				<div className="mx-auto max-w-7xl p-6">
+					<Alert className="mx-auto mt-20 max-w-md">
+						<Lock className="h-4 w-4" />
+						<AlertDescription>
+							У вас нет доступа к диаграмме Ганта. Необходимо разрешение
+							"projects:read", "gantt:read" или "constructionProjects:read".
+						</AlertDescription>
+					</Alert>
+				</div>
 			</div>
 		);
 	}

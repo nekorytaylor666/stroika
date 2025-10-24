@@ -1,8 +1,10 @@
 import { ConstructionProjectOverview } from "@/components/construction/construction-project-overview";
-import Header from "@/components/header";
-import MainLayout from "@/components/layout/main-layout";
+import Loader from "@/components/loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePermissions, useProjectPermissions } from "@/hooks/use-permissions";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
+import { Lock } from "lucide-react";
 
 export const Route = createFileRoute(
 	"/construction/$orgId/projects/$projectId/overview",
@@ -15,6 +17,43 @@ function ConstructionProjectOverviewPage() {
 
 	// Convert the string projectId to Convex Id type
 	const convexProjectId = projectId as Id<"constructionProjects">;
+
+	// Use permission hooks with colon notation
+	const permissions = usePermissions();
+	const projectPermissions = useProjectPermissions(projectId);
+
+	// Loading state
+	if (permissions.isLoading || projectPermissions.isLoading) {
+		return (
+			<div className="flex h-full items-center justify-center">
+				<Loader />
+			</div>
+		);
+	}
+
+	// Check if user can manage the project using colon notation
+	const canManageProject =
+		permissions.hasPermission("projects:manage") ||
+		permissions.hasPermission("constructionProjects:manage") ||
+		projectPermissions.canAdmin ||
+		permissions.isOwner;
+
+	if (!canManageProject) {
+		return (
+			<div className="h-full bg-background p-6">
+				<div className="mx-auto max-w-7xl">
+					<Alert className="mx-auto mt-20 max-w-md">
+						<Lock className="h-4 w-4" />
+						<AlertDescription>
+							У вас нет доступа к обзору проекта. Только пользователи с правами
+							управления проектом могут просматривать эту вкладку. Необходимо
+							разрешение "projects:manage" или "constructionProjects:manage".
+						</AlertDescription>
+					</Alert>
+				</div>
+			</div>
+		);
+	}
 
 	return <ConstructionProjectOverview projectId={convexProjectId} />;
 }

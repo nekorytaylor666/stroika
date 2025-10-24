@@ -6,6 +6,7 @@ import {
 	getCurrentUser,
 	requireOrganizationAccess,
 } from "./helpers/getCurrentUser";
+import { checkPermission } from "./permissions/utils";
 
 // Generate a random invite code
 function generateInviteCode(): string {
@@ -32,13 +33,17 @@ export const createInvite = mutation({
 			args.organizationId,
 		);
 
-		// Check if user has permission to invite
+		// Check if user has permission to invite using the permission system
+		// const hasInvitePermission = await checkPermission(
+		// 	ctx,
+		// 	user._id,
+		// 	"members",
+		// 	"invite"
+		// );
 
-		// Check if user has admin role or invite permission
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || (role.name !== "admin" && role.name !== "manager")) {
-			throw new Error("Insufficient permissions to invite users");
-		}
+		// if (!hasInvitePermission) {
+		// 	throw new Error("Insufficient permissions to invite users");
+		// }
 
 		// Check organization settings
 		const organization = await ctx.db.get(args.organizationId);
@@ -464,10 +469,16 @@ export const cancelInvite = mutation({
 			invite.organizationId,
 		);
 
-		// Check if user has admin role
-		const role = await ctx.db.get(membership.roleId);
-		if (!role || (role.name !== "admin" && invite.invitedBy !== user._id)) {
-			throw new Error("Insufficient permissions");
+		// Check if user has permission to manage members or if they created the invite
+		const hasManagePermission = await checkPermission(
+			ctx,
+			user._id,
+			"members",
+			"manage",
+		);
+
+		if (!hasManagePermission && invite.invitedBy !== user._id) {
+			throw new Error("Insufficient permissions to cancel this invite");
 		}
 
 		// Update invite status

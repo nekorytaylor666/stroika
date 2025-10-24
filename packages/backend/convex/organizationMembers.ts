@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { getCurrentUser, requireOrganizationAccess } from "./helpers/getCurrentUser";
 
 // Get organization members
 export const list = query({
@@ -10,33 +11,7 @@ export const list = query({
 		includeInactive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		const { user } = await requireOrganizationAccess(ctx, args.organizationId);
 
 		// Get members
 		let membersQuery = ctx.db
@@ -125,34 +100,7 @@ export const getMemberDetails = query({
 		memberId: v.id("organizationMembers"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		// Check if the requester is a member of the organization
-		const requesterMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!requesterMembership || !requesterMembership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		const { user } = await requireOrganizationAccess(ctx, args.organizationId);
 
 		// Get the member details
 		const member = await ctx.db.get(args.memberId);
@@ -230,35 +178,12 @@ export const updateRole = mutation({
 		roleId: v.id("roles"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Check if user has permission
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		// Get current user and check organization access
+		const { user, membership } = await requireOrganizationAccess(ctx, args.organizationId);
 
 		// Check if user has admin role
 		const role = await ctx.db.get(membership.roleId);
-		if (!role || role.name !== "admin") {
+		if (!role || (role.name !== "admin" && role.name !== "owner")) {
 			throw new Error("Insufficient permissions");
 		}
 
@@ -274,8 +199,11 @@ export const updateRole = mutation({
 			throw new Error("Member not found");
 		}
 
+		// Get current role of target member
+		const currentRole = await ctx.db.get(targetMembership.roleId);
+
 		// Prevent removing the last admin
-		if (role.name === "admin") {
+		if (currentRole?.name === "admin") {
 			const adminCount = await ctx.db
 				.query("organizationMembers")
 				.withIndex("by_organization", (q) =>
@@ -284,7 +212,7 @@ export const updateRole = mutation({
 				.filter((q) =>
 					q.and(
 						q.eq(q.field("isActive"), true),
-						q.eq(q.field("roleId"), membership.roleId),
+						q.eq(q.field("roleId"), targetMembership.roleId),
 					),
 				)
 				.collect();
@@ -324,35 +252,12 @@ export const removeMember = mutation({
 		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Check if user has permission
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		// Get current user and check organization access
+		const { user, membership } = await requireOrganizationAccess(ctx, args.organizationId);
 
 		// Check if user has admin role
 		const role = await ctx.db.get(membership.roleId);
-		if (!role || role.name !== "admin") {
+		if (!role || (role.name !== "admin" && role.name !== "owner")) {
 			throw new Error("Insufficient permissions");
 		}
 
@@ -453,42 +358,16 @@ export const deactivateMember = mutation({
 		memberId: v.id("organizationMembers"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		// Get the user using auth.getUserId
-		const authUserId = await auth.getUserId(ctx);
-
-		if (!authUserId) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db.get(authUserId);
-		if (!user) {
-			throw new Error("User not found");
-		}
-
 		const member = await ctx.db.get(args.memberId);
 		if (!member) {
 			throw new Error("Member not found");
 		}
 
-		// Check if requester has permission (must be admin)
-		const requesterMembership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", member.organizationId).eq("userId", user._id),
-			)
-			.first();
+		// Get current user and check organization access
+		const { user, membership } = await requireOrganizationAccess(ctx, member.organizationId);
 
-		if (!requesterMembership || !requesterMembership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
-
-		const requesterRole = await ctx.db.get(requesterMembership.roleId);
-		if (!requesterRole || requesterRole.name !== "admin") {
+		const requesterRole = await ctx.db.get(membership.roleId);
+		if (!requesterRole || (requesterRole.name !== "admin" && requesterRole.name !== "owner")) {
 			throw new Error("Only admins can deactivate members");
 		}
 
@@ -528,31 +407,8 @@ export const leaveOrganization = mutation({
 		organizationId: v.id("organizations"),
 	},
 	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity();
-		if (!identity) {
-			throw new Error("Not authenticated");
-		}
-
-		const user = await ctx.db
-			.query("users")
-			.withIndex("by_email", (q) => q.eq("email", identity.email!))
-			.first();
-
-		if (!user) {
-			throw new Error("User not found");
-		}
-
-		// Get membership
-		const membership = await ctx.db
-			.query("organizationMembers")
-			.withIndex("by_org_user", (q) =>
-				q.eq("organizationId", args.organizationId).eq("userId", user._id),
-			)
-			.first();
-
-		if (!membership || !membership.isActive) {
-			throw new Error("Not a member of this organization");
-		}
+		// Get current user and check organization access
+		const { user, membership } = await requireOrganizationAccess(ctx, args.organizationId);
 
 		// Prevent owner from leaving
 		const organization = await ctx.db.get(args.organizationId);

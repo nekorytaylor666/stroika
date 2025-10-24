@@ -27,12 +27,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import RoleSelectorDialog from "./role-selector-dialog";
 
 interface MemberActionsDropdownProps {
 	memberId: Id<"organizationMembers">;
 	userId: Id<"users">;
 	userName: string;
 	userEmail: string;
+	currentRoleId: Id<"roles">;
+	organizationId: Id<"organizations">;
 	isCurrentUser?: boolean;
 	onUpdate?: () => void;
 }
@@ -42,10 +45,13 @@ export default function MemberActionsDropdown({
 	userId,
 	userName,
 	userEmail,
+	currentRoleId,
+	organizationId,
 	isCurrentUser = false,
 	onUpdate,
 }: MemberActionsDropdownProps) {
 	const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+	const [showRoleDialog, setShowRoleDialog] = useState(false);
 	const [generatedPassword, setGeneratedPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -138,7 +144,10 @@ export default function MemberActionsDropdown({
 						Сбросить пароль
 					</DropdownMenuItem>
 
-					<DropdownMenuItem disabled>
+					<DropdownMenuItem
+						onClick={() => setShowRoleDialog(true)}
+						disabled={isCurrentUser}
+					>
 						<Shield className="mr-2 h-4 w-4" />
 						Изменить роль
 					</DropdownMenuItem>
@@ -237,6 +246,17 @@ export default function MemberActionsDropdown({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<RoleSelectorDialog
+				open={showRoleDialog}
+				onOpenChange={setShowRoleDialog}
+				memberId={memberId}
+				userId={userId}
+				userName={userName}
+				currentRoleId={currentRoleId}
+				organizationId={organizationId}
+				onUpdate={onUpdate}
+			/>
 		</>
 	);
 }

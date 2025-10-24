@@ -8,7 +8,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
@@ -70,7 +69,7 @@ export function ProjectFinancePage({ projectId }: ProjectFinancePageProps) {
 	const BalanceIcon = balanceStatus.icon;
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 p-6">
 			{/* Header with financial summary */}
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<Card>
@@ -137,10 +136,15 @@ export function ProjectFinancePage({ projectId }: ProjectFinancePageProps) {
 						<CardDescription>Рентабельность</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<div className={`font-bold text-2xl ${
-							financialOverview.balance.profitMargin > 0 ? "text-green-600" : 
-							financialOverview.balance.profitMargin < 0 ? "text-red-600" : ""
-						}`}>
+						<div
+							className={`font-bold text-2xl ${
+								financialOverview.balance.profitMargin > 0
+									? "text-green-600"
+									: financialOverview.balance.profitMargin < 0
+										? "text-red-600"
+										: ""
+							}`}
+						>
 							{financialOverview.balance.profitMargin.toFixed(1)}%
 						</div>
 						<div className="mt-1 flex items-center">
@@ -229,9 +233,10 @@ export function ProjectFinancePage({ projectId }: ProjectFinancePageProps) {
 							<CardTitle className="text-base">О платежах</CardTitle>
 						</CardHeader>
 						<CardContent className="pt-0">
-							<p className="text-sm text-muted-foreground">
-								Платежи отслеживают все денежные операции (входящие и исходящие). 
-								Исходящие платежи могут быть связаны с расходами после их оплаты.
+							<p className="text-muted-foreground text-sm">
+								Платежи отслеживают все денежные операции (входящие и
+								исходящие). Исходящие платежи могут быть связаны с расходами
+								после их оплаты.
 							</p>
 						</CardContent>
 					</Card>
@@ -244,9 +249,10 @@ export function ProjectFinancePage({ projectId }: ProjectFinancePageProps) {
 							<CardTitle className="text-base">О расходах</CardTitle>
 						</CardHeader>
 						<CardContent className="pt-0">
-							<p className="text-sm text-muted-foreground">
-								Расходы - это детальный учет затрат по категориям. 
-								После одобрения расход можно отметить как оплаченный, что автоматически создаст связанный платеж.
+							<p className="text-muted-foreground text-sm">
+								Расходы - это детальный учет затрат по категориям. После
+								одобрения расход можно отметить как оплаченный, что
+								автоматически создаст связанный платеж.
 							</p>
 						</CardContent>
 					</Card>

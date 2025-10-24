@@ -15,6 +15,7 @@ interface MemberLineProps {
 		avatarUrl?: string;
 		status: string;
 		role: string;
+		roleId: string;
 		joinedDate: string;
 		teamIds: string[];
 	};
@@ -71,6 +72,8 @@ export default function MemberLine({ user, memberId }: MemberLineProps) {
 					userId={user.id as Id<"users">}
 					userName={user.name}
 					userEmail={user.email}
+					currentRoleId={user.roleId as Id<"roles">}
+					organizationId={params.orgId as Id<"organizations">}
 					isCurrentUser={isCurrentUser}
 				/>
 			</div>

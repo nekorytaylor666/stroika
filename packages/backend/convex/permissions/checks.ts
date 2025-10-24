@@ -340,6 +340,11 @@ export async function isAdmin(
 	userId: Id<"users">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
+	// Check if user is organization owner first
+	if (await isOrganizationOwner(ctx, userId, organizationId)) {
+		return true;
+	}
+
 	const membership = await ctx.db
 		.query("organizationMembers")
 		.withIndex("by_org_user", (q) =>

@@ -49,6 +49,8 @@ import type * as issueNotifications from "../issueNotifications.js";
 import type * as labels from "../labels.js";
 import type * as metadata from "../metadata.js";
 import type * as migrations_cleanupUsers from "../migrations/cleanupUsers.js";
+import type * as migrations_clearUsersForAuth from "../migrations/clearUsersForAuth.js";
+import type * as migrations_migrateUsersToProfiles from "../migrations/migrateUsersToProfiles.js";
 import type * as migrations_migrateUsersToRoleId from "../migrations/migrateUsersToRoleId.js";
 import type * as notifications from "../notifications.js";
 import type * as notificationsAction from "../notificationsAction.js";
@@ -117,6 +119,8 @@ declare const fullApi: ApiFromModules<{
   labels: typeof labels;
   metadata: typeof metadata;
   "migrations/cleanupUsers": typeof migrations_cleanupUsers;
+  "migrations/clearUsersForAuth": typeof migrations_clearUsersForAuth;
+  "migrations/migrateUsersToProfiles": typeof migrations_migrateUsersToProfiles;
   "migrations/migrateUsersToRoleId": typeof migrations_migrateUsersToRoleId;
   notifications: typeof notifications;
   notificationsAction: typeof notificationsAction;

@@ -11,7 +11,7 @@ function ProjectLayout() {
 	return (
 		<div className="flex h-full flex-col">
 			<ProjectNavigation />
-			<div className="flex-1 overflow-hidden">
+			<div className="flex-1 overflow-auto">
 				<Outlet />
 			</div>
 		</div>

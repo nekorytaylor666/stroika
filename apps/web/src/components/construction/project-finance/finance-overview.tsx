@@ -72,9 +72,12 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 	const accounts = useQuery(api.finance.accounts.getAccounts);
 
 	// Fetch financial data
-	const financialOverview = useQuery(api.finance.reports.getProjectFinancialOverview, {
-		projectId,
-	});
+	const financialOverview = useQuery(
+		api.finance.reports.getProjectFinancialOverview,
+		{
+			projectId,
+		},
+	);
 
 	// Keep these for backward compatibility with existing UI
 	const paymentStats = financialOverview?.payments;
@@ -377,20 +380,26 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 												Расходы (оплачено)
 											</span>
 											<span className="font-medium text-orange-600">
-												{formatCurrency(financialSummary.expenses?.totalPaid || 0)}
+												{formatCurrency(
+													financialSummary.expenses?.totalPaid || 0,
+												)}
 											</span>
 										</div>
 										<div className="mb-4 flex items-center justify-between border-t pt-2">
-											<span className="text-muted-foreground text-sm font-medium">
+											<span className="font-medium text-muted-foreground text-sm">
 												Баланс
 											</span>
-											<span className={cn(
-												"font-bold text-lg",
-												financialSummary.balance?.currentBalance >= 0
-													? "text-green-600"
-													: "text-red-600"
-											)}>
-												{formatCurrency(financialSummary.balance?.currentBalance || 0)}
+											<span
+												className={cn(
+													"font-bold text-lg",
+													financialSummary.balance?.currentBalance >= 0
+														? "text-green-600"
+														: "text-red-600",
+												)}
+											>
+												{formatCurrency(
+													financialSummary.balance?.currentBalance || 0,
+												)}
 											</span>
 										</div>
 									</div>
@@ -414,30 +423,38 @@ export function ProjectFinanceTab({ projectId }: ProjectFinanceTabProps) {
 												: "text-red-600",
 										)}
 									>
-										{formatCurrency(financialSummary.balance?.currentBalance || 0)}
+										{formatCurrency(
+											financialSummary.balance?.currentBalance || 0,
+										)}
 									</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-sm">Рентабельность</p>
-									<p className={cn(
-										"font-semibold text-xl",
-										financialSummary.balance?.profitMargin > 0
-											? "text-green-600"
-											: financialSummary.balance?.profitMargin < 0
-											? "text-red-600"
-											: "",
-									)}>
+									<p className="text-muted-foreground text-sm">
+										Рентабельность
+									</p>
+									<p
+										className={cn(
+											"font-semibold text-xl",
+											financialSummary.balance?.profitMargin > 0
+												? "text-green-600"
+												: financialSummary.balance?.profitMargin < 0
+													? "text-red-600"
+													: "",
+										)}
+									>
 										{(financialSummary.balance?.profitMargin || 0).toFixed(1)}%
 									</p>
 								</div>
 								<div>
 									<p className="text-muted-foreground text-sm">Расходы</p>
-									<p className="font-semibold text-xl text-red-600">
+									<p className="font-semibold text-red-600 text-xl">
 										{formatCurrency(financialSummary.expenses?.totalPaid || 0)}
 									</p>
 								</div>
 								<div>
-									<p className="text-muted-foreground text-sm">Чистый денежный поток</p>
+									<p className="text-muted-foreground text-sm">
+										Чистый денежный поток
+									</p>
 									<p
 										className={cn(
 											"font-semibold text-xl",

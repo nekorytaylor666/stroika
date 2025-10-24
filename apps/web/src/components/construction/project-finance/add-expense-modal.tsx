@@ -23,9 +23,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
-import { cn } from "@/lib/utils";
 import { useMutation } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";

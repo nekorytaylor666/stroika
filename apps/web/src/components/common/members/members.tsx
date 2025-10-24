@@ -111,6 +111,7 @@ export default function Members() {
 													member.role?.displayName ||
 													member.role?.name ||
 													"Member",
+												roleId: member.role?._id || "",
 												joinedDate: new Date(member.joinedAt).toISOString(),
 												teamIds: member.teams.map((t) => t._id),
 											}}

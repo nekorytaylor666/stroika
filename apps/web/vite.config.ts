@@ -37,6 +37,8 @@ export default defineConfig({
 				globPatterns: ["**/*.{js,css,html,ico,png,svg,json,woff,woff2}"],
 				navigateFallback: null,
 				navigateFallbackDenylist: [/^\/api/, /^\/$/],
+				maximumFileSizeToCacheInBytes: 3000000,
+
 				// Import custom service worker code
 				importScripts: ["sw-push.js"],
 				// Use NetworkFirst for API calls (Convex)

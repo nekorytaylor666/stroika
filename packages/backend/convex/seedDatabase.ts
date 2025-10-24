@@ -131,36 +131,68 @@ async function createPermissions(ctx: MutationCtx) {
 	const permissionMap: Record<string, Id<"permissions">> = {};
 
 	const permissions = [
-		// Project permissions
+		// General Project permissions (for all project types)
+		{
+			resource: "projects",
+			action: "create",
+			scope: "organization",
+			description: "Create general projects",
+		},
+		{
+			resource: "projects",
+			action: "read",
+			scope: "organization",
+			description: "View general projects",
+		},
+		{
+			resource: "projects",
+			action: "update",
+			scope: "organization",
+			description: "Edit general projects",
+		},
+		{
+			resource: "projects",
+			action: "delete",
+			scope: "organization",
+			description: "Delete general projects",
+		},
+		{
+			resource: "projects",
+			action: "manage",
+			scope: "organization",
+			description: "Full general project management",
+		},
+
+		// Construction Project permissions (specific to construction)
 		{
 			resource: "constructionProjects",
 			action: "create",
 			scope: "organization",
-			description: "Create new projects",
+			description: "Create new construction projects",
 		},
 		{
 			resource: "constructionProjects",
 			action: "read",
 			scope: "organization",
-			description: "View projects",
+			description: "View construction projects",
 		},
 		{
 			resource: "constructionProjects",
 			action: "update",
 			scope: "organization",
-			description: "Edit projects",
+			description: "Edit construction projects",
 		},
 		{
 			resource: "constructionProjects",
 			action: "delete",
 			scope: "organization",
-			description: "Delete projects",
+			description: "Delete construction projects",
 		},
 		{
 			resource: "constructionProjects",
 			action: "manage",
 			scope: "organization",
-			description: "Full project management",
+			description: "Full construction project management",
 		},
 
 		// User permissions
@@ -225,6 +257,134 @@ async function createPermissions(ctx: MutationCtx) {
 			action: "manage",
 			scope: "organization",
 			description: "Full team management",
+		},
+
+		// Construction Teams permissions (specific to construction)
+		{
+			resource: "constructionTeams",
+			action: "create",
+			scope: "organization",
+			description: "Create construction teams",
+		},
+		{
+			resource: "constructionTeams",
+			action: "read",
+			scope: "organization",
+			description: "View construction teams",
+		},
+		{
+			resource: "constructionTeams",
+			action: "update",
+			scope: "organization",
+			description: "Edit construction teams",
+		},
+		{
+			resource: "constructionTeams",
+			action: "delete",
+			scope: "organization",
+			description: "Delete construction teams",
+		},
+		{
+			resource: "constructionTeams",
+			action: "manage",
+			scope: "organization",
+			description: "Full construction team management",
+		},
+
+		// Finance permissions
+		{
+			resource: "finance",
+			action: "read",
+			scope: "project",
+			description: "View financial data",
+		},
+		{
+			resource: "finance",
+			action: "create",
+			scope: "project",
+			description: "Create financial records",
+		},
+		{
+			resource: "finance",
+			action: "update",
+			scope: "project",
+			description: "Edit financial records",
+		},
+		{
+			resource: "finance",
+			action: "delete",
+			scope: "project",
+			description: "Delete financial records",
+		},
+		{
+			resource: "finance",
+			action: "manage",
+			scope: "project",
+			description: "Full financial management",
+		},
+
+		// Calendar permissions
+		{
+			resource: "calendar",
+			action: "read",
+			scope: "organization",
+			description: "View calendar",
+		},
+		{
+			resource: "calendar",
+			action: "create",
+			scope: "organization",
+			description: "Create calendar events",
+		},
+		{
+			resource: "calendar",
+			action: "update",
+			scope: "organization",
+			description: "Edit calendar events",
+		},
+		{
+			resource: "calendar",
+			action: "delete",
+			scope: "organization",
+			description: "Delete calendar events",
+		},
+		{
+			resource: "calendar",
+			action: "manage",
+			scope: "organization",
+			description: "Full calendar management",
+		},
+
+		// Gantt chart permissions
+		{
+			resource: "gantt",
+			action: "read",
+			scope: "organization",
+			description: "View Gantt charts",
+		},
+		{
+			resource: "gantt",
+			action: "create",
+			scope: "organization",
+			description: "Create Gantt charts",
+		},
+		{
+			resource: "gantt",
+			action: "update",
+			scope: "organization",
+			description: "Edit Gantt charts",
+		},
+		{
+			resource: "gantt",
+			action: "delete",
+			scope: "organization",
+			description: "Delete Gantt charts",
+		},
+		{
+			resource: "gantt",
+			action: "manage",
+			scope: "organization",
+			description: "Full Gantt chart management",
 		},
 
 		// Document permissions
@@ -341,6 +501,38 @@ async function createPermissions(ctx: MutationCtx) {
 			action: "manage",
 			scope: "organization",
 			description: "Full role management",
+		},
+
+		// Permissions management
+		{
+			resource: "permissions",
+			action: "read",
+			scope: "organization",
+			description: "View permissions",
+		},
+		{
+			resource: "permissions",
+			action: "create",
+			scope: "organization",
+			description: "Create permissions",
+		},
+		{
+			resource: "permissions",
+			action: "update",
+			scope: "organization",
+			description: "Edit permissions",
+		},
+		{
+			resource: "permissions",
+			action: "delete",
+			scope: "organization",
+			description: "Delete permissions",
+		},
+		{
+			resource: "permissions",
+			action: "manage",
+			scope: "organization",
+			description: "Full permission management",
 		},
 	];
 

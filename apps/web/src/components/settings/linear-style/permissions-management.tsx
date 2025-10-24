@@ -54,7 +54,7 @@ interface RoleFormData {
 const permissionGroups = [
 	{
 		name: "Проекты",
-		resource: "projects",
+		resource: "constructionProjects",
 		permissions: [
 			{ action: "create", label: "Создание проектов" },
 			{ action: "read", label: "Просмотр проектов" },
@@ -71,7 +71,7 @@ const permissionGroups = [
 			{ action: "read", label: "Просмотр задач" },
 			{ action: "update", label: "Редактирование задач" },
 			{ action: "delete", label: "Удаление задач" },
-			{ action: "assign", label: "Назначение задач" },
+			{ action: "manage", label: "Полное управление задачами" },
 		],
 	},
 	{
@@ -82,17 +82,48 @@ const permissionGroups = [
 			{ action: "read", label: "Просмотр команд" },
 			{ action: "update", label: "Редактирование команд" },
 			{ action: "delete", label: "Удаление команд" },
-			{ action: "manage_members", label: "Управление участниками" },
+			{ action: "manage", label: "Полное управление командами" },
 		],
 	},
 	{
 		name: "Пользователи",
 		resource: "users",
 		permissions: [
+			{ action: "create", label: "Создание пользователей" },
 			{ action: "read", label: "Просмотр пользователей" },
 			{ action: "update", label: "Редактирование пользователей" },
 			{ action: "delete", label: "Удаление пользователей" },
-			{ action: "manage_roles", label: "Управление ролями" },
+			{ action: "manage", label: "Полное управление пользователями" },
+		],
+	},
+	{
+		name: "Документы",
+		resource: "documents",
+		permissions: [
+			{ action: "create", label: "Создание документов" },
+			{ action: "read", label: "Просмотр документов" },
+			{ action: "update", label: "Редактирование документов" },
+			{ action: "delete", label: "Удаление документов" },
+			{ action: "manage", label: "Полное управление документами" },
+		],
+	},
+	{
+		name: "Участники",
+		resource: "members",
+		permissions: [
+			{ action: "invite", label: "Приглашение участников" },
+			{ action: "remove", label: "Удаление участников" },
+			{ action: "manage", label: "Полное управление участниками" },
+		],
+	},
+	{
+		name: "Роли",
+		resource: "roles",
+		permissions: [
+			{ action: "create", label: "Создание ролей" },
+			{ action: "update", label: "Редактирование ролей" },
+			{ action: "delete", label: "Удаление ролей" },
+			{ action: "manage", label: "Полное управление ролями" },
 		],
 	},
 ];
@@ -114,9 +145,10 @@ export function LinearPermissionsManagement({
 	const rolePermissions = useQuery(
 		api.permissions.queries.getAllRolePermissions,
 	);
+	const isAdmin = useQuery(api.permissions.queries.isCurrentUserAdmin);
 
 	// Mutations
-	const createRole = useMutation(api.permissions.mutations.createRole);
+	const createRole = useMutation(api.permissions.roles.createRole);
 	const updateRolePermissions = useMutation(
 		api.permissions.utils.updateRolePermissions,
 	);
@@ -138,9 +170,9 @@ export function LinearPermissionsManagement({
 	const handleCreateRole = async () => {
 		await createRole({
 			...roleFormData,
-			isSystem: false,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
+			isDirector: false,
+			priority: 50,
+			permissionIds: [],
 		});
 		setIsCreateRoleModalOpen(false);
 		setRoleFormData({ name: "", displayName: "", description: "" });
@@ -179,6 +211,7 @@ export function LinearPermissionsManagement({
 						<Button
 							size="sm"
 							variant="ghost"
+							disabled={isAdmin === false}
 							onClick={() => setIsCreateRoleModalOpen(true)}
 						>
 							<Plus className="h-4 w-4" />
@@ -252,6 +285,7 @@ export function LinearPermissionsManagement({
 											const permKey = `${group.resource}:${permission.action}`;
 											const isEnabled = selectedRolePermissions.has(permKey);
 											const isSystemRole = selectedRoleData.isSystem;
+											const isDisabled = isSystemRole || isAdmin === false;
 
 											return (
 												<div
@@ -261,7 +295,7 @@ export function LinearPermissionsManagement({
 													<div className="flex items-center gap-3">
 														<Checkbox
 															checked={isEnabled}
-															disabled={isSystemRole}
+															disabled={isDisabled}
 															onCheckedChange={(checked) =>
 																handlePermissionToggle(
 																	selectedRole as Id<"roles">,
@@ -284,13 +318,14 @@ export function LinearPermissionsManagement({
 							))}
 						</div>
 
-						{selectedRoleData.isSystem && (
+						{(selectedRoleData.isSystem || isAdmin === false) && (
 							<div className="mt-6 rounded-lg bg-muted/50 p-4">
 								<div className="flex gap-2">
 									<Info className="mt-0.5 h-4 w-4 text-muted-foreground" />
 									<div className="text-muted-foreground text-sm">
-										Системные роли нельзя изменить. Они предоставляют базовые
-										права доступа, необходимые для работы системы.
+										{selectedRoleData.isSystem
+											? "Системные роли нельзя изменить. Они предоставляют базовые права доступа, необходимые для работы системы."
+											: "Только администраторы могут изменять права доступа для ролей."}
 									</div>
 								</div>
 							</div>

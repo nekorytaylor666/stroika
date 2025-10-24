@@ -1,7 +1,7 @@
 import { SeedButton } from "@/components/admin/seed-button";
 import { OrganizationalHierarchy } from "@/components/permissions/organizational-hierarchy";
-import { PermissionsManagement } from "@/components/settings/permissions-management";
 import { LinearPermissionsManagement } from "@/components/settings/linear-style/permissions-management";
+import { PermissionsManagement } from "@/components/settings/permissions-management";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, Database, Shield, Settings } from "lucide-react";
+import { Building2, Database, Settings, Shield } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/construction/$orgId/admin")({
