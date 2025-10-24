@@ -5,9 +5,12 @@ import { authComponent, createAuth, getUserId } from "../auth";
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx) {
 	try {
 		const authUser = await authComponent.getAuthUser(ctx);
+		if (!authUser || !authUser._id) {
+			return null;
+		}
+
 		return authUser;
-	}
-	catch (error) {
+	} catch (error) {
 		console.error("Error in getCurrentUser:", error);
 		return null;
 	}
@@ -29,7 +32,6 @@ export async function getCurrentUserWithOrganization(
 		user,
 		organization: organizations[0],
 	};
-
 }
 
 export async function requireOrganizationAccess(
@@ -50,8 +52,8 @@ export async function requireOrganizationAccess(
 		.filter((q) =>
 			q.and(
 				q.eq(q.field("organizationId"), organizationId),
-				q.eq(q.field("userId"), authUser.userId)
-			)
+				q.eq(q.field("userId"), authUser.userId),
+			),
 		)
 		.first();
 

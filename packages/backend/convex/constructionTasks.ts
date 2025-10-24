@@ -11,21 +11,37 @@ import { authComponent, createAuth } from "./auth";
 export const getAll = query({
 	handler: async (ctx) => {
 		try {
-			// const { user, organization } = await getCurrentUserWithOrganization(ctx);
 			const user = await getCurrentUser(ctx);
+			if (!user) {
+				return [];
+			}
 
-			console.log("user:", JSON.stringify(user, null, 2));
-			const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
-			const organization = await auth.api.listOrganizations({
-				headers,
-			});
-			const tasks = await ctx.db
+			// Get organization ID - use user's current organization if set
+			let organizationId = user.currentOrganizationId;
+
+			if (!organizationId) {
+				// Fallback: try to get from Better Auth
+				try {
+					const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+					const organizations = await auth.api.listOrganizations({ headers });
+					organizationId = organizations[0]?.id;
+				} catch (error) {
+					console.error("Error getting organization from Better Auth:", error);
+				}
+			}
+
+			// Get all construction tasks
+			let tasks = await ctx.db
 				.query("issues")
 				.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
-				.filter((q) => q.eq(q.field("organizationId"), organization.id))
 				.collect();
 
-			// Populate related datauth
+			// Filter by organization if we have one
+			if (organizationId) {
+				tasks = tasks.filter((task) => task.organizationId === organizationId);
+			}
+
+			// Populate related data
 			const populatedTasks = await Promise.all(
 				tasks.map(async (task) => {
 					const [status, assignee, priority, labels, attachments, subtasks] =

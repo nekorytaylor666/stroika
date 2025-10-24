@@ -5,6 +5,23 @@ import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./helpers/getCurrentUser";
 
 // Subscribe to push notifications
+export const onCreateTeamMember = mutation({
+	args: {
+		userId: v.id("user"),
+		teamId: v.id("team"),
+	},
+	handler: async (ctx, args) => {
+		console.log("onCreateTeamMember", args);
+		await ctx.db.insert("notifications", {
+			userId: args.userId,
+			title: "You have been added to a team",
+			body: "You have been added to a team",
+			type: "task_assigned",
+			read: false,
+			createdAt: Date.now(),
+		});
+	},
+});
 export const subscribeToPush = mutation({
 	args: {
 		subscription: v.object({

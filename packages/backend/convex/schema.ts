@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { tables } from "./betterAuth/schema";
 
 export default defineSchema({
 	// NOTE: Organizations are now managed by Better Auth - see betterAuth/schema.ts
