@@ -71,12 +71,12 @@ export default function RoleSelectorDialog({
 				userId,
 				roleId: selectedRoleId,
 			});
-			toast.success("Role updated successfully");
+			toast.success("Роль успешно обновлена");
 			onUpdate?.();
 			onOpenChange(false);
-		} catch (error: any) {
+		} catch (error: unknown) {
 			console.error("Failed to update role:", error);
-			toast.error(error.message || "Failed to update role");
+			toast.error(error.message || "Не удалось обновить роль");
 		} finally {
 			setIsLoading(false);
 		}
@@ -88,17 +88,17 @@ export default function RoleSelectorDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-[425px]">
 				<DialogHeader>
-					<DialogTitle>Change Role</DialogTitle>
+					<DialogTitle>Изменить роль</DialogTitle>
 					<DialogDescription>
-						Change the role for {userName}. Current role:{" "}
-						{currentRole?.displayName || "Unknown"}
+						Изменить роль для {userName}. Текущая роль:{" "}
+						{currentRole?.displayName || "Неизвестная"}
 					</DialogDescription>
 				</DialogHeader>
 
 				<div className="grid gap-4 py-4">
 					<div className="grid grid-cols-4 items-center gap-4">
 						<Label htmlFor="role" className="text-right">
-							New Role
+							Новая роль
 						</Label>
 						<div className="col-span-3">
 							<Select
@@ -109,7 +109,7 @@ export default function RoleSelectorDialog({
 								disabled={isLoading}
 							>
 								<SelectTrigger>
-									<SelectValue placeholder="Select a role..." />
+									<SelectValue placeholder="Выберите роль..." />
 								</SelectTrigger>
 								<SelectContent>
 									{roles?.map((role) => (
@@ -143,7 +143,7 @@ export default function RoleSelectorDialog({
 							</p>
 							{selectedRole.memberCount !== undefined && (
 								<p className="mt-1 text-blue-600 text-xs">
-									{selectedRole.memberCount} member(s) with this role
+									{selectedRole.memberCount} участник(ов) с этой ролью
 								</p>
 							)}
 						</div>
@@ -156,13 +156,13 @@ export default function RoleSelectorDialog({
 						onClick={() => onOpenChange(false)}
 						disabled={isLoading}
 					>
-						Cancel
+						Отмена
 					</Button>
 					<Button
 						onClick={handleUpdateRole}
 						disabled={isLoading || selectedRoleId === currentRoleId}
 					>
-						{isLoading ? "Updating..." : "Update Role"}
+						{isLoading ? "Обновление..." : "Обновить роль"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

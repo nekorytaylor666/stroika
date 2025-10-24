@@ -111,6 +111,9 @@ export function usePermissions() {
 		canUpdateRoles: hasPermission("roles:update"),
 		canDeleteRoles: hasPermission("roles:delete"),
 
+		canUpdateUsers: hasPermission("users:update"),
+		canManageUsers: hasPermission("users:manage"),
+
 		// Loading state
 		isLoading: userPermissions === undefined,
 	};

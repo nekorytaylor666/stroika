@@ -218,13 +218,13 @@ export function EditableUserSelect(props: EditableUserSelectPropsUnion) {
 			</PopoverTrigger>
 			<PopoverContent className="w-[300px] p-0" align="start">
 				<Command>
-					<CommandInput placeholder="Search users..." />
-					<CommandEmpty>No users found.</CommandEmpty>
+					<CommandInput placeholder="Поиск пользователей..." />
+					<CommandEmpty>Пользователи не найдены.</CommandEmpty>
 					<CommandGroup className="max-h-64 overflow-auto">
 						{value && (
 							<CommandItem value="clear" onSelect={() => handleSelect(null)}>
 								<X className="mr-2 h-4 w-4" />
-								<span>Clear selection</span>
+								<span>Очистить выбор</span>
 							</CommandItem>
 						)}
 						{users.map((user) => (

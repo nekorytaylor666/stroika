@@ -14,6 +14,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { CheckIcon, FolderIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
@@ -50,27 +51,29 @@ export function ProjectSelector({ project, onChange }: ProjectSelectorProps) {
 
 	return (
 		<div className="*:not-first:mt-2">
-			<Popover open={open} onOpenChange={setOpen}>
+			<Popover modal={true} open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<Button
 						id={id}
-						className="flex items-center gap-2"
+						className="flex items-center gap-2 max-w-[200px]"
 						size="xs"
 						variant="secondary"
 						role="combobox"
 						aria-expanded={open}
 					>
 						<FolderIcon className="size-4" />
-						<span>{project?.name || "Выберите проект"}</span>
+						<span className="truncate">
+							{project?.name || "Выберите проект"}
+						</span>
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent
-					className="w-full min-w-[var(--radix-popper-anchor-width)] border-input p-0"
+					className="w-full min-w-[var(--radix-popper-anchor-width)] max-w-[300px] border-input p-0"
 					align="start"
 				>
 					<Command>
 						<CommandInput autoFocus={false} placeholder="Выберите проект..." />
-						<CommandList>
+						<CommandList className="max-h-[200px] overflow-y-auto">
 							<CommandEmpty>Проект не найден.</CommandEmpty>
 							<CommandGroup>
 								<CommandItem

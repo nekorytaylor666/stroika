@@ -94,7 +94,7 @@ export const getAllAttachments = query({
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
@@ -114,25 +114,25 @@ export const getAllAttachments = query({
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
-								_id: issue._id,
-								identifier: issue.identifier,
-								title: issue.title,
-								isConstructionTask,
-							}
+							_id: issue._id,
+							identifier: issue.identifier,
+							title: issue.title,
+							isConstructionTask,
+						}
 						: null,
 					uploader: uploader
 						? {
-								_id: uploader._id,
-								name: uploader.name,
-								email: uploader.email,
-								image: uploader.avatarUrl,
-							}
+							_id: uploader._id,
+							name: uploader.name,
+							email: uploader.email,
+							image: uploader.avatarUrl,
+						}
 						: null,
 					constructionProject: constructionProject
 						? {
-								_id: constructionProject._id,
-								name: constructionProject.name,
-							}
+							_id: constructionProject._id,
+							name: constructionProject.name,
+						}
 						: null,
 				};
 			}),
@@ -321,7 +321,7 @@ export const getProjectAttachments = query({
 		const enrichedAttachments = await Promise.all(
 			filteredItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
@@ -331,25 +331,25 @@ export const getProjectAttachments = query({
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
-								_id: issue._id,
-								identifier: issue.identifier,
-								title: issue.title,
-								isConstructionTask: true,
-							}
+							_id: issue._id,
+							identifier: issue.identifier,
+							title: issue.title,
+							isConstructionTask: true,
+						}
 						: null,
 					uploader: uploader
 						? {
-								_id: uploader._id,
-								name: uploader.name,
-								email: uploader.email,
-								image: uploader.avatarUrl,
-							}
+							_id: uploader._id,
+							name: uploader.name,
+							email: uploader.email,
+							image: uploader.avatarUrl,
+						}
 						: null,
 					constructionProject: project
 						? {
-								_id: project._id,
-								name: project.name,
-							}
+							_id: project._id,
+							name: project.name,
+						}
 						: null,
 				};
 			}),
@@ -375,7 +375,7 @@ export const getAttachmentById = query({
 		}
 
 		const [issue, uploader, fileUrl] = await Promise.all([
-			ctx.db.get(attachment.issueId),
+			attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 			ctx.db.get(attachment.uploadedBy),
 			ctx.storage.getUrl(attachment.fileUrl as any),
 		]);

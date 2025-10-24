@@ -41,10 +41,10 @@ export default function Members() {
 	const handleCancelInvite = async (inviteId: Id<"organizationInvites">) => {
 		try {
 			await cancelInvite({ inviteId });
-			toast.success("Invite cancelled successfully");
-		} catch (error: any) {
+			toast.success("Приглашение успешно отменено");
+		} catch (error: unknown) {
 			console.error("Failed to cancel invite:", error);
-			toast.error(error.message || "Failed to cancel invite");
+			toast.error(error.message || "Не удалось отменить приглашение");
 		}
 	};
 
@@ -65,11 +65,11 @@ export default function Members() {
 						<TabsList>
 							<TabsTrigger value="members" className="gap-2">
 								<Users className="h-4 w-4" />
-								Members {members && `(${members.length})`}
+								Участники {members && `(${members.length})`}
 							</TabsTrigger>
 							<TabsTrigger value="invites" className="gap-2">
 								<Clock className="h-4 w-4" />
-								Pending Invites{" "}
+								Ожидающие приглашения{" "}
 								{invites && invites.length > 0 && `(${invites.length})`}
 							</TabsTrigger>
 						</TabsList>
@@ -80,17 +80,17 @@ export default function Members() {
 							className="gap-2"
 						>
 							<Plus className="h-4 w-4" />
-							Invite Member
+							Пригласить участника
 						</Button>
 					</div>
 
 					<TabsContent value="members" className="mt-4">
 						<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
 							<div className="w-[70%] md:w-[60%] lg:w-[55%]">Имя</div>
-							<div className="w-[30%] md:w-[20%] lg:w-[15%]">Role</div>
-							<div className="hidden w-[15%] lg:block">Joined</div>
+							<div className="w-[30%] md:w-[20%] lg:w-[15%]">Роль</div>
+							<div className="hidden w-[15%] lg:block">Присоединился</div>
 							<div className="hidden w-[30%] md:block md:w-[20%] lg:w-[15%]">
-								Teams
+								Команды
 							</div>
 						</div>
 
@@ -124,35 +124,38 @@ export default function Members() {
 					<TabsContent value="invites" className="mt-4">
 						<div className="sticky top-0 z-10 flex items-center border-b bg-container px-6 py-1.5 text-muted-foreground text-sm">
 							<div className="w-[40%]">Электронная почта</div>
-							<div className="w-[20%]">Role</div>
-							<div className="w-[20%]">Invited By</div>
-							<div className="w-[15%]">Expires</div>
-							<div className="w-[5%]"></div>
+							<div className="w-[20%]">Роль</div>
+							<div className="w-[20%]">Пригласил</div>
+							<div className="w-[15%]">Истекает</div>
+							<div className="w-[5%]" />
 						</div>
 
 						<div className="w-full">
 							{invites && invites.length === 0 && (
 								<div className="px-6 py-8 text-center text-muted-foreground">
 									<UserCheck className="mx-auto mb-2 h-8 w-8" />
-									<p className="text-sm">No pending invites</p>
+									<p className="text-sm">Нет ожидающих приглашений</p>
 								</div>
 							)}
 							{invites?.map((invite) => (
-								<div
+								<button
 									key={invite._id}
+									type="button"
 									className="group flex w-full cursor-pointer items-center border-muted-foreground/5 border-b px-6 py-3 text-sm last:border-b-0 hover:bg-sidebar/50"
 									onClick={() => handleShowInviteUrl(invite._id, invite.email)}
-									title="Click to view invite link"
+									title="Нажмите, чтобы посмотреть ссылку для приглашения"
 								>
 									<div className="flex w-[40%] items-center gap-2 font-medium group-hover:text-primary">
 										<Link2 className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
 										{invite.email}
 									</div>
 									<div className="w-[20%] text-muted-foreground">
-										{invite.role?.displayName || invite.role?.name || "Member"}
+										{invite.role?.displayName ||
+											invite.role?.name ||
+											"Участник"}
 									</div>
 									<div className="w-[20%] text-muted-foreground">
-										{invite.invitedByUser?.name || "Unknown"}
+										{invite.invitedByUser?.name || "Неизвестно"}
 									</div>
 									<div className="w-[15%] text-muted-foreground">
 										{format(new Date(invite.expiresAt), "dd MMM", {
@@ -169,10 +172,10 @@ export default function Members() {
 											}}
 											className="text-muted-foreground hover:text-destructive"
 										>
-											Cancel
+											Отменить
 										</Button>
 									</div>
-								</div>
+								</button>
 							))}
 						</div>
 					</TabsContent>

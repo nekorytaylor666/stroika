@@ -19,6 +19,7 @@ import { api } from "@stroika/backend";
 import { useMutation } from "convex/react";
 import {
 	Copy,
+	Edit,
 	MoreHorizontal,
 	RefreshCw,
 	Shield,
@@ -27,6 +28,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/use-permissions";
+import EditUserDialog from "./edit-user-dialog";
 import RoleSelectorDialog from "./role-selector-dialog";
 
 interface MemberActionsDropdownProps {
@@ -52,8 +55,12 @@ export default function MemberActionsDropdown({
 }: MemberActionsDropdownProps) {
 	const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 	const [showRoleDialog, setShowRoleDialog] = useState(false);
+	const [showEditDialog, setShowEditDialog] = useState(false);
 	const [generatedPassword, setGeneratedPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+
+	// Check permissions
+	const { canUpdateUsers } = usePermissions();
 
 	// Mutations
 	const generatePassword = useMutation(
@@ -110,7 +117,10 @@ export default function MemberActionsDropdown({
 		}
 
 		try {
-			await removeMember({ memberId });
+			await removeMember({
+				organizationId,
+				userId,
+			});
 			toast.success("Пользователь удален из организации");
 			onUpdate?.();
 		} catch (error) {
@@ -136,6 +146,14 @@ export default function MemberActionsDropdown({
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" className="w-48">
+					<DropdownMenuItem
+						onClick={() => setShowEditDialog(true)}
+						disabled={isCurrentUser || !canUpdateUsers}
+					>
+						<Edit className="mr-2 h-4 w-4" />
+						Редактировать пользователя
+					</DropdownMenuItem>
+
 					<DropdownMenuItem
 						onClick={() => setShowPasswordDialog(true)}
 						disabled={isCurrentUser}
@@ -246,6 +264,15 @@ export default function MemberActionsDropdown({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+
+			<EditUserDialog
+				open={showEditDialog}
+				onOpenChange={setShowEditDialog}
+				userId={userId}
+				userName={userName}
+				userEmail={userEmail}
+				onUpdate={onUpdate}
+			/>
 
 			<RoleSelectorDialog
 				open={showRoleDialog}

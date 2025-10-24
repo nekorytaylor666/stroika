@@ -30,6 +30,11 @@ export function DatePicker({
 }: DatePickerProps) {
 	const [open, setOpen] = React.useState(false);
 
+	// Set a wide range for years to allow future dates well beyond 2025
+	const currentYear = new Date().getFullYear();
+	const startYear = currentYear - 50; // Allow 50 years in the past
+	const endYear = currentYear + 50; // Allow 50 years in the future
+
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
@@ -61,6 +66,9 @@ export function DatePicker({
 					}}
 					initialFocus
 					locale={ru}
+					startMonth={new Date(startYear, 0)}
+					endMonth={new Date(endYear, 11)}
+					defaultMonth={date || new Date()}
 				/>
 			</PopoverContent>
 		</Popover>

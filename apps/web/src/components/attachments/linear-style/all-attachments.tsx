@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatFileSize } from "@/lib/utils";
 import { api } from "@stroika/backend";
+import { useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -51,6 +52,9 @@ interface LinearAllAttachmentsProps {
 export function LinearAllAttachments({
 	projectId,
 }: LinearAllAttachmentsProps = {}) {
+	// Get orgId from route params
+	const params = useParams({ strict: false });
+	const orgId = params.orgId;
 	const [search, setSearch] = useState("");
 	const [fileType, setFileType] = useState<FileType>("all");
 	const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -330,6 +334,7 @@ export function LinearAllAttachments({
 											viewMode={viewMode}
 											onPreview={() => setSelectedAttachment(attachment)}
 											onDownload={() => handleDownload(attachment)}
+											orgId={orgId}
 										/>
 									</motion.div>
 								))}

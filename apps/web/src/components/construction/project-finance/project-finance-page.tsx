@@ -40,9 +40,9 @@ export function ProjectFinancePage({ projectId }: ProjectFinancePageProps) {
 	);
 
 	const formatAmount = (amount: number) => {
-		return new Intl.NumberFormat("ru-RU", {
+		return new Intl.NumberFormat("kk-KZ", {
 			style: "currency",
-			currency: "RUB",
+			currency: "KZT",
 			minimumFractionDigits: 0,
 		}).format(amount);
 	};

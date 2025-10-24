@@ -52,6 +52,7 @@ interface AttachmentCardProps {
 	viewMode: "grid" | "list";
 	onPreview: () => void;
 	onDownload: () => void;
+	orgId?: string;
 }
 
 export function LinearAttachmentCard({
@@ -59,6 +60,7 @@ export function LinearAttachmentCard({
 	viewMode,
 	onPreview,
 	onDownload,
+	orgId,
 }: AttachmentCardProps) {
 	const [imageError, setImageError] = useState(false);
 	const [isHovered, setIsHovered] = useState(false);
@@ -88,11 +90,11 @@ export function LinearAttachmentCard({
 	const isImage = attachment.mimeType.toLowerCase().startsWith("image/");
 
 	const getIssueUrl = () => {
-		if (!attachment.issue) return null;
+		if (!attachment.issue || !orgId) return null;
 		if (attachment.issue.isConstructionTask) {
-			return `/construction/lndev-ui/construction-tasks`;
+			return `/construction/${orgId}/tasks/${attachment.issue._id}`;
 		}
-		return `/lndev-ui/team/all/all`;
+		return "/lndev-ui/team/all/all";
 	};
 
 	const issueUrl = getIssueUrl();
@@ -111,6 +113,14 @@ export function LinearAttachmentCard({
 				<div
 					className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-muted/50 transition-colors hover:bg-muted"
 					onClick={onPreview}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							onPreview();
+						}
+					}}
+					role="button"
+					tabIndex={0}
 				>
 					<FileIcon className="h-5 w-5 text-muted-foreground" />
 				</div>
@@ -121,6 +131,14 @@ export function LinearAttachmentCard({
 							className="cursor-pointer truncate font-medium text-sm hover:text-foreground/80"
 							title={attachment.fileName}
 							onClick={onPreview}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onPreview();
+								}
+							}}
+							role="button"
+							tabIndex={0}
 						>
 							{attachment.fileName}
 						</h3>
@@ -216,6 +234,14 @@ export function LinearAttachmentCard({
 			<div
 				className="aspect-square cursor-pointer overflow-hidden bg-muted/30"
 				onClick={onPreview}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onPreview();
+					}
+				}}
+				role="button"
+				tabIndex={0}
 			>
 				{isImage && !imageError ? (
 					<img

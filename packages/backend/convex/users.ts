@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { auth } from "./auth";
+import { getCurrentUser as getCurrentUserHelper } from "./helpers/getCurrentUser";
+import { checkPermission } from "./permissions/utils";
 
 // Get current authenticated user
 export const getCurrentUser = query({
@@ -92,7 +94,7 @@ export const getAll = query({
 		const orgMembers = await ctx.db
 			.query("organizationMembers")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", user.currentOrganizationId!),
+				q.eq("organizationId", user.currentOrganizationId),
 			)
 			.filter((q) => q.eq(q.field("isActive"), true))
 			.collect();
@@ -153,7 +155,10 @@ export const updateProfile = mutation({
 			throw new Error("User not found");
 		}
 
-		const updates: any = {};
+		const updates: Partial<{
+			name: string;
+			phone: string;
+		}> = {};
 		if (args.name !== undefined) updates.name = args.name;
 		if (args.phone !== undefined) updates.phone = args.phone;
 
@@ -240,7 +245,7 @@ export const searchUsers = query({
 			(user) =>
 				user.name.toLowerCase().includes(searchTerm) ||
 				user.email.toLowerCase().includes(searchTerm) ||
-				(user.position && user.position.toLowerCase().includes(searchTerm)),
+				(user.position?.toLowerCase().includes(searchTerm)),
 		);
 	},
 });
@@ -276,6 +281,7 @@ export const update = mutation({
 	args: {
 		id: v.id("users"),
 		name: v.optional(v.string()),
+		email: v.optional(v.string()),
 		avatarUrl: v.optional(v.string()),
 		status: v.optional(
 			v.union(v.literal("online"), v.literal("offline"), v.literal("away")),
@@ -288,6 +294,37 @@ export const update = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { id, ...updates } = args;
+
+		// Get current user and check permissions
+		const currentUser = await getCurrentUserHelper(ctx);
+		if (!currentUser) {
+			throw new Error("Пользователь не аутентифицирован");
+		}
+
+		// Check if user has permission to update users
+		const hasPermission = await checkPermission(
+			ctx,
+			currentUser._id,
+			"users",
+			"update"
+		);
+
+		if (!hasPermission) {
+			throw new Error("У вас нет прав для редактирования пользователей");
+		}
+
+		// If email is being updated, check if it's already in use
+		if (updates.email) {
+			const existingUser = await ctx.db
+				.query("users")
+				.withIndex("by_email", (q) => q.eq("email", updates.email))
+				.first();
+
+			if (existingUser && existingUser._id !== id) {
+				throw new Error("Электронная почта уже используется другим пользователем");
+			}
+		}
+
 		await ctx.db.patch(id, updates);
 		return { success: true };
 	},
