@@ -19,9 +19,10 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "convex": "catalog:",
-    "better-auth": "catalog:",
     "@convex-dev/better-auth": "catalog:",
+    "better-auth": "catalog:",
+    "convex": "catalog:",
+    "convex-helpers": "^0.1.104",
     "jose": "^6.0.11",
     "web-push": "^3.6.7"
   }

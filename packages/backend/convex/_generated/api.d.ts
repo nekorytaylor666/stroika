@@ -16,6 +16,9 @@ import type * as betterAuth__generated_api from "../betterAuth/_generated/api.js
 import type * as betterAuth__generated_server from "../betterAuth/_generated/server.js";
 import type * as betterAuth_adapter from "../betterAuth/adapter.js";
 import type * as betterAuth_auth from "../betterAuth/auth.js";
+import type * as betterAuth_permissions from "../betterAuth/permissions.js";
+import type * as betterAuth_team from "../betterAuth/team.js";
+import type * as betterAuth_users from "../betterAuth/users.js";
 import type * as cleanup from "../cleanup.js";
 import type * as clear from "../clear.js";
 import type * as comments from "../comments.js";
@@ -94,6 +97,9 @@ declare const fullApi: ApiFromModules<{
   "betterAuth/_generated/server": typeof betterAuth__generated_server;
   "betterAuth/adapter": typeof betterAuth_adapter;
   "betterAuth/auth": typeof betterAuth_auth;
+  "betterAuth/permissions": typeof betterAuth_permissions;
+  "betterAuth/team": typeof betterAuth_team;
+  "betterAuth/users": typeof betterAuth_users;
   cleanup: typeof cleanup;
   clear: typeof clear;
   comments: typeof comments;
@@ -1904,6 +1910,68 @@ export declare const components: {
           onUpdateHandle?: string;
         },
         any
+      >;
+    };
+    team: {
+      addTeamMembers: FunctionReference<
+        "mutation",
+        "internal",
+        { teamId: string; userIds: Array<string> },
+        any
+      >;
+      addTeamMembersByTeamName: FunctionReference<
+        "mutation",
+        "internal",
+        { teamName: string; userIds: Array<string> },
+        any
+      >;
+      getTeamMembersByTeamName: FunctionReference<
+        "query",
+        "internal",
+        { name: string },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          banExpires?: null | number;
+          banReason?: null | string;
+          banned?: null | boolean;
+          createdAt: number;
+          email: string;
+          emailVerified: boolean;
+          image?: null | string;
+          name: string;
+          role?: null | string;
+          updatedAt: number;
+          userId?: null | string;
+        }>
+      >;
+      removeTeamMembersByTeamName: FunctionReference<
+        "mutation",
+        "internal",
+        { teamName: string; userId: string },
+        any
+      >;
+    };
+    users: {
+      listUsers: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          banExpires?: null | number;
+          banReason?: null | string;
+          banned?: null | boolean;
+          createdAt: number;
+          email: string;
+          emailVerified: boolean;
+          image?: null | string;
+          name: string;
+          role?: null | string;
+          updatedAt: number;
+          userId?: null | string;
+        }>
       >;
     };
   };

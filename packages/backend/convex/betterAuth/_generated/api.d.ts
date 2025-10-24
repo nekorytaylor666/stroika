@@ -10,6 +10,9 @@
 
 import type * as adapter from "../adapter.js";
 import type * as auth from "../auth.js";
+import type * as permissions from "../permissions.js";
+import type * as team from "../team.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -28,6 +31,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   adapter: typeof adapter;
   auth: typeof auth;
+  permissions: typeof permissions;
+  team: typeof team;
+  users: typeof users;
 }>;
 export type Mounts = {
   adapter: {
@@ -1772,6 +1778,68 @@ export type Mounts = {
         onUpdateHandle?: string;
       },
       any
+    >;
+  };
+  team: {
+    addTeamMembers: FunctionReference<
+      "mutation",
+      "public",
+      { teamId: string; userIds: Array<string> },
+      any
+    >;
+    addTeamMembersByTeamName: FunctionReference<
+      "mutation",
+      "public",
+      { teamName: string; userIds: Array<string> },
+      any
+    >;
+    getTeamMembersByTeamName: FunctionReference<
+      "query",
+      "public",
+      { name: string },
+      Array<{
+        _creationTime: number;
+        _id: string;
+        banExpires?: null | number;
+        banReason?: null | string;
+        banned?: null | boolean;
+        createdAt: number;
+        email: string;
+        emailVerified: boolean;
+        image?: null | string;
+        name: string;
+        role?: null | string;
+        updatedAt: number;
+        userId?: null | string;
+      }>
+    >;
+    removeTeamMembersByTeamName: FunctionReference<
+      "mutation",
+      "public",
+      { teamName: string; userId: string },
+      any
+    >;
+  };
+  users: {
+    listUsers: FunctionReference<
+      "query",
+      "public",
+      { ids: Array<string> },
+      Array<{
+        _creationTime: number;
+        _id: string;
+        banExpires?: null | number;
+        banReason?: null | string;
+        banned?: null | boolean;
+        createdAt: number;
+        email: string;
+        emailVerified: boolean;
+        image?: null | string;
+        name: string;
+        role?: null | string;
+        updatedAt: number;
+        userId?: null | string;
+      }>
     >;
   };
 };

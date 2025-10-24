@@ -1,13 +1,14 @@
 import { v } from "convex/values";
-import { components } from "./_generated/api";
+import { api, components } from "./_generated/api";
 import { query } from "./_generated/server";
 import type { DataModel, Id } from "./_generated/dataModel";
 import { createClient } from "@convex-dev/better-auth";
 import { betterAuth } from "better-auth";
-import type { GenericCtx } from "@convex-dev/better-auth";
+import type { AuthFunctions, GenericCtx } from "@convex-dev/better-auth";
 import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
 import authSchema from "./betterAuth/schema";
-
+import { internal } from "./_generated/api";
+import { ac } from "./betterAuth/permissions";
 const siteUrl = process.env.SITE_URL!;
 
 // Import the old auth for modification
@@ -42,16 +43,49 @@ const getUserId = async (ctx: any) => {
 export const auth = {
 	getUserId,
 };
+const authFunctions: AuthFunctions = internal.auth;
 
 // Export Better Auth functions
 export const authComponent = createClient<DataModel, typeof authSchema>(
 	components.betterAuth,
 	{
+		authFunctions,
+
 		local: {
 			schema: authSchema,
 		},
+		verbose: true,
+
+		triggers: {
+			teamMember: {
+				onCreate: async (ctx, doc) => {
+					console.log("user created", doc);
+					await ctx.db.insert("notifications", {
+						userId: doc.userId,
+						title: "You have been added to a team",
+						body: "You have been added to a team",
+						type: "task_assigned",
+						read: false,
+						createdAt: Date.now(),
+					});
+					// Note: You'll need to adapt this logic based on your actual user creation flow
+					// The doc here is the Better Auth user document, not your custom users table
+				},
+				onUpdate: async (ctx, newDoc, oldDoc) => {
+					// Both old and new documents are available so you can compare and detect
+					// changes - you can ignore oldDoc if you don't need it.
+					console.log("user updated", newDoc, oldDoc);
+				},
+				onDelete: async (ctx, doc) => {
+					// The entire deleted document is available
+					console.log("user deleted", doc);
+				},
+			},
+		},
 	},
 );
+export const { onCreate, onUpdate, onDelete } = authComponent.triggersApi();
+
 export const createAuth = (
 	ctx: GenericCtx<DataModel>,
 	{ optionsOnly } = { optionsOnly: false },
@@ -73,15 +107,37 @@ export const createAuth = (
 			enabled: true,
 			requireEmailVerification: false,
 		},
+		verbose: true,
 		plugins: [
 			// The cross domain plugin is required for client side frameworks
 			crossDomain({ siteUrl }),
 			admin(),
 			organization({
+				ac: ac,
+				dynamicAccessControl: {
+					enabled: true,
+				},
 				teams: {
 					enabled: true,
 					maximumTeams: 10, // Optional: limit teams per organization
 					allowRemovingAllTeams: false, // Optional: prevent removing the last team
+				},
+				organizationHooks: {
+					beforeCreateTeam: async ({ team, user, organization }) => {
+						console.log("beforeCreateTeam", team, user, organization);
+					},
+					afterCreateTeam: async ({ team, user, organization }) => {
+						console.log("afterCreateTeam", team, user, organization);
+					},
+					beforeAddTeamMember: async ({ team, user, organization }) => {
+						console.log("beforeAddTeamMember", team, user, organization);
+					},
+					afterAddTeamMember: async ({ team, user, organization }) => {
+						console.log("afterAddTeamMember", team, user, organization);
+					},
+					beforeRemoveTeamMember: async ({ team, user, organization }) => {
+						console.log("beforeRemoveTeamMember", team, user, organization);
+					},
 				},
 			}),
 

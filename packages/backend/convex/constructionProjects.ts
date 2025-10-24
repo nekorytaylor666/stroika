@@ -7,6 +7,8 @@ import {
 	getUserProjectAccessLevel,
 } from "./permissions/checks";
 import { getAccessibleProjects } from "./permissions/projectAccess";
+import { authComponent, createAuth } from "./auth";
+import { components } from "./_generated/api";
 
 // Queries - Get all projects the current user has access to
 export const getAll = query({
@@ -64,11 +66,11 @@ export const getById = query({
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
 
-		// Check if user has access to this project
-		const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
-		if (!hasAccess) {
-			throw new Error("Insufficient permissions to view this project");
-		}
+		// // Check if user has access to this project
+		// const hasAccess = await canAccessProject(ctx, user._id, args.id, "read");
+		// if (!hasAccess) {
+		// 	throw new Error("Insufficient permissions to view this project");
+		// }
 
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
@@ -84,7 +86,7 @@ export const getById = query({
 						q.eq("constructionProjectId", project._id),
 					)
 					.collect(),
-				getUserProjectAccessLevel(ctx, user._id, args.id),
+				// getUserProjectAccessLevel(ctx, user._id, args.id),
 			]);
 
 		return {
@@ -104,10 +106,10 @@ export const getProjectWithTasks = query({
 		const { user } = await getCurrentUserWithOrganization(ctx);
 
 		// Check if user has access to this project
-		const hasAccess = await canAccessProject(ctx, user.id, args.id, "read");
-		if (!hasAccess) {
-			throw new Error("Insufficient permissions to view this project");
-		}
+		// const hasAccess = await canAccessProject(ctx, user.id, args.id, "read");
+		// if (!hasAccess) {
+		// 	throw new Error("Insufficient permissions to view this project");
+		// }
 
 		const project = await ctx.db.get(args.id);
 		if (!project) return null;
@@ -324,13 +326,42 @@ export const create = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
-		if (!user) {
-			throw new Error("Not authenticated");
-		}
+
+		console.log("organization", organization);
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
 		const projectId = await ctx.db.insert("constructionProjects", {
 			...args,
 			organizationId: organization.id,
+		});
+
+		const team = await auth.api.createTeam({
+			body: {
+				name: projectId,
+				organizationId: organization.id,
+			},
+			headers: await authComponent.getHeaders(ctx),
+		});
+
+		await ctx.runMutation(components.betterAuth.team.addTeamMembers, {
+			teamId: team.id,
+			userIds: args.teamMemberIds,
+		});
+
+		const permission = {
+			[`${projectId}:finance`]: ["create", "update", "delete", "view"],
+		};
+		await auth.api.createOrgRole({
+			body: {
+				role: `${projectId}:project-owner`, // required
+				permission: permission,
+				additionalFields: {
+					projectId: projectId,
+				},
+				organizationId: organization.id,
+			},
+			// This endpoint requires session cookies.
+			headers,
 		});
 
 		// // Grant the creator admin access to the project
