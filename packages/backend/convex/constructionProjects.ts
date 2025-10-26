@@ -355,24 +355,31 @@ export const create = mutation({
 			userIds: args.teamMemberIds,
 		});
 
-		const response = await ctx.runMutation(api.customPermissions.createAllProjectRoles, {
-			projectId,
-		})
-		console.log("organization roles created", response)
+		const response = await ctx.runMutation(
+			api.customPermissions.createAllProjectRoles,
+			{
+				projectId,
+			},
+		);
+		console.log("organization roles created", response);
 
 		await ctx.runMutation(api.customPermissions.assignUserToRole, {
 			userId: args.leadId,
-			roleId: response.adminRoleId
+			roleId: response.adminRoleId,
 		});
 		await ctx.runMutation(api.customPermissions.assignUserToRole, {
 			userId: user._id,
 			roleId: response.ownerRoleId,
 		});
-b
-		Promise.all(args.teamMemberIds.map(id => ctx.runMutation(api.customPermissions.assignUserToRole, {
-			userId: id,
-			roleId: response.memberRoleId,
-		})));
+
+		await Promise.all(
+			args.teamMemberIds.map((id) =>
+				ctx.runMutation(api.customPermissions.assignUserToRole, {
+					userId: id,
+					roleId: response.memberRoleId,
+				}),
+			),
+		);
 
 		// // Grant the creator admin access to the project
 		// await ctx.db.insert("projectAccess", {

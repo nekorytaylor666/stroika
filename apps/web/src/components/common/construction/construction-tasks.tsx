@@ -358,9 +358,12 @@ export default function ConstructionTasks({
 											name={task.title}
 											index={index}
 											parent={status._id}
-											className="cursor-pointer p-0 transition-colors hover:bg-accent/50"
+											className="cursor-pointer p-0 transition-colors hover:bg-accent/50 w-full"
 										>
-											<div onClick={() => openTaskDetails(task)}>
+											<div
+												onClick={() => openTaskDetails(task)}
+												className="w-full"
+											>
 												<ConstructionIssueLine issue={task} layoutId={true} />
 											</div>
 										</ListItem>

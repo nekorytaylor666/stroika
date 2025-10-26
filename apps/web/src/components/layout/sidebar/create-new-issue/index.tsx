@@ -279,7 +279,7 @@ export function CreateNewIssue() {
 							onChange={(newAssignee) =>
 								setAddTaskForm({
 									...addTaskForm,
-									assigneeId: newAssignee?._id || null,
+									assigneeId: newAssignee?.id || null,
 								})
 							}
 						/>

@@ -7,8 +7,8 @@ import { mutation } from "./_generated/server";
 export const notifyTaskAssigned = mutation({
 	args: {
 		issueId: v.id("issues"),
-		assigneeId: v.id("users"),
-		assignedBy: v.id("users"),
+		assigneeId: v.string(),
+		assignedBy: v.string(),
 	},
 	handler: async (ctx, args) => {
 		// Get issue details

@@ -5,30 +5,16 @@ import {
 	getCurrentUser,
 	getCurrentUserWithOrganization,
 } from "./helpers/getCurrentUser";
-import { authComponent, createAuth } from "./auth";
+import { auth, authComponent, createAuth } from "./auth";
+import type { Id } from "./_generated/dataModel";
 
 // Queries
 export const getAll = query({
 	handler: async (ctx) => {
 		try {
-			const user = await getCurrentUser(ctx);
-			if (!user) {
-				return [];
-			}
+			const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-			// Get organization ID - use user's current organization if set
-			let organizationId = user.currentOrganizationId;
-
-			if (!organizationId) {
-				// Fallback: try to get from Better Auth
-				try {
-					const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
-					const organizations = await auth.api.listOrganizations({ headers });
-					organizationId = organizations[0]?.id;
-				} catch (error) {
-					console.error("Error getting organization from Better Auth:", error);
-				}
-			}
+			const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
 			// Get all construction tasks
 			let tasks = await ctx.db
@@ -37,19 +23,27 @@ export const getAll = query({
 				.collect();
 
 			// Filter by organization if we have one
-			if (organizationId) {
-				tasks = tasks.filter((task) => task.organizationId === organizationId);
+			if (organization.id) {
+				tasks = tasks.filter((task) => task.organizationId === organization.id);
 			}
+			const { users } = await auth.api.listUsers({
+				query: { limit: 100, offset: 0 },
+				headers,
+			});
 
 			// Populate related data
 			const populatedTasks = await Promise.all(
 				tasks.map(async (task) => {
 					const [status, assignee, priority, labels, attachments, subtasks] =
 						await Promise.all([
-							ctx.db.get(task.statusId),
-							task.assigneeId ? ctx.db.get(task.assigneeId) : null,
-							ctx.db.get(task.priorityId),
-							Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
+							ctx.db.get(task.statusId as Id<"status">),
+							task.assigneeId
+								? users.find((user) => user.id === task.assigneeId)
+								: null,
+							ctx.db.get(task.priorityId as Id<"priorities">),
+							Promise.all(
+								task.labelIds.map((id) => ctx.db.get(id as Id<"labels">)),
+							),
 							ctx.db
 								.query("issueAttachments")
 								.withIndex("by_issue", (q) => q.eq("issueId", task._id))
@@ -66,8 +60,8 @@ export const getAll = query({
 					const attachmentsWithUsers = await Promise.all(
 						attachments.map(async (attachment) => {
 							const [uploader, fileUrl] = await Promise.all([
-								ctx.db.get(attachment.uploadedBy),
-								ctx.storage.getUrl(attachment.fileUrl as any),
+								users.find((user) => user.id === attachment.uploadedBy),
+								ctx.storage.getUrl(attachment.fileUrl),
 							]);
 							return {
 								...attachment,
@@ -158,13 +152,20 @@ export const getByIdentifier = query({
 export const getById = query({
 	args: { id: v.id("issues") },
 	handler: async (ctx, args) => {
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 		const task = await ctx.db.get(args.id);
 		if (!task || !task.isConstructionTask) return null;
 
+		const { users } = await auth.api.listUsers({
+			query: { limit: 100, offset: 0 },
+			headers,
+		});
 		const [status, assignee, priority, labels, attachments] = await Promise.all(
 			[
 				ctx.db.get(task.statusId),
-				task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+				task.assigneeId
+					? users.find((user) => user.id === task.assigneeId)
+					: null,
 				ctx.db.get(task.priorityId),
 				Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
 				ctx.db
@@ -178,7 +179,7 @@ export const getById = query({
 		const attachmentsWithUsers = await Promise.all(
 			attachments.map(async (attachment) => {
 				const [uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.uploadedBy),
+					users.find((user) => user.id === attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 				return {
@@ -631,11 +632,12 @@ export const updateStatus = mutation({
 export const updateAssignee = mutation({
 	args: {
 		id: v.id("issues"),
-		assigneeId: v.optional(v.id("users")),
-		userId: v.id("users"), // User making the change
+		assigneeId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		// Get current task to check for changes
+		const user = await getCurrentUser(ctx);
+		if (!user) throw new Error("User not found");
 		const currentTask = await ctx.db.get(args.id);
 		if (!currentTask) throw new Error("Task not found");
 
@@ -643,7 +645,7 @@ export const updateAssignee = mutation({
 		if (args.assigneeId !== currentTask.assigneeId) {
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: args.id,
-				userId: args.userId,
+				userId: user._id,
 				type: "assignee_changed",
 				metadata: {
 					oldAssigneeId: currentTask.assigneeId,
@@ -656,7 +658,7 @@ export const updateAssignee = mutation({
 				await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
 					issueId: args.id,
 					assigneeId: args.assigneeId,
-					assignedBy: args.userId,
+					assignedBy: user?._id,
 				});
 			}
 		}

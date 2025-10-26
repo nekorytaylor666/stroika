@@ -57,16 +57,15 @@ export const authComponent = createClient<DataModel, typeof authSchema>(
 		verbose: true,
 
 		triggers: {
-			teamMember: {
+			user: {
 				onCreate: async (ctx, doc) => {
 					console.log("user created", doc);
-					await ctx.db.insert("notifications", {
-						userId: doc.userId,
-						title: "You have been added to a team",
-						body: "You have been added to a team",
-						type: "task_assigned",
-						read: false,
-						createdAt: Date.now(),
+					await ctx.db.insert("users", {
+						email: doc.email || "",
+						name: doc.name,
+						avatarUrl: doc.image || "",
+						authId: doc._id || "",
+						createdAt: new Date().toISOString(),
 					});
 					// Note: You'll need to adapt this logic based on your actual user creation flow
 					// The doc here is the Better Auth user document, not your custom users table
@@ -75,10 +74,32 @@ export const authComponent = createClient<DataModel, typeof authSchema>(
 					// Both old and new documents are available so you can compare and detect
 					// changes - you can ignore oldDoc if you don't need it.
 					console.log("user updated", newDoc, oldDoc);
+					const user = await ctx.db
+						.query("users")
+						.withIndex("by_betterAuthId", (q) =>
+							q.eq("betterAuthId", newDoc.userId || ""),
+						)
+						.first();
+					if (user) {
+						await ctx.db.patch(user._id, {
+							email: newDoc.email || user.email,
+							name: newDoc.name || user.name,
+							avatarUrl: newDoc.image || user.avatarUrl,
+						});
+					}
 				},
 				onDelete: async (ctx, doc) => {
 					// The entire deleted document is available
 					console.log("user deleted", doc);
+					const user = await ctx.db
+						.query("users")
+						.withIndex("by_betterAuthId", (q) =>
+							q.eq("betterAuthId", doc.userId || ""),
+						)
+						.first();
+					if (user) {
+						await ctx.db.delete(user._id);
+					}
 				},
 			},
 		},

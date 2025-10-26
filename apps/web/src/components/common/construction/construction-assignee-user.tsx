@@ -15,6 +15,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import type { UserWithRole } from "better-auth/plugins";
 import { CheckIcon, UserIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -27,7 +28,7 @@ interface UserType {
 }
 
 interface ConstructionAssigneeUserProps {
-	user: UserType | null;
+	user: UserWithRole | null;
 }
 
 export function ConstructionAssigneeUser({
@@ -67,7 +68,7 @@ export function ConstructionAssigneeUser({
 	return (
 		<motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.1 }}>
 			<Avatar className="size-6">
-				<AvatarImage src={user.avatarUrl} alt={user.name} />
+				<AvatarImage src={user.image || ""} alt={user.name} />
 				<AvatarFallback className="text-[10px]">
 					{user.name
 						.split(" ")

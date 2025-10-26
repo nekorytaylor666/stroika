@@ -14,6 +14,7 @@ import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionProjectBadge } from "./construction-project-badge";
 import { ConstructionStatusSelector } from "./construction-status-selector";
 import type { ConstructionTask } from "./construction-tasks";
+import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionIssueLineProps {
 	issue: ConstructionTask;
@@ -51,7 +52,7 @@ export function ConstructionIssueLine({
 	// Find related entities with null checks
 	const assignee =
 		issue.assigneeId && users
-			? users.find((u) => u._id === issue.assigneeId) || null
+			? users.find((u: UserWithRole) => u.id === issue.assigneeId) || null
 			: null;
 	const taskLabels =
 		issue.labelIds && labels
@@ -77,63 +78,59 @@ export function ConstructionIssueLine({
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
-				<div className="w-full">
-					<div
-						className="flex h-12 w-full cursor-pointer items-center justify-start border-border/40 border-b px-0 py-1 transition-all duration-150 hover:rounded-md hover:bg-sidebar/50 hover:px-2"
-						onClick={handleClick}
-					>
-						<div className="flex items-center gap-2">
-							{priority && (
-								<ConstructionPrioritySelector
-									priority={priority}
-									issueId={issue._id}
-								/>
-							)}
-							<span className="w-[80px] shrink-0 truncate font-medium text-muted-foreground text-sm">
-								{issue.identifier}
-							</span>
-							<ConstructionStatusSelector
-								statusId={issue.statusId}
+				<div
+					className="flex h-12 w-full cursor-pointer items-center justify-start border-border/40 border-b px-2 py-1 transition-all duration-150 hover:rounded-md hover:bg-sidebar/50"
+					onClick={handleClick}
+				>
+					<div className="flex items-center gap-2">
+						{priority && (
+							<ConstructionPrioritySelector
+								priority={priority}
 								issueId={issue._id}
 							/>
-						</div>
-						<div className="ml-2 flex min-w-0 flex-1 items-center gap-3">
-							<span className="truncate font-medium text-sm">
-								{issue.title}
+						)}
+						<span className="w-[80px] shrink-0 truncate font-medium text-muted-foreground text-sm">
+							{issue.identifier}
+						</span>
+						<ConstructionStatusSelector
+							statusId={issue.statusId}
+							issueId={issue._id}
+						/>
+					</div>
+					<div className="ml-2 flex min-w-0 flex-1 items-center gap-3">
+						<span className="truncate font-medium text-sm">{issue.title}</span>
+						{issue.subtaskCount !== undefined && issue.subtaskCount > 0 && (
+							<span className="flex items-center gap-1 text-muted-foreground text-xs">
+								<ListTree className="h-3 w-3" />
+								<span>{issue.subtaskCount}</span>
 							</span>
-							{issue.subtaskCount !== undefined && issue.subtaskCount > 0 && (
-								<span className="flex items-center gap-1 text-muted-foreground text-xs">
-									<ListTree className="h-3 w-3" />
-									<span>{issue.subtaskCount}</span>
+						)}
+					</div>
+					<div className="ml-auto flex items-center justify-end gap-3">
+						<div className="flex items-center gap-2">
+							{taskLabels.length > 0 && (
+								<ConstructionLabelBadge labels={taskLabels as any} />
+							)}
+							{project && <ConstructionProjectBadge project={project} />}
+						</div>
+						<div className="flex items-center gap-2">
+							{issue.dueDate && (
+								<span
+									className={cn(
+										"shrink-0 text-xs",
+										isNearDeadline
+											? "font-semibold text-red-600"
+											: "text-muted-foreground",
+									)}
+								>
+									{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
 								</span>
 							)}
+							<span className="shrink-0 text-muted-foreground text-xs">
+								{format(new Date(issue.createdAt), "MMM dd", { locale: ru })}
+							</span>
 						</div>
-						<div className="ml-auto flex items-center justify-end gap-3">
-							<div className="flex items-center gap-2">
-								{taskLabels.length > 0 && (
-									<ConstructionLabelBadge labels={taskLabels as any} />
-								)}
-								{project && <ConstructionProjectBadge project={project} />}
-							</div>
-							<div className="flex items-center gap-2">
-								{issue.dueDate && (
-									<span
-										className={cn(
-											"shrink-0 text-xs",
-											isNearDeadline
-												? "font-semibold text-red-600"
-												: "text-muted-foreground",
-										)}
-									>
-										{format(new Date(issue.dueDate), "d MMM", { locale: ru })}
-									</span>
-								)}
-								<span className="shrink-0 text-muted-foreground text-xs">
-									{format(new Date(issue.createdAt), "MMM dd", { locale: ru })}
-								</span>
-							</div>
-							<ConstructionAssigneeUser user={assignee || null} />
-						</div>
+						<ConstructionAssigneeUser user={assignee || null} />
 					</div>
 				</div>
 			</ContextMenuTrigger>

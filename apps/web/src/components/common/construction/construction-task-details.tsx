@@ -51,6 +51,7 @@ import { ConstructionTaskAttachmentsGrid } from "./construction-task-attachments
 import { ConstructionTaskComments } from "./construction-task-comments";
 import type { ConstructionTask } from "./construction-tasks";
 import { TimelineChart } from "./construction-timeline-chart";
+import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionTaskDetailsProps {
 	task: ConstructionTask | null;
@@ -109,7 +110,7 @@ export function ConstructionTaskDetails({
 	if (!currentTask) return null;
 
 	const assignee = currentTask.assigneeId
-		? users?.find((u) => u._id === currentTask.assigneeId)
+		? users?.find((u) => u.id === currentTask.assigneeId)
 		: null;
 	const priority = priorities?.find((p) => p._id === currentTask.priorityId);
 	const taskLabels = currentTask.labelIds
@@ -455,14 +456,14 @@ export function ConstructionTaskDetails({
 											<User className="mr-2 h-4 w-4" />
 											Не назначен
 										</DropdownMenuItem>
-										{users?.map((user) => (
+										{users?.map((user: UserWithRole) => (
 											<DropdownMenuItem
-												key={user._id}
+												key={user.id}
 												onClick={async () => {
 													if (updateTaskAssignee && currentUser) {
 														await updateTaskAssignee({
 															id: currentTask._id as Id<"issues">,
-															assigneeId: user._id as Id<"users">,
+															assigneeId: user.id as Id<"users">,
 															userId: currentUser._id,
 														});
 													}

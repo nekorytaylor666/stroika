@@ -22,10 +22,10 @@ export const createActivity = mutation({
 		newValue: v.optional(v.string()),
 		metadata: v.optional(
 			v.object({
-				oldStatusId: v.optional(v.id("status")),
+				oldStatusId: v.optional(v.string()),
 				newStatusId: v.optional(v.id("status")),
-				oldAssigneeId: v.optional(v.id("users")),
-				newAssigneeId: v.optional(v.id("users")),
+				oldAssigneeId: v.optional(v.string()),
+				newAssigneeId: v.optional(v.string()),
 				oldPriorityId: v.optional(v.id("priorities")),
 				newPriorityId: v.optional(v.id("priorities")),
 				commentId: v.optional(v.id("issueComments")),
