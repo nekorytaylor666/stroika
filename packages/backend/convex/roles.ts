@@ -1,7 +1,29 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./helpers/getCurrentUser";
+import { api, components } from "./_generated/api";
 
+export const createCustomRole = mutation({
+	args: {
+		role: v.string(),
+		permission: v.record(v.string(), v.array(v.string())),
+		organizationId: v.string(),
+		additionalFields: v.optional(v.string()),
+	},
+	handler: async (ctx, args): Promise<void> => {
+		console.log(args);
+		await ctx.runMutation(
+			api.betterAuth.customPermissions.createCustomOrganizationRole,
+			{
+				role: args.role,
+				permission: args.permission,
+				organizationId: args.organizationId,
+				additionalFields: JSON.stringify(args.additionalFields),
+			},
+		);
+		return;
+	},
+});
 // List all roles
 export const list = query({
 	args: {},

@@ -65,6 +65,18 @@ export const tables = {
 	})
 		.index("expiresAt", ["expiresAt"])
 		.index("identifier", ["identifier"]),
+	// The "scope" field is included to support resource-based authorization.
+	// It allows resources to be grouped or isolated by a scope, e.g., per organization, team, or globally.
+	// This enables flexible, dynamic permission checks at runtime based on resource scope.
+
+	organizationRole: defineTable({
+		organizationId: v.string(),
+		role: v.string(),
+		permission: v.string(),
+		createdAt: v.number(),
+		updatedAt: v.optional(v.union(v.null(), v.number())),
+		additionalFields: v.optional(v.string()),
+	}).index("organizationId", ["organizationId"]),
 	team: defineTable({
 		name: v.string(),
 		organizationId: v.string(),

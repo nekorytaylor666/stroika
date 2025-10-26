@@ -67,7 +67,6 @@ export const createSubtask = mutation({
 		labelIds: v.array(v.id("labels")),
 		projectId: v.optional(v.id("constructionProjects")),
 		dueDate: v.optional(v.string()),
-		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
 		// Get parent task to inherit some properties

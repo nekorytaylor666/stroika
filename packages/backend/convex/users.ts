@@ -10,7 +10,6 @@ export { getCurrentUser, viewer, me } from "./auth";
 export const getAll = query({
 	handler: async (ctx) => {
 		const identity = await ctx.auth.getUserIdentity();
-		console.log("identity", identity);
 
 		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 		// Check if user is authenticated using Better Auth

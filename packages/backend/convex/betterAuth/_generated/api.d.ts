@@ -10,6 +10,7 @@
 
 import type * as adapter from "../adapter.js";
 import type * as auth from "../auth.js";
+import type * as customPermissions from "../customPermissions.js";
 import type * as permissions from "../permissions.js";
 import type * as team from "../team.js";
 import type * as users from "../users.js";
@@ -31,6 +32,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   adapter: typeof adapter;
   auth: typeof auth;
+  customPermissions: typeof customPermissions;
   permissions: typeof permissions;
   team: typeof team;
   users: typeof users;
@@ -99,6 +101,17 @@ export type Mounts = {
                 value: string;
               };
               model: "verification";
+            }
+          | {
+              data: {
+                additionalFields?: string;
+                createdAt: number;
+                organizationId: string;
+                permission: string;
+                role: string;
+                updatedAt?: null | number;
+              };
+              model: "organizationRole";
             }
           | {
               data: {
@@ -290,6 +303,39 @@ export type Mounts = {
                   | "expiresAt"
                   | "createdAt"
                   | "updatedAt"
+                  | "_id";
+                operator?:
+                  | "lt"
+                  | "lte"
+                  | "gt"
+                  | "gte"
+                  | "eq"
+                  | "in"
+                  | "not_in"
+                  | "ne"
+                  | "contains"
+                  | "starts_with"
+                  | "ends_with";
+                value:
+                  | string
+                  | number
+                  | boolean
+                  | Array<string>
+                  | Array<number>
+                  | null;
+              }>;
+            }
+          | {
+              model: "organizationRole";
+              where?: Array<{
+                connector?: "AND" | "OR";
+                field:
+                  | "organizationId"
+                  | "role"
+                  | "permission"
+                  | "createdAt"
+                  | "updatedAt"
+                  | "additionalFields"
                   | "_id";
                 operator?:
                   | "lt"
@@ -656,6 +702,39 @@ export type Mounts = {
               }>;
             }
           | {
+              model: "organizationRole";
+              where?: Array<{
+                connector?: "AND" | "OR";
+                field:
+                  | "organizationId"
+                  | "role"
+                  | "permission"
+                  | "createdAt"
+                  | "updatedAt"
+                  | "additionalFields"
+                  | "_id";
+                operator?:
+                  | "lt"
+                  | "lte"
+                  | "gt"
+                  | "gte"
+                  | "eq"
+                  | "in"
+                  | "not_in"
+                  | "ne"
+                  | "contains"
+                  | "starts_with"
+                  | "ends_with";
+                value:
+                  | string
+                  | number
+                  | boolean
+                  | Array<string>
+                  | Array<number>
+                  | null;
+              }>;
+            }
+          | {
               model: "team";
               where?: Array<{
                 connector?: "AND" | "OR";
@@ -849,6 +928,7 @@ export type Mounts = {
           | "session"
           | "account"
           | "verification"
+          | "organizationRole"
           | "team"
           | "teamMember"
           | "organization"
@@ -900,6 +980,7 @@ export type Mounts = {
           | "session"
           | "account"
           | "verification"
+          | "organizationRole"
           | "team"
           | "teamMember"
           | "organization"
@@ -1108,6 +1189,47 @@ export type Mounts = {
                   | "expiresAt"
                   | "createdAt"
                   | "updatedAt"
+                  | "_id";
+                operator?:
+                  | "lt"
+                  | "lte"
+                  | "gt"
+                  | "gte"
+                  | "eq"
+                  | "in"
+                  | "not_in"
+                  | "ne"
+                  | "contains"
+                  | "starts_with"
+                  | "ends_with";
+                value:
+                  | string
+                  | number
+                  | boolean
+                  | Array<string>
+                  | Array<number>
+                  | null;
+              }>;
+            }
+          | {
+              model: "organizationRole";
+              update: {
+                additionalFields?: string;
+                createdAt?: number;
+                organizationId?: string;
+                permission?: string;
+                role?: string;
+                updatedAt?: null | number;
+              };
+              where?: Array<{
+                connector?: "AND" | "OR";
+                field:
+                  | "organizationId"
+                  | "role"
+                  | "permission"
+                  | "createdAt"
+                  | "updatedAt"
+                  | "additionalFields"
                   | "_id";
                 operator?:
                   | "lt"
@@ -1558,6 +1680,47 @@ export type Mounts = {
               }>;
             }
           | {
+              model: "organizationRole";
+              update: {
+                additionalFields?: string;
+                createdAt?: number;
+                organizationId?: string;
+                permission?: string;
+                role?: string;
+                updatedAt?: null | number;
+              };
+              where?: Array<{
+                connector?: "AND" | "OR";
+                field:
+                  | "organizationId"
+                  | "role"
+                  | "permission"
+                  | "createdAt"
+                  | "updatedAt"
+                  | "additionalFields"
+                  | "_id";
+                operator?:
+                  | "lt"
+                  | "lte"
+                  | "gt"
+                  | "gte"
+                  | "eq"
+                  | "in"
+                  | "not_in"
+                  | "ne"
+                  | "contains"
+                  | "starts_with"
+                  | "ends_with";
+                value:
+                  | string
+                  | number
+                  | boolean
+                  | Array<string>
+                  | Array<number>
+                  | null;
+              }>;
+            }
+          | {
               model: "team";
               update: {
                 createdAt?: number;
@@ -1776,6 +1939,21 @@ export type Mounts = {
               }>;
             };
         onUpdateHandle?: string;
+      },
+      any
+    >;
+  };
+  customPermissions: {
+    createCustomOrganizationRole: FunctionReference<
+      "mutation",
+      "public",
+      {
+        actions: Array<string>;
+        additionalFields?: string;
+        organizationId: string;
+        permission: Record<string, Array<string>>;
+        resource: string;
+        role: string;
       },
       any
     >;

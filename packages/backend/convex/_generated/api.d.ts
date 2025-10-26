@@ -16,6 +16,7 @@ import type * as betterAuth__generated_api from "../betterAuth/_generated/api.js
 import type * as betterAuth__generated_server from "../betterAuth/_generated/server.js";
 import type * as betterAuth_adapter from "../betterAuth/adapter.js";
 import type * as betterAuth_auth from "../betterAuth/auth.js";
+import type * as betterAuth_customPermissions from "../betterAuth/customPermissions.js";
 import type * as betterAuth_permissions from "../betterAuth/permissions.js";
 import type * as betterAuth_team from "../betterAuth/team.js";
 import type * as betterAuth_users from "../betterAuth/users.js";
@@ -25,6 +26,7 @@ import type * as comments from "../comments.js";
 import type * as constructionProjects from "../constructionProjects.js";
 import type * as constructionTasks from "../constructionTasks.js";
 import type * as constructionTeams from "../constructionTeams.js";
+import type * as customPermissions from "../customPermissions.js";
 import type * as debug from "../debug.js";
 import type * as debugAuth from "../debugAuth.js";
 import type * as departments_mutations from "../departments/mutations.js";
@@ -99,6 +101,7 @@ declare const fullApi: ApiFromModules<{
   "betterAuth/_generated/server": typeof betterAuth__generated_server;
   "betterAuth/adapter": typeof betterAuth_adapter;
   "betterAuth/auth": typeof betterAuth_auth;
+  "betterAuth/customPermissions": typeof betterAuth_customPermissions;
   "betterAuth/permissions": typeof betterAuth_permissions;
   "betterAuth/team": typeof betterAuth_team;
   "betterAuth/users": typeof betterAuth_users;
@@ -108,6 +111,7 @@ declare const fullApi: ApiFromModules<{
   constructionProjects: typeof constructionProjects;
   constructionTasks: typeof constructionTasks;
   constructionTeams: typeof constructionTeams;
+  customPermissions: typeof customPermissions;
   debug: typeof debug;
   debugAuth: typeof debugAuth;
   "departments/mutations": typeof departments_mutations;
@@ -235,6 +239,17 @@ export declare const components: {
                   value: string;
                 };
                 model: "verification";
+              }
+            | {
+                data: {
+                  additionalFields?: string;
+                  createdAt: number;
+                  organizationId: string;
+                  permission: string;
+                  role: string;
+                  updatedAt?: null | number;
+                };
+                model: "organizationRole";
               }
             | {
                 data: {
@@ -426,6 +441,39 @@ export declare const components: {
                     | "expiresAt"
                     | "createdAt"
                     | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "organizationRole";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "organizationId"
+                    | "role"
+                    | "permission"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "additionalFields"
                     | "_id";
                   operator?:
                     | "lt"
@@ -792,6 +840,39 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "organizationRole";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "organizationId"
+                    | "role"
+                    | "permission"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "additionalFields"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "team";
                 where?: Array<{
                   connector?: "AND" | "OR";
@@ -985,6 +1066,7 @@ export declare const components: {
             | "session"
             | "account"
             | "verification"
+            | "organizationRole"
             | "team"
             | "teamMember"
             | "organization"
@@ -1036,6 +1118,7 @@ export declare const components: {
             | "session"
             | "account"
             | "verification"
+            | "organizationRole"
             | "team"
             | "teamMember"
             | "organization"
@@ -1244,6 +1327,47 @@ export declare const components: {
                     | "expiresAt"
                     | "createdAt"
                     | "updatedAt"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "organizationRole";
+                update: {
+                  additionalFields?: string;
+                  createdAt?: number;
+                  organizationId?: string;
+                  permission?: string;
+                  role?: string;
+                  updatedAt?: null | number;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "organizationId"
+                    | "role"
+                    | "permission"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "additionalFields"
                     | "_id";
                   operator?:
                     | "lt"
@@ -1694,6 +1818,47 @@ export declare const components: {
                 }>;
               }
             | {
+                model: "organizationRole";
+                update: {
+                  additionalFields?: string;
+                  createdAt?: number;
+                  organizationId?: string;
+                  permission?: string;
+                  role?: string;
+                  updatedAt?: null | number;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "organizationId"
+                    | "role"
+                    | "permission"
+                    | "createdAt"
+                    | "updatedAt"
+                    | "additionalFields"
+                    | "_id";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
                 model: "team";
                 update: {
                   createdAt?: number;
@@ -1912,6 +2077,21 @@ export declare const components: {
                 }>;
               };
           onUpdateHandle?: string;
+        },
+        any
+      >;
+    };
+    customPermissions: {
+      createCustomOrganizationRole: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          actions: Array<string>;
+          additionalFields?: string;
+          organizationId: string;
+          permission: Record<string, Array<string>>;
+          resource: string;
+          role: string;
         },
         any
       >;

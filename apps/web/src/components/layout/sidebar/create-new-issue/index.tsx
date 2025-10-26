@@ -27,6 +27,7 @@ import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
 import { type SubtaskData, SubtasksInput } from "./subtasks-input";
+import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionTaskForm {
 	identifier: string;
@@ -50,7 +51,7 @@ export function CreateNewIssue() {
 		useCreateIssueStore();
 	const statuses = useQuery(api.metadata.getAllStatus);
 	const priorities = useQuery(api.metadata.getAllPriorities);
-	const users = useQuery(api.users.getAll);
+	const { users } = useConstructionData();
 	const projects = useQuery(api.constructionProjects.getAll);
 	const tasks = useQuery(api.constructionTasks.getAll);
 	const createTask = useMutation(api.constructionTasks.create);
@@ -273,7 +274,7 @@ export function CreateNewIssue() {
 						/>
 						<AssigneeSelector
 							assignee={
-								users?.find((u) => u._id === addTaskForm.assigneeId) || null
+								users?.find((u) => u.id === addTaskForm.assigneeId) || null
 							}
 							onChange={(newAssignee) =>
 								setAddTaskForm({

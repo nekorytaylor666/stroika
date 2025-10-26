@@ -31,8 +31,11 @@ import {
 	GanttToday,
 } from "@/components/ui/shadcn-io/gantt";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import Loader from "@/components/loader";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useConstructionGanttData } from "@/hooks/use-construction-gantt-data";
+import { useProjectPermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
@@ -44,6 +47,7 @@ import {
 	Briefcase,
 	ChevronDown,
 	Filter,
+	Lock,
 	Search,
 	Users,
 } from "lucide-react";
@@ -62,6 +66,9 @@ function ProjectAnalyticsPage() {
 	const [selectedUserId, setSelectedUserId] = useState<string>("all");
 	const [selectedStatusIds, setSelectedStatusIds] = useState<string[]>([]);
 	const [selectedPriorityIds, setSelectedPriorityIds] = useState<string[]>([]);
+
+	// Check permissions
+	const permissions = useProjectPermissions(projectId);
 
 	// Get construction data including statuses and priorities
 	const { statuses, priorities } = useConstructionData();
@@ -184,6 +191,32 @@ function ProjectAnalyticsPage() {
 			{} as Record<string, typeof filteredFeatures>,
 		);
 	}, [filteredFeatures]);
+
+	// Loading state
+	if (!permissions) {
+		return (
+			<div className="flex h-full items-center justify-center">
+				<Loader />
+			</div>
+		);
+	}
+
+	// Check if user can view analytics
+	if (!permissions.canReadAnalytics) {
+		return (
+			<div className="h-full bg-background p-6">
+				<div className="mx-auto max-w-7xl">
+					<Alert className="mx-auto mt-20 max-w-md">
+						<Lock className="h-4 w-4" />
+						<AlertDescription>
+							У вас нет доступа к аналитике этого проекта. Обратитесь к
+							администратору проекта для получения необходимых разрешений.
+						</AlertDescription>
+					</Alert>
+				</div>
+			</div>
+		);
+	}
 
 	const isLoading =
 		projectData === undefined ||

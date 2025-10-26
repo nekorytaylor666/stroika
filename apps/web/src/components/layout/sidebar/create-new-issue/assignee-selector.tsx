@@ -16,12 +16,13 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useConstructionData } from "@/hooks/use-construction-data";
+import type { UserWithRole } from "better-auth/plugins";
 import { CheckIcon, UserCircle } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 
 interface AssigneeSelectorProps {
-	assignee: any | null;
-	onChange: (assignee: any | null) => void;
+	assignee: UserWithRole | null;
+	onChange: (assignee: UserWithRole | null) => void;
 }
 
 export function AssigneeSelector({
@@ -30,12 +31,12 @@ export function AssigneeSelector({
 }: AssigneeSelectorProps) {
 	const id = useId();
 	const [open, setOpen] = useState<boolean>(false);
-	const [value, setValue] = useState<string | null>(assignee?._id || null);
+	const [value, setValue] = useState<string | null>(assignee?.id || null);
 
 	const { users, tasks } = useConstructionData();
 
 	useEffect(() => {
-		setValue(assignee?._id || null);
+		setValue(assignee?.id || null);
 	}, [assignee]);
 
 	const handleAssigneeChange = (userId: string) => {
@@ -44,7 +45,7 @@ export function AssigneeSelector({
 			onChange(null);
 		} else {
 			setValue(userId);
-			const newAssignee = users?.find((u) => u._id === userId);
+			const newAssignee = users?.find((u) => u.id === userId);
 			if (newAssignee) {
 				onChange(newAssignee);
 			}
@@ -71,12 +72,12 @@ export function AssigneeSelector({
 					>
 						{value ? (
 							(() => {
-								const selectedUser = users?.find((user) => user._id === value);
+								const selectedUser = users?.find((user) => user.id === value);
 								if (selectedUser) {
 									return (
 										<Avatar className="size-5">
 											<AvatarImage
-												src={selectedUser.avatarUrl}
+												src={selectedUser.image}
 												alt={selectedUser.name}
 											/>
 											<AvatarFallback>
@@ -92,7 +93,7 @@ export function AssigneeSelector({
 						)}
 						<span>
 							{value
-								? users?.find((u) => u._id === value)?.name
+								? users?.find((u) => u.id === value)?.name
 								: "Не назначено"}
 						</span>
 					</Button>
@@ -124,23 +125,23 @@ export function AssigneeSelector({
 								</CommandItem>
 								{users?.map((user) => (
 									<CommandItem
-										key={user._id}
-										value={user._id}
-										onSelect={() => handleAssigneeChange(user._id)}
+										key={user.id}
+										value={user.id}
+										onSelect={() => handleAssigneeChange(user.id)}
 										className="flex items-center justify-between"
 									>
 										<div className="flex items-center gap-2">
 											<Avatar className="size-5">
-												<AvatarImage src={user.avatarUrl} alt={user.name} />
+												<AvatarImage src={user.image} alt={user.name} />
 												<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
 											</Avatar>
 											{user.name}
 										</div>
-										{value === user._id && (
+										{value === user.id && (
 											<CheckIcon size={16} className="ml-auto" />
 										)}
 										<span className="text-muted-foreground text-xs">
-											{getTaskCountForUser(user._id)}
+											{getTaskCountForUser(user.id)}
 										</span>
 									</CommandItem>
 								))}

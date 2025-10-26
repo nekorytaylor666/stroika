@@ -4,7 +4,7 @@ import { tables } from "./betterAuth/schema";
 
 export default defineSchema({
 	// NOTE: Organizations are now managed by Better Auth - see betterAuth/schema.ts
-
+	...tables,
 	// Organization members
 	organizationMembers: defineTable({
 		organizationId: v.string(), // Better Auth organization ID
@@ -224,32 +224,31 @@ export default defineSchema({
 		.index("by_organization", ["organizationId"])
 		.index("by_priority", ["priority"]),
 
-	// Permissions table
-	permissions: defineTable({
-		resource: v.string(), // e.g., "projects", "users", "teams", "documents"
-		action: v.string(), // e.g., "create", "read", "update", "delete", "manage"
-		scope: v.union(
-			v.literal("global"), // System-wide permission
-			v.literal("organization"), // Organization-level permission
-			v.literal("project"), // Project-specific permission
-			v.literal("team"), // Team-based permission
-			v.literal("resource"), // Individual resource permission
-		),
-		description: v.optional(v.string()),
-		createdAt: v.string(),
-	})
-		.index("by_resource_action", ["resource", "action"])
-		.index("by_scope", ["scope"]),
-
 	// Role-Permission mapping table
-	rolePermissions: defineTable({
+	customRoles: defineTable({
+		name: v.string(),
+		displayName: v.string(),
+		description: v.optional(v.string()),
+		scope: v.union(
+			v.literal("global"),
+			v.literal("organization"),
+			v.literal("project"),
+			v.literal("team"),
+			v.literal("resource"),
+		),
+		scopeId: v.optional(v.string()),
+		//json
+		permissions: v.string(),
+	}),
+	userCustomRoles: defineTable({
+		userId: v.string(),
 		roleId: v.string(),
-		permissionId: v.string(),
+		granted: v.boolean(), // true = grant, false = revoke (override role permission)
 		createdAt: v.string(),
+		expiresAt: v.optional(v.string()), // Optional expiration for temporary permissions
 	})
-		.index("by_role", ["roleId"])
-		.index("by_permission", ["permissionId"])
-		.index("by_role_permission", ["roleId", "permissionId"]),
+		.index("by_user", ["userId"])
+		.index("by_role", ["roleId"]),
 
 	// User custom permissions (for specific overrides)
 	userPermissions: defineTable({

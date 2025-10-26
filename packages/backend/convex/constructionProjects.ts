@@ -8,7 +8,7 @@ import {
 } from "./permissions/checks";
 import { getAccessibleProjects } from "./permissions/projectAccess";
 import { authComponent, createAuth } from "./auth";
-import { components } from "./_generated/api";
+import { api, components } from "./_generated/api";
 
 // Queries - Get all projects the current user has access to
 export const getAll = query({
@@ -327,7 +327,14 @@ export const create = mutation({
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 
-		console.log("organization", organization);
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
 		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
 		const projectId = await ctx.db.insert("constructionProjects", {
@@ -348,21 +355,24 @@ export const create = mutation({
 			userIds: args.teamMemberIds,
 		});
 
-		const permission = {
-			[`${projectId}:finance`]: ["create", "update", "delete", "view"],
-		};
-		await auth.api.createOrgRole({
-			body: {
-				role: `${projectId}:project-owner`, // required
-				permission: permission,
-				additionalFields: {
-					projectId: projectId,
-				},
-				organizationId: organization.id,
-			},
-			// This endpoint requires session cookies.
-			headers,
+		const response = await ctx.runMutation(api.customPermissions.createAllProjectRoles, {
+			projectId,
+		})
+		console.log("organization roles created", response)
+
+		await ctx.runMutation(api.customPermissions.assignUserToRole, {
+			userId: args.leadId,
+			roleId: response.adminRoleId
 		});
+		await ctx.runMutation(api.customPermissions.assignUserToRole, {
+			userId: user._id,
+			roleId: response.ownerRoleId,
+		});
+b
+		Promise.all(args.teamMemberIds.map(id => ctx.runMutation(api.customPermissions.assignUserToRole, {
+			userId: id,
+			roleId: response.memberRoleId,
+		})));
 
 		// // Grant the creator admin access to the project
 		// await ctx.db.insert("projectAccess", {

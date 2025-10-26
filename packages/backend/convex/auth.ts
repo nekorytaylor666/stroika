@@ -107,13 +107,15 @@ export const createAuth = (
 			enabled: true,
 			requireEmailVerification: false,
 		},
-		verbose: true,
+		secret: process.env.BETTER_AUTH_SECRET,
 		plugins: [
 			// The cross domain plugin is required for client side frameworks
 			crossDomain({ siteUrl }),
 			admin(),
 			organization({
-				ac: ac,
+				ac: {
+					...ac,
+				},
 				dynamicAccessControl: {
 					enabled: true,
 				},

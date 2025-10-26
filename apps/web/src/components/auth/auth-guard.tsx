@@ -12,7 +12,6 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children }: AuthGuardProps) {
 	const session = authClient.useSession();
-	console.log("session:", JSON.stringify(session, null, 2));
 	if (session.isPending) {
 		return <Loader />;
 	}

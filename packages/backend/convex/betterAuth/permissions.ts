@@ -4,7 +4,8 @@ import {
 	adminAc,
 } from "better-auth/plugins/organization/access";
 
-const statement = {
+export const statements = {
 	...defaultStatements,
-} as const;
-export const ac = createAccessControl(statement);
+};
+
+export const ac = createAccessControl(statements);

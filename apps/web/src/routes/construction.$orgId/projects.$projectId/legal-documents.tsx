@@ -4,7 +4,7 @@ import { LegalDocumentUploadDialog } from "@/components/construction/legal-docum
 import Loader from "@/components/loader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { usePermissions, useProjectPermissions } from "@/hooks/use-permissions";
+import { useProjectPermissions } from "@/hooks/use-permissions";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertTriangle, Lock, Upload } from "lucide-react";
@@ -23,14 +23,8 @@ function LegalDocumentsPage() {
 	const [documentTypeFilter, setDocumentTypeFilter] = useState("all");
 	const [statusFilter, setStatusFilter] = useState("all");
 
-	// Use permission hooks with colon notation
-	// Permission levels needed:
-	// - documents:read - View documents
-	// - documents:create - Upload new documents
-	// - documents:update - Edit existing documents
-	// - documents:manage - Full document management (create, read, update, delete)
-	const permissions = usePermissions();
-	const projectPermissions = useProjectPermissions(projectId);
+	// Use permission hook
+	const permissions = useProjectPermissions(projectId);
 
 	const handleClearFilters = () => {
 		setSearchQuery("");
@@ -39,7 +33,7 @@ function LegalDocumentsPage() {
 	};
 
 	// Loading state
-	if (permissions.isLoading || projectPermissions.isLoading) {
+	if (!permissions) {
 		return (
 			<div className="flex h-full items-center justify-center">
 				<Loader />
@@ -47,38 +41,16 @@ function LegalDocumentsPage() {
 		);
 	}
 
-	// Check basic project access first
-	if (!projectPermissions.canView) {
-		return (
-			<div className="h-full overflow-auto bg-background">
-				<div className="mx-auto max-w-7xl p-6">
-					<Alert className="mx-auto mt-20 max-w-md">
-						<Lock className="h-4 w-4" />
-						<AlertDescription>
-							У вас нет доступа к этому проекту. Обратитесь к администратору для
-							получения необходимых разрешений.
-						</AlertDescription>
-					</Alert>
-				</div>
-			</div>
-		);
-	}
-
 	// Check if user can view documents
-	const canViewDocuments =
-		permissions.hasPermission("documents:read") ||
-		permissions.hasPermission("documents:manage") ||
-		permissions.isOwner;
-
-	if (!canViewDocuments) {
+	if (!permissions.canReadDocuments) {
 		return (
 			<div className="h-full overflow-auto bg-background">
 				<div className="mx-auto max-w-7xl p-6">
 					<Alert className="mx-auto mt-20 max-w-md">
 						<Lock className="h-4 w-4" />
 						<AlertDescription>
-							У вас нет доступа к документам. Необходимы права на просмотр
-							документов (documents:read) для доступа к этой странице.
+							У вас нет доступа к документам этого проекта. Обратитесь к
+							администратору проекта для получения необходимых разрешений.
 						</AlertDescription>
 					</Alert>
 				</div>
@@ -86,25 +58,12 @@ function LegalDocumentsPage() {
 		);
 	}
 
-	// Check if user can upload documents using colon notation
-	const canUploadDocuments =
-		projectPermissions.canEdit &&
-		(permissions.hasPermission("documents:create") ||
-			permissions.hasPermission("documents:manage"));
-
-	// Check if user can manage (edit/delete) documents
+	// Permission flags
+	const canUploadDocuments = permissions.canCreateDocuments;
 	const canManageDocuments =
-		projectPermissions.canAdmin ||
-		permissions.hasPermission("documents:manage") ||
-		permissions.isOwner;
-
-	// Check if user can edit documents
+		permissions.canDeleteDocuments || permissions.canManageDocuments;
 	const canEditDocuments =
-		projectPermissions.canEdit &&
-		(permissions.hasPermission("documents:update") ||
-			permissions.hasPermission("documents:manage"));
-
-	// Check if user has read-only access
+		permissions.canUpdateDocuments || permissions.canManageDocuments;
 	const isReadOnly = !canUploadDocuments;
 
 	return (
