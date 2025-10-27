@@ -460,11 +460,10 @@ export function ConstructionTaskDetails({
 											<DropdownMenuItem
 												key={user.id}
 												onClick={async () => {
-													if (updateTaskAssignee && currentUser) {
+													if (updateTaskAssignee) {
 														await updateTaskAssignee({
 															id: currentTask._id as Id<"issues">,
 															assigneeId: user.id as Id<"users">,
-															userId: currentUser._id,
 														});
 													}
 												}}

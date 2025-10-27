@@ -10,7 +10,7 @@ import {
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
 import { useIssuesStore } from "@/store/issues-store";
-import { api } from "@stroika/backend";
+import { api, type Id } from "@stroika/backend";
 import { useQuery } from "convex/react";
 import {
 	AlarmClock,
@@ -52,6 +52,11 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 	const users = useQuery(api.users.getAll);
 	const labels = useQuery(api.metadata.getAllLabels);
 	const projects = useQuery(api.constructionProjects.getAll);
+	const updateStatus = useMutation(api.issues.updateStatus);
+	const updateAssignee = useMutation(api.constructionTasks.updateAssignee);
+	const updatePriority = useMutation(api.constructionTasks.updatePriority);
+	const updateLabel = useMutation(api.constructionTasks.addLabel);
+	const updateProject = useMutation(api.constructionTasks.updateProject);
 
 	const handleAddLink = () => {
 		toast.success("Link added");
@@ -87,11 +92,33 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 
 	const handleCopy = () => {
 		if (!issueId) return;
-		const issue = getIssueById(issueId);
+		const issue = issues.find((i) => i.id === issueId);
 		if (issue) {
 			navigator.clipboard.writeText(issue.title);
 			toast.success("Copied to clipboard");
 		}
+	};
+
+	const handleStatusChange = (statusId: Id<"status">) => {
+		toast.success(`Status changed to ${statusId}`);
+	};
+	const handleAssigneeChange = async (assigneeId: string | null) => {
+		toast.success(`Assignee changed to ${assigneeId}`);
+		console.log("assigneeId", assigneeId);
+		try {
+			await updateAssignee({
+				id: issueId,
+				assigneeId: assigneeId || undefined,
+			});
+		} catch (error) {
+			toast.error(`Failed to update assignee: ${error}`);
+		}
+	};
+	const handlePriorityChange = (priorityId: Id<"priorities">) => {
+		toast.success(`Priority changed to ${priorityId}`);
+	};
+	const handleLabelToggle = (labelId: Id<"labels">) => {
+		toast.success(`Label toggled to ${labelId}`);
 	};
 
 	const handleRemindMe = () => {
@@ -132,20 +159,18 @@ export function IssueContextMenu({ issueId }: IssueContextMenuProps) {
 						<ContextMenuItem onClick={() => handleAssigneeChange(null)}>
 							<User className="size-4" /> Не назначен
 						</ContextMenuItem>
-						{users
-							.filter((user) => user.teamIds.includes("CORE"))
-							.map((user) => (
-								<ContextMenuItem
-									key={user.id}
-									onClick={() => handleAssigneeChange(user.id)}
-								>
-									<Avatar className="size-4">
-										<AvatarImage src={user.avatarUrl} alt={user.name} />
-										<AvatarFallback>{user.name[0]}</AvatarFallback>
-									</Avatar>
-									{user.name}
-								</ContextMenuItem>
-							))}
+						{users.map((user) => (
+							<ContextMenuItem
+								key={user.id}
+								onClick={() => handleAssigneeChange(user.id)}
+							>
+								<Avatar className="size-4">
+									<AvatarImage src={user.image} alt={user.name} />
+									<AvatarFallback>{user.name[0]}</AvatarFallback>
+								</Avatar>
+								{user.name}
+							</ContextMenuItem>
+						))}
 					</ContextMenuSubContent>
 				</ContextMenuSub>
 

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation } from "convex/react";
@@ -36,11 +37,10 @@ export function ConstructionAssigneeSelector({
 }: ConstructionAssigneeSelectorProps) {
 	const [open, setOpen] = useState(false);
 	const { users, tasks } = useConstructionData();
-	const currentUser = useCurrentUser();
 	const updateAssignee = useMutation(api.constructionTasks.updateAssignee);
 
 	const currentAssignee = currentAssigneeId
-		? users?.find((u) => u._id === currentAssigneeId)
+		? users?.find((u) => u.id === currentAssigneeId)
 		: null;
 
 	const getTaskCountForUser = (userId: Id<"users"> | null) => {
@@ -48,17 +48,12 @@ export function ConstructionAssigneeSelector({
 		return tasks.filter((task) => task.assigneeId === userId).length;
 	};
 
-	const handleAssigneeChange = async (userId: Id<"users"> | null) => {
-		if (!currentUser) {
-			console.error("No current user found");
-			return;
-		}
-
+	const handleAssigneeChange = async (userId: Id<"user"> | null) => {
 		try {
+			console.log("userId", userId);
 			await updateAssignee({
 				id: issueId,
 				assigneeId: userId,
-				userId: currentUser._id,
 			});
 			setOpen(false);
 		} catch (error) {
@@ -78,7 +73,7 @@ export function ConstructionAssigneeSelector({
 						<>
 							<Avatar className="h-5 w-5">
 								<AvatarImage
-									src={currentAssignee.avatarUrl}
+									src={currentAssignee.image}
 									alt={currentAssignee.name}
 								/>
 								<AvatarFallback>
@@ -125,22 +120,22 @@ export function ConstructionAssigneeSelector({
 							</CommandItem>
 							{users?.map((user) => (
 								<CommandItem
-									key={user._id}
-									onSelect={() => handleAssigneeChange(user._id as Id<"users">)}
+									key={user.id}
+									onSelect={() => handleAssigneeChange(user.id)}
 									className="flex items-center justify-between"
 								>
 									<div className="flex items-center gap-2">
 										<Avatar className="h-5 w-5">
-											<AvatarImage src={user.avatarUrl} alt={user.name} />
+											<AvatarImage src={user.image} alt={user.name} />
 											<AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
 										</Avatar>
 										<span>{user.name}</span>
 									</div>
 									<div className="flex items-center gap-2">
 										<span className="text-muted-foreground text-xs">
-											{getTaskCountForUser(user._id as Id<"users">)}
+											{getTaskCountForUser(user.id as Id<"users">)}
 										</span>
-										{currentAssigneeId === user._id && (
+										{currentAssigneeId === user.id && (
 											<Check className="h-3.5 w-3.5" />
 										)}
 									</div>

@@ -101,7 +101,7 @@ export const getByIdentifier = query({
 			.withIndex("by_identifier", (q) => q.eq("identifier", args.identifier))
 			.filter((q) =>
 				q.and(
-					q.eq(q.field("organizationId"), organization._id),
+					q.eq(q.field("organizationId"), organization.id),
 					q.eq(q.field("isConstructionTask"), true),
 				),
 			)
