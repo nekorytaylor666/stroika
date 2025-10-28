@@ -4,6 +4,7 @@ import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { cn } from "@/lib/utils";
 import { useConstructionTaskDetailsStore } from "@/store/construction/construction-task-details-store";
+import type { UserWithRole } from "better-auth/plugins";
 import { differenceInDays, format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ListTree } from "lucide-react";
@@ -14,7 +15,6 @@ import { ConstructionPrioritySelector } from "./construction-priority-selector";
 import { ConstructionProjectBadge } from "./construction-project-badge";
 import { ConstructionStatusSelector } from "./construction-status-selector";
 import type { ConstructionTask } from "./construction-tasks";
-import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionIssueLineProps {
 	issue: ConstructionTask;

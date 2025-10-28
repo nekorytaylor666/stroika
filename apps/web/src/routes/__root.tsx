@@ -1,3 +1,4 @@
+import { AIAgentProvider } from "@/components/ai-agent";
 import { CommandPalette } from "@/components/command-palette";
 import { ThemeProvider } from "@/components/layout/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,9 +17,11 @@ export const Route = createRootRoute({
 function RootComponent() {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-			<Outlet />
-			<CommandPalette />
-			<Toaster richColors />
+			<AIAgentProvider>
+				<Outlet />
+				<CommandPalette />
+				<Toaster richColors />
+			</AIAgentProvider>
 		</ThemeProvider>
 	);
 }

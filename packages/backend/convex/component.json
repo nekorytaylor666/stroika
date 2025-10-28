@@ -1,11 +1,11 @@
 {
-  "definition": "betterAuth:index.ts",
-  "mountPath": "/betterAuth",
-  "use": {
-    "betterAuth": {
-      "type": "definition",
-      "path": "../node_modules/@convex-dev/better-auth/convex.config.ts",
-      "name": "default"
-    }
-  }
+	"definition": "betterAuth:index.ts",
+	"mountPath": "/betterAuth",
+	"use": {
+		"betterAuth": {
+			"type": "definition",
+			"path": "../node_modules/@convex-dev/better-auth/convex.config.ts",
+			"name": "default"
+		}
+	}
 }

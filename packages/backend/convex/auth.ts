@@ -1,14 +1,14 @@
-import { v } from "convex/values";
-import { api, components } from "./_generated/api";
-import { query } from "./_generated/server";
-import type { DataModel, Id } from "./_generated/dataModel";
 import { createClient } from "@convex-dev/better-auth";
-import { betterAuth } from "better-auth";
 import type { AuthFunctions, GenericCtx } from "@convex-dev/better-auth";
 import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
-import authSchema from "./betterAuth/schema";
+import { betterAuth } from "better-auth";
+import { v } from "convex/values";
+import { api, components } from "./_generated/api";
 import { internal } from "./_generated/api";
+import type { DataModel, Id } from "./_generated/dataModel";
+import { query } from "./_generated/server";
 import { ac } from "./betterAuth/permissions";
+import authSchema from "./betterAuth/schema";
 const siteUrl = process.env.SITE_URL!;
 
 // Import the old auth for modification

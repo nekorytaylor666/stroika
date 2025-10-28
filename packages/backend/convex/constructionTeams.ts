@@ -1,13 +1,13 @@
 import { v } from "convex/values";
+import { api, components } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { authComponent, createAuth } from "./auth";
 import {
 	getCurrentUser,
 	getCurrentUserWithOrganization,
 	requireOrganizationAccess,
 } from "./helpers/getCurrentUser";
-import { api, components } from "./_generated/api";
-import { authComponent, createAuth } from "./auth";
 
 // Get team members for a specific project with task statistics
 export const getProjectTeamWithStats = query({

@@ -1,10 +1,10 @@
 import Loader from "@/components/loader";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { authClient } from "@/lib/auth-client";
 import { api } from "@stroika/backend";
 import { Navigate } from "@tanstack/react-router";
 import { useConvexAuth, useQuery } from "convex/react";
 import { OrganizationSetup } from "./organization-setup";
-import { authClient } from "@/lib/auth-client";
 
 interface AuthGuardProps {
 	children: React.ReactNode;

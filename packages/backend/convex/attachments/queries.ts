@@ -114,25 +114,25 @@ export const getAllAttachments = query({
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
-							_id: issue._id,
-							identifier: issue.identifier,
-							title: issue.title,
-							isConstructionTask,
-						}
+								_id: issue._id,
+								identifier: issue.identifier,
+								title: issue.title,
+								isConstructionTask,
+							}
 						: null,
 					uploader: uploader
 						? {
-							_id: uploader._id,
-							name: uploader.name,
-							email: uploader.email,
-							image: uploader.avatarUrl,
-						}
+								_id: uploader._id,
+								name: uploader.name,
+								email: uploader.email,
+								image: uploader.avatarUrl,
+							}
 						: null,
 					constructionProject: constructionProject
 						? {
-							_id: constructionProject._id,
-							name: constructionProject.name,
-						}
+								_id: constructionProject._id,
+								name: constructionProject.name,
+							}
 						: null,
 				};
 			}),
@@ -331,25 +331,25 @@ export const getProjectAttachments = query({
 					fileUrl: fileUrl || attachment.fileUrl, // Use the resolved URL
 					issue: issue
 						? {
-							_id: issue._id,
-							identifier: issue.identifier,
-							title: issue.title,
-							isConstructionTask: true,
-						}
+								_id: issue._id,
+								identifier: issue.identifier,
+								title: issue.title,
+								isConstructionTask: true,
+							}
 						: null,
 					uploader: uploader
 						? {
-							_id: uploader._id,
-							name: uploader.name,
-							email: uploader.email,
-							image: uploader.avatarUrl,
-						}
+								_id: uploader._id,
+								name: uploader.name,
+								email: uploader.email,
+								image: uploader.avatarUrl,
+							}
 						: null,
 					constructionProject: project
 						? {
-							_id: project._id,
-							name: project.name,
-						}
+								_id: project._id,
+								name: project.name,
+							}
 						: null,
 				};
 			}),

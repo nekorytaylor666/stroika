@@ -1,7 +1,7 @@
 import { v } from "convex/values";
+import { api, components } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./helpers/getCurrentUser";
-import { api, components } from "./_generated/api";
 
 export const createCustomRole = mutation({
 	args: {
