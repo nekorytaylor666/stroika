@@ -1,15 +1,15 @@
+import {
+	createThread as createThreadAgent,
+	listMessages,
+	saveMessage,
+} from "@convex-dev/agent";
+import { paginationOptsValidator } from "convex/server";
+import { v } from "convex/values";
 // See the docs at https://docs.convex.dev/agents/messages
 import { components, internal } from "../_generated/api";
 import { action, internalAction, mutation, query } from "../_generated/server";
-import {
-	listMessages,
-	saveMessage,
-	createThread as createThreadAgent,
-} from "@convex-dev/agent";
-import { v } from "convex/values";
-import { agent } from "./agent";
-import { paginationOptsValidator } from "convex/server";
 import { getCurrentUser } from "../helpers/getCurrentUser";
+import { agent } from "./agent";
 
 /**
  * OPTION 1 (BASIC):
@@ -20,7 +20,15 @@ export const generateTextInAnAction = action({
 	args: { prompt: v.string(), threadId: v.string() },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
-		const result = await agent.generateText(ctx, { threadId }, { prompt });
+		// Create agent with context
+		const { createAgentWithContext } = await import("./agent");
+		const agentWithContext = await createAgentWithContext(ctx);
+
+		const result = await agentWithContext.generateText(
+			ctx,
+			{ threadId },
+			{ prompt },
+		);
 		return result.text;
 	},
 });
@@ -52,7 +60,12 @@ export const sendMessage = mutation({
 export const generateResponse = internalAction({
 	args: { promptMessageId: v.string(), threadId: v.string() },
 	handler: async (ctx, { promptMessageId, threadId }) => {
-		await agent.generateText(ctx, { threadId }, { promptMessageId });
+		// Create agent with context
+		const { createAgentWithContext } = await import("./agent");
+		const agentWithContext = await createAgentWithContext(ctx);
+
+		// Generate text with the context-aware agent
+		await agentWithContext.generateText(ctx, { threadId }, { promptMessageId });
 	},
 });
 

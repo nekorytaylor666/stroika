@@ -1,11 +1,11 @@
-import { components, internal } from "./_generated/api";
-import { mutation, query } from "./_generated/server";
 import {
+	createThread as createThreadAgent,
 	listMessages,
 	saveMessage,
-	createThread as createThreadAgent,
 } from "@convex-dev/agent";
 import { v } from "convex/values";
+import { components, internal } from "./_generated/api";
+import { mutation, query } from "./_generated/server";
 import {
 	getCurrentUser,
 	getCurrentUserWithOrganization,
@@ -405,7 +405,7 @@ export const sendMessageWithContext = mutation({
 			prompt: enrichedPrompt,
 		});
 
-		// Schedule response generation
+		// Schedule response generation (the agent will include CSV context)
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
 			promptMessageId: messageId,
