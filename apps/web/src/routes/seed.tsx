@@ -2,7 +2,7 @@ import { SeedButton } from "@/components/admin/seed-button";
 import { Button } from "@/components/ui/button";
 import { api } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { components } from "../../../../packages/backend/convex/_generated/api";
 
 export const Route = createFileRoute("/seed")({
@@ -11,9 +11,12 @@ export const Route = createFileRoute("/seed")({
 
 function RouteComponent() {
 	const createCustomRole = useMutation(api.customPermissions.createCustomRole);
+	const buildAgentContext = useQuery(api.contextData.buildAgentContext);
+	console.log("buildAgentContext", buildAgentContext);
 	return (
 		<div>
 			Hello <SeedButton />
+			<div>{buildAgentContext}</div>
 			<Button
 				onClick={() =>
 					createCustomRole({

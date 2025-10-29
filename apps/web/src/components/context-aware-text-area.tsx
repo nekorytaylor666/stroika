@@ -2,16 +2,6 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
-import {
-	ChevronRight,
-	Folder,
-	File,
-	Building,
-	CheckSquare,
-	FileText,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
 	Command,
 	CommandEmpty,
@@ -25,6 +15,16 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+	Building,
+	CheckSquare,
+	ChevronRight,
+	File,
+	FileText,
+	Folder,
+} from "lucide-react";
+import { useRef, useState } from "react";
 
 interface FileNode {
 	name: string;
@@ -451,7 +451,7 @@ export function ContextTextarea({
 		}
 
 		return (
-			<div className="pointer-events-none absolute inset-0 whitespace-pre-wrap p-3 text-sm text-transparent wrap-break-word">
+			<div className="wrap-break-word pointer-events-none absolute inset-0 whitespace-pre-wrap p-3 text-sm text-transparent">
 				{parts.map((part, index) => {
 					const key = part.isMention
 						? `mention-${part.path}-${index}`
@@ -569,7 +569,7 @@ export function ContextTextarea({
 			</Popover>
 
 			{contexts.length > 0 && (
-				<div className="mt-2 text-xs text-muted-foreground">
+				<div className="mt-2 text-muted-foreground text-xs">
 					<span className="font-medium">Selected contexts:</span>{" "}
 					{contexts.map((c) => c.path).join(", ")}
 				</div>

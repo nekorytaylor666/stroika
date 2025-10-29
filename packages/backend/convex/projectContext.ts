@@ -4,7 +4,7 @@ import {
 	saveMessage,
 } from "@convex-dev/agent";
 import { v } from "convex/values";
-import { components, internal } from "./_generated/api";
+import { api, components, internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import {
 	getCurrentUser,
@@ -322,6 +322,17 @@ export const sendMessageWithContext = mutation({
 		),
 	},
 	handler: async (ctx, { prompt, threadId, contexts }) => {
+		// Get current user
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		// Fetch agent context data
+		const agentContextData = await ctx.runQuery(
+			api.contextData.buildAgentContext,
+		);
+
 		// Fetch detailed context for each mentioned entity
 		let enrichedPrompt = prompt;
 		const contextData = [];
@@ -409,6 +420,7 @@ export const sendMessageWithContext = mutation({
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
 			promptMessageId: messageId,
+			contextData: agentContextData || "",
 		});
 	},
 });

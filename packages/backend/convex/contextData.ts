@@ -1,7 +1,8 @@
-import { internal } from "../_generated/api";
-import { Doc, type Id } from "../_generated/dataModel";
-import { internalQuery, query } from "../_generated/server";
-import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
+import { api, components } from "./_generated/api";
+import { type Id } from "./_generated/dataModel";
+import { query } from "./_generated/server";
+import { authComponent, createAuth } from "./auth";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 /**
  * Format data as CSV string
@@ -33,10 +34,25 @@ function formatAsCSV(headers: string[], rows: any[][]): string {
 export const getOrganizationContextCSV = query({
 	handler: async (ctx) => {
 		const { organization, user } = await getCurrentUserWithOrganization(ctx);
+		console.log("organization", organization);
+		console.log("user", user);
+
 		if (!user || !organization) {
 			return null;
 		}
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
 
+		const users = await auth.api.listUsers({
+			query: { limit: 1000, offset: 0 },
+			headers,
+		});
+
+		const members = await ctx.runQuery(
+			components.betterAuth.members.listMembersByOrg,
+			{
+				organizationId: organization.id,
+			},
+		);
 		// Get all projects
 		const projects = await ctx.db
 			.query("constructionProjects")
@@ -48,11 +64,11 @@ export const getOrganizationContextCSV = query({
 		// Get project-related data
 		const projectRows: any[][] = [];
 		for (const project of projects) {
-			const [status, lead, priority] = await Promise.all([
-				ctx.db.get(project.statusId as Id<"statuses">),
-				ctx.db.get(project.leadId as Id<"users">),
+			const [status, priority] = await Promise.all([
+				ctx.db.get(project.statusId as Id<"status">),
 				ctx.db.get(project.priorityId as Id<"priorities">),
 			]);
+			const lead = users.users.find((user) => user.id === project.leadId);
 
 			projectRows.push([
 				project._id,
@@ -101,8 +117,10 @@ export const getOrganizationContextCSV = query({
 		const taskRows: any[][] = [];
 		for (const task of tasks) {
 			const [status, assignee, priority, project] = await Promise.all([
-				ctx.db.get(task.statusId as Id<"statuses">),
-				task.assigneeId ? ctx.db.get(task.assigneeId as Id<"users">) : null,
+				ctx.db.get(task.statusId as Id<"status">),
+				task.assigneeId
+					? users.users.find((user) => user.id === task.assigneeId)
+					: null,
 				ctx.db.get(task.priorityId as Id<"priorities">),
 				task.projectId
 					? ctx.db.get(task.projectId as Id<"constructionProjects">)
@@ -155,108 +173,57 @@ export const getOrganizationContextCSV = query({
 		);
 
 		// Get all organization members
-		const members = await ctx.db
-			.query("users")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization.id),
-			)
-			.collect();
 
 		// Get member-related data
-		const memberRows: any[][] = [];
+		const memberRows: string[][] = [];
 		for (const member of members) {
 			// Get department and position
-			let departmentName = "";
-			let positionName = "";
-
-			if (member.departmentId) {
-				const department = await ctx.db.get(
-					member.departmentId as Id<"departments">,
-				);
-				departmentName = department?.displayName || "";
-			}
-
-			if (member.organizationalPositionId) {
-				const position = await ctx.db.get(
-					member.organizationalPositionId as Id<"organizationalPositions">,
-				);
-				positionName = position?.displayName || "";
-			}
 
 			memberRows.push([
-				member._id,
-				member.name,
-				member.email,
-				member.phone || "",
-				departmentName,
-				positionName,
-				member.status || "offline",
-				member.joinedDate || "",
+				member.userId,
+				member.user.name,
+				member.user.email,
+				member.role,
 			]);
 		}
 
 		const memberCSV = formatAsCSV(
-			[
-				"user_id",
-				"name",
-				"email",
-				"phone",
-				"department",
-				"position",
-				"status",
-				"joined_date",
-			],
+			["user_id", "name", "email", "role"],
 			memberRows,
 		);
 
 		// Get all statuses
-		const statuses = await ctx.db
-			.query("statuses")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization.id),
-			)
-			.collect();
+		const statuses = await ctx.db.query("status").collect();
 
 		const statusRows = statuses.map((status) => [
 			status._id,
 			status.name,
 			status.color,
-			status.type,
-			status.isDefault ? "true" : "false",
+			status.iconName,
 		]);
 
 		const statusCSV = formatAsCSV(
-			["status_id", "name", "color", "type", "is_default"],
+			["status_id", "name", "color", "icon_name"],
 			statusRows,
 		);
 
 		// Get all priorities
-		const priorities = await ctx.db
-			.query("priorities")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization.id),
-			)
-			.collect();
+		const priorities = await ctx.db.query("priorities").collect();
 
 		const priorityRows = priorities.map((priority) => [
 			priority._id,
 			priority.name,
 			priority.color,
-			priority.isDefault ? "true" : "false",
+			priority.iconName,
 		]);
 
 		const priorityCSV = formatAsCSV(
-			["priority_id", "name", "color", "is_default"],
+			["priority_id", "name", "color", "icon_name"],
 			priorityRows,
 		);
 
 		// Get all labels
-		const labels = await ctx.db
-			.query("labels")
-			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization.id),
-			)
-			.collect();
+		const labels = await ctx.db.query("labels").collect();
 
 		const labelRows = labels.map((label) => [
 			label._id,
@@ -288,11 +255,15 @@ export const getOrganizationContextCSV = query({
 /**
  * Build comprehensive agent context with CSV data
  */
-export const buildAgentContext = internalQuery({
+export const buildAgentContext = query({
 	handler: async (ctx) => {
-		const csvData = await ctx.runQuery(
-			internal.agent.contextData.getOrganizationContextCSV,
-		);
+		let csvData;
+		try {
+			csvData = await ctx.runQuery(api.contextData.getOrganizationContextCSV);
+		} catch (error) {
+			console.error("Error building agent context", error);
+			return "";
+		}
 
 		if (!csvData) {
 			return "";

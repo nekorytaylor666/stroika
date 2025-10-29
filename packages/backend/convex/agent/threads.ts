@@ -1,3 +1,5 @@
+import { openai } from "@ai-sdk/openai";
+import { Agent } from "@convex-dev/agent";
 import {
 	createThread as createThreadAgent,
 	listMessages,
@@ -6,10 +8,10 @@ import {
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
 // See the docs at https://docs.convex.dev/agents/messages
-import { components, internal } from "../_generated/api";
+import { api, components, internal } from "../_generated/api";
 import { action, internalAction, mutation, query } from "../_generated/server";
 import { getCurrentUser } from "../helpers/getCurrentUser";
-import { agent } from "./agent";
+import { agent, createAgentWithContext } from "./agent";
 
 /**
  * OPTION 1 (BASIC):
@@ -20,15 +22,9 @@ export const generateTextInAnAction = action({
 	args: { prompt: v.string(), threadId: v.string() },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
-		// Create agent with context
-		const { createAgentWithContext } = await import("./agent");
-		const agentWithContext = await createAgentWithContext(ctx);
-
-		const result = await agentWithContext.generateText(
-			ctx,
-			{ threadId },
-			{ prompt },
-		);
+		// Note: This example uses the default agent without context.
+		// For context-aware responses, use the sendMessage mutation instead.
+		const result = await agent.generateText(ctx, { threadId }, { prompt });
 		return result.text;
 	},
 });
@@ -44,6 +40,14 @@ export const sendMessage = mutation({
 	args: { prompt: v.string(), threadId: v.string() },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		// Fetch context data in the mutation (which has auth)
+		const contextData = await ctx.runQuery(api.contextData.buildAgentContext);
+
 		const { messageId } = await saveMessage(ctx, components.agent, {
 			threadId,
 			prompt,
@@ -51,6 +55,7 @@ export const sendMessage = mutation({
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
 			promptMessageId: messageId,
+			contextData: contextData || "",
 		});
 	},
 });
@@ -58,11 +63,14 @@ export const sendMessage = mutation({
 // Generate a response to a user message.
 // Any clients listing the messages will automatically get the new message.
 export const generateResponse = internalAction({
-	args: { promptMessageId: v.string(), threadId: v.string() },
-	handler: async (ctx, { promptMessageId, threadId }) => {
+	args: {
+		promptMessageId: v.string(),
+		threadId: v.string(),
+		contextData: v.string(),
+	},
+	handler: async (ctx, { promptMessageId, threadId, contextData }) => {
 		// Create agent with context
-		const { createAgentWithContext } = await import("./agent");
-		const agentWithContext = await createAgentWithContext(ctx);
+		const agentWithContext = await createAgentWithContext(ctx, contextData);
 
 		// Generate text with the context-aware agent
 		await agentWithContext.generateText(ctx, { threadId }, { promptMessageId });

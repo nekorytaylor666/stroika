@@ -1,15 +1,13 @@
 import { openai } from "@ai-sdk/openai";
 import { Agent } from "@convex-dev/agent";
-import { api, components, internal } from "../_generated/api";
+import { components } from "../_generated/api";
 import type { ActionCtx } from "../_generated/server";
 
 // Create a function that returns an agent with dynamic context
-export const createAgentWithContext = async (ctx: ActionCtx) => {
-	// Get the CSV context data
-	const contextData = await ctx.runQuery(
-		internal.agent.contextData.buildAgentContext,
-	);
-
+export const createAgentWithContext = async (
+	ctx: ActionCtx,
+	contextData: string,
+): Promise<Agent> => {
 	return new Agent(components.agent, {
 		name: "Stroika Assistant",
 		languageModel: openai.chat("gpt-4o-mini"),

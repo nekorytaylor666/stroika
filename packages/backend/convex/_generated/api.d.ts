@@ -20,6 +20,7 @@ import type * as betterAuth__generated_server from "../betterAuth/_generated/ser
 import type * as betterAuth_adapter from "../betterAuth/adapter.js";
 import type * as betterAuth_auth from "../betterAuth/auth.js";
 import type * as betterAuth_customPermissions from "../betterAuth/customPermissions.js";
+import type * as betterAuth_members from "../betterAuth/members.js";
 import type * as betterAuth_permissions from "../betterAuth/permissions.js";
 import type * as betterAuth_team from "../betterAuth/team.js";
 import type * as betterAuth_users from "../betterAuth/users.js";
@@ -29,6 +30,7 @@ import type * as comments from "../comments.js";
 import type * as constructionProjects from "../constructionProjects.js";
 import type * as constructionTasks from "../constructionTasks.js";
 import type * as constructionTeams from "../constructionTeams.js";
+import type * as contextData from "../contextData.js";
 import type * as customPermissions from "../customPermissions.js";
 import type * as debug from "../debug.js";
 import type * as debugAuth from "../debugAuth.js";
@@ -109,6 +111,7 @@ declare const fullApi: ApiFromModules<{
   "betterAuth/adapter": typeof betterAuth_adapter;
   "betterAuth/auth": typeof betterAuth_auth;
   "betterAuth/customPermissions": typeof betterAuth_customPermissions;
+  "betterAuth/members": typeof betterAuth_members;
   "betterAuth/permissions": typeof betterAuth_permissions;
   "betterAuth/team": typeof betterAuth_team;
   "betterAuth/users": typeof betterAuth_users;
@@ -118,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   constructionProjects: typeof constructionProjects;
   constructionTasks: typeof constructionTasks;
   constructionTeams: typeof constructionTeams;
+  contextData: typeof contextData;
   customPermissions: typeof customPermissions;
   debug: typeof debug;
   debugAuth: typeof debugAuth;
@@ -2101,6 +2105,14 @@ export declare const components: {
           resource: string;
           role: string;
         },
+        any
+      >;
+    };
+    members: {
+      listMembersByOrg: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
         any
       >;
     };

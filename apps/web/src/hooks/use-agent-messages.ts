@@ -1,13 +1,13 @@
-import { useMutation, useQuery } from "convex/react";
+import {
+	type UIMessage,
+	optimisticallySendMessage,
+	toUIMessages,
+	useThreadMessages,
+} from "@convex-dev/agent/react";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
+import { useMutation, useQuery } from "convex/react";
 import { useCallback } from "react";
-import {
-	useThreadMessages,
-	toUIMessages,
-	optimisticallySendMessage,
-	type UIMessage,
-} from "@convex-dev/agent/react";
 
 /**
  * Hook to manage messages in a thread (basic pattern without streaming)

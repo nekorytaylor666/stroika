@@ -1,36 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Button } from "@/components/ui/button";
+import { ContextTextarea } from "@/components/context-aware-text-area";
 import {
-	X,
-	Send,
-	Sparkles,
-	Plus,
-	ListTodo,
-	FolderPlus,
-	Settings,
-	MessageSquare,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-	ChatContainerRoot,
 	ChatContainerContent,
+	ChatContainerRoot,
 	ChatContainerScrollAnchor,
 } from "@/components/prompt-kit/chat-container";
+import { Loader } from "@/components/prompt-kit/loader";
 import {
 	Message,
 	MessageAvatar,
 	MessageContent,
 } from "@/components/prompt-kit/message";
-import { Loader } from "@/components/prompt-kit/loader";
-import { useAgentThreads } from "@/hooks/use-agent-threads";
-import { useAgentMessages } from "@/hooks/use-agent-messages";
-import type { Id } from "@stroika/backend";
-import { ContextTextarea } from "@/components/context-aware-text-area";
-import { useQuery, useMutation } from "convex/react";
-import { api } from "@stroika/backend";
+import { Button } from "@/components/ui/button";
 import {
 	Select,
 	SelectContent,
@@ -38,6 +20,25 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useAgentMessages } from "@/hooks/use-agent-messages";
+import { useAgentThreads } from "@/hooks/use-agent-threads";
+import { cn } from "@/lib/utils";
+import type { Id } from "@stroika/backend";
+import { api } from "@stroika/backend";
+import { useMutation, useQuery } from "convex/react";
+import {
+	FolderPlus,
+	ListTodo,
+	MessageSquare,
+	Plus,
+	Send,
+	Settings,
+	Sparkles,
+	X,
+} from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { Response } from "../ai-elements/response";
 
 interface MentionContext {
 	id: string;
@@ -216,7 +217,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
 						onClick={onClose}
-						className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+						className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
 					/>
 
 					{/* Sidebar Panel */}
@@ -225,17 +226,17 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 						animate={{ x: 0 }}
 						exit={{ x: "100%" }}
 						transition={{ type: "spring", damping: 30, stiffness: 300 }}
-						className="fixed right-0 top-0 h-full w-full sm:w-[480px] bg-background border-l shadow-2xl z-50 flex flex-col"
+						className="fixed top-0 right-0 z-50 flex h-full w-full flex-col border-l bg-background shadow-2xl sm:w-2xl"
 					>
 						{/* Header */}
-						<div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/10 to-purple-500/10">
-							<div className="flex items-center gap-2 flex-1">
-								<div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center flex-shrink-0">
+						<div className="flex items-center justify-between border-b bg-gradient-to-r from-primary/10 to-purple-500/10 p-4">
+							<div className="flex flex-1 items-center gap-2">
+								<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-purple-500">
 									<Sparkles className="h-5 w-5 text-white" />
 								</div>
-								<div className="flex-1 min-w-0">
-									<h2 className="text-lg font-semibold">AI Агент</h2>
-									<p className="text-xs text-muted-foreground truncate">
+								<div className="min-w-0 flex-1">
+									<h2 className="font-semibold text-lg">AI Агент</h2>
+									<p className="truncate text-muted-foreground text-xs">
 										{currentThread?.title || "Выберите или создайте чат"}
 									</p>
 								</div>
@@ -263,7 +264,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 
 						{/* Thread Selector */}
 						{threads && threads.length > 0 && (
-							<div className="p-4 border-b">
+							<div className="border-b p-4">
 								<Select
 									value={currentThreadId || undefined}
 									onValueChange={(value) =>
@@ -281,7 +282,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 													value={thread._id}
 													className="flex items-center justify-between"
 												>
-													<div className="flex items-center gap-2 flex-1">
+													<div className="flex flex-1 items-center gap-2">
 														<MessageSquare className="h-4 w-4" />
 														<span className="truncate">{thread.title}</span>
 													</div>
@@ -293,46 +294,17 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 							</div>
 						)}
 
-						{/* Quick Actions */}
-						{currentThreadId && (
-							<div className="p-4 border-b bg-muted/30">
-								<p className="text-xs font-medium text-muted-foreground mb-3">
-									Быстрые действия
-								</p>
-								<div className="grid grid-cols-2 gap-2">
-									{quickActions.map((action) => (
-										<Button
-											key={action.label}
-											variant="outline"
-											className="h-auto flex-col items-start gap-1 p-3 hover:bg-primary/5 hover:border-primary/50 transition-colors"
-											onClick={action.action}
-										>
-											<div className="flex items-center gap-2 w-full">
-												<action.icon className="h-4 w-4 text-primary" />
-												<span className="text-sm font-medium">
-													{action.label}
-												</span>
-											</div>
-											<span className="text-xs text-muted-foreground text-left">
-												{action.description}
-											</span>
-										</Button>
-									))}
-								</div>
-							</div>
-						)}
-
 						{/* Chat Messages */}
 						<div className="flex-1 overflow-hidden">
 							{!currentThreadId ? (
-								<div className="h-full flex items-center justify-center p-8 text-center">
+								<div className="flex h-full items-center justify-center p-8 text-center">
 									<div className="space-y-4">
-										<div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto">
+										<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20">
 											<MessageSquare className="h-8 w-8 text-primary" />
 										</div>
 										<div>
-											<h3 className="font-semibold mb-2">Начните новый чат</h3>
-											<p className="text-sm text-muted-foreground mb-4">
+											<h3 className="mb-2 font-semibold">Начните новый чат</h3>
+											<p className="mb-4 text-muted-foreground text-sm">
 												Создайте новый чат, чтобы начать общение с AI-помощником
 											</p>
 											<Button onClick={handleNewChat} className="gap-2">
@@ -343,7 +315,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 									</div>
 								</div>
 							) : messagesLoading ? (
-								<div className="h-full flex items-center justify-center">
+								<div className="flex h-full items-center justify-center">
 									<Loader variant="circular" />
 								</div>
 							) : (
@@ -364,7 +336,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 											{messages.map((message, index) => (
 												<Message
 													key={message.key || `message-${index}`}
-													className="animate-in fade-in slide-in-from-bottom-2"
+													className="fade-in slide-in-from-bottom-2 animate-in"
 												>
 													<MessageAvatar
 														src={
@@ -380,13 +352,13 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 													<div className="flex-1">
 														<MessageContent
 															className={cn(
-																"max-w-[90%]",
+																"max-w-[90%] px-4 py-2 text-sm",
 																message.role === "assistant"
-																	? "bg-primary/10 border border-primary/20"
+																	? "border border-primary/20 bg-primary/10"
 																	: "bg-secondary",
 															)}
 														>
-															{message.text || "..."}
+															<Response>{message.text || "..."}</Response>
 														</MessageContent>
 													</div>
 												</Message>
@@ -401,7 +373,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 
 						{/* Input Area */}
 						{currentThreadId && (
-							<div className="p-4 border-t bg-muted/30">
+							<div className="border-t bg-muted/30 p-4">
 								<div className="space-y-2">
 									<div className="relative">
 										<ContextTextarea
@@ -425,26 +397,26 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 												size="icon"
 												onClick={handleSubmit}
 												disabled={!input.trim()}
-												className="rounded-full h-8 w-8 bg-primary hover:bg-primary/90"
+												className="h-8 w-8 rounded-full bg-primary hover:bg-primary/90"
 											>
 												<Send className="h-4 w-4" />
 											</Button>
 										</div>
 									</div>
 									{contexts.length > 0 && (
-										<div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+										<div className="flex flex-wrap gap-1 text-muted-foreground text-xs">
 											<span className="font-medium">Упомянуто:</span>
 											{contexts.map((ctx) => (
 												<span
 													key={ctx.id}
-													className="bg-accent/50 px-2 py-0.5 rounded"
+													className="rounded bg-accent/50 px-2 py-0.5"
 												>
 													{ctx.path}
 												</span>
 											))}
 										</div>
 									)}
-									<p className="text-xs text-muted-foreground text-center">
+									<p className="text-center text-muted-foreground text-xs">
 										AI может допускать ошибки. Проверяйте важную информацию.
 									</p>
 								</div>
