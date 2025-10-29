@@ -211,42 +211,8 @@ export const uploadToProject = mutation({
 			throw new Error("No default status or priority found");
 		}
 
-		// Create a placeholder issue for project file attachments
-		const projectFileIssue = await ctx.db
-			.query("issues")
-			.filter((q) =>
-				q.and(
-					q.eq(q.field("title"), "[Project Files]"),
-					q.eq(q.field("projectId"), args.projectId),
-				),
-			)
-			.first();
-
-		let issueId = projectFileIssue?._id;
-
-		if (!issueId) {
-			// Create a project files issue if it doesn't exist
-			issueId = await ctx.db.insert("issues", {
-				organizationId: organization._id,
-				title: "[Project Files]",
-				description: "Container for project file attachments",
-				identifier: `PROJECT-FILES-${Date.now()}`,
-				projectId: args.projectId,
-				statusId: defaultStatus._id,
-				priorityId: defaultPriority._id,
-				assigneeId: undefined,
-				labelIds: [],
-				createdAt: new Date().toISOString(),
-				cycleId: "default",
-				rank: "0",
-				dueDate: undefined,
-				isConstructionTask: true,
-				parentTaskId: undefined,
-			});
-		}
-
 		await ctx.db.insert("issueAttachments", {
-			issueId,
+			issueId: undefined,
 			projectId: args.projectId,
 			fileName: args.fileName,
 			fileUrl: args.storageId,

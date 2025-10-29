@@ -12,15 +12,8 @@ import {
 	FolderPlus,
 	Settings,
 	MessageSquare,
-	Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-	PromptInput,
-	PromptInputTextarea,
-	PromptInputActions,
-	PromptInputAction,
-} from "@/components/prompt-kit/prompt-input";
 import {
 	ChatContainerRoot,
 	ChatContainerContent,
@@ -34,7 +27,10 @@ import {
 import { Loader } from "@/components/prompt-kit/loader";
 import { useAgentThreads } from "@/hooks/use-agent-threads";
 import { useAgentMessages } from "@/hooks/use-agent-messages";
-import type { Id } from "../../../../../../packages/backend/convex/_generated/dataModel";
+import type { Id } from "@stroika/backend";
+import { ContextTextarea } from "@/components/context-aware-text-area";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@stroika/backend";
 import {
 	Select,
 	SelectContent,
@@ -42,7 +38,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface MentionContext {
+	id: string;
+	path: string;
+	start: number;
+	end: number;
+	entityType?: "project" | "task" | "document";
+	entityId?: string;
+}
 
 interface AIAgentSidebarProps {
 	isOpen: boolean;
@@ -53,8 +57,33 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 	const [input, setInput] = useState("");
 	const [currentThreadId, setCurrentThreadId] =
 		useState<Id<"_agent_threads"> | null>(null);
+	const [contexts, setContexts] = useState<MentionContext[]>([]);
 	const scrollRef = useRef<HTMLDivElement>(null);
 
+	// Use the context-aware message sending
+	const sendMessageWithContext = useMutation(
+		api.projectContext.sendMessageWithContext,
+	);
+
+	// Preload all mentionable entities when sidebar opens
+	// These load once and are filtered on client side
+	const allProjects = useQuery(
+		api.projectContext.searchProjectsForMentions,
+		isOpen ? { searchQuery: "", limit: 100 } : "skip",
+	);
+
+	const allTasks = useQuery(
+		api.projectContext.searchTasksForMentions,
+		isOpen ? { searchQuery: "", limit: 100 } : "skip",
+	);
+
+	const allDocuments = useQuery(
+		api.projectContext.searchDocumentsForMentions,
+		isOpen ? { searchQuery: "", limit: 100 } : "skip",
+	);
+	console.log("allProjects", allProjects);
+	console.log("allTasks", allTasks);
+	console.log("allDocuments", allDocuments);
 	const {
 		threads,
 		isLoading: threadsLoading,
@@ -104,14 +133,32 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 		if (!input.trim() || !currentThreadId) return;
 
 		const messageText = input;
+		const currentContexts = contexts;
 		setInput("");
+		setContexts([]); // Clear contexts after sending
 
 		try {
-			await sendMessage(messageText);
+			// If we have contexts, use the context-aware sending
+			if (currentContexts.length > 0) {
+				await sendMessageWithContext({
+					prompt: messageText,
+					threadId: currentThreadId,
+					contexts: currentContexts.map((ctx) => ({
+						id: ctx.id,
+						path: ctx.path,
+						entityType: ctx.entityType,
+						entityId: ctx.entityId,
+					})),
+				});
+			} else {
+				// Use regular message sending
+				await sendMessage(messageText);
+			}
 		} catch (error) {
 			console.error("Failed to send message:", error);
-			// Restore input on error
+			// Restore input and contexts on error
 			setInput(messageText);
+			setContexts(currentContexts);
 		}
 	};
 
@@ -155,7 +202,9 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 		},
 	];
 
-	const currentThread = threads?.find((t) => t.id === currentThreadId);
+	const currentThread = threads?.find(
+		(t: { id: string; title: string; _id: string }) => t.id === currentThreadId,
+	);
 
 	return (
 		<AnimatePresence>
@@ -199,8 +248,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 									className="rounded-full"
 									title="Новый чат"
 								>
-									a
-									<MessageSquare classNme="h-5 w-5" />
+									<MessageSquare className="h-5 w-5" />
 								</Button>
 								<Button
 									variant="ghost"
@@ -226,18 +274,20 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 										<SelectValue placeholder="Выберите чат" />
 									</SelectTrigger>
 									<SelectContent>
-										{threads.map((thread) => (
-											<SelectItem
-												key={thread._id}
-												value={thread._id}
-												className="flex items-center justify-between"
-											>
-												<div className="flex items-center gap-2 flex-1">
-													<MessageSquare className="h-4 w-4" />
-													<span className="truncate">{thread.title}</span>
-												</div>
-											</SelectItem>
-										))}
+										{threads.map(
+											(thread: { _id: string; title: string; id: string }) => (
+												<SelectItem
+													key={thread._id}
+													value={thread._id}
+													className="flex items-center justify-between"
+												>
+													<div className="flex items-center gap-2 flex-1">
+														<MessageSquare className="h-4 w-4" />
+														<span className="truncate">{thread.title}</span>
+													</div>
+												</SelectItem>
+											),
+										)}
 									</SelectContent>
 								</Select>
 							</div>
@@ -313,7 +363,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 											)}
 											{messages.map((message, index) => (
 												<Message
-													key={message.key || message._id || index}
+													key={message.key || `message-${index}`}
 													className="animate-in fade-in slide-in-from-bottom-2"
 												>
 													<MessageAvatar
@@ -336,7 +386,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 																	: "bg-secondary",
 															)}
 														>
-															{message.text || message.content || "..."}
+															{message.text || "..."}
 														</MessageContent>
 													</div>
 												</Message>
@@ -352,34 +402,52 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 						{/* Input Area */}
 						{currentThreadId && (
 							<div className="p-4 border-t bg-muted/30">
-								<PromptInput
-									value={input}
-									onValueChange={setInput}
-									onSubmit={handleSubmit}
-									isLoading={false}
-									maxHeight={200}
-									className="bg-background"
-								>
-									<PromptInputTextarea
-										placeholder="Напишите что нужно сделать..."
-										className="min-h-[44px]"
-									/>
-									<PromptInputActions>
-										<PromptInputAction tooltip="Отправить сообщение" side="top">
+								<div className="space-y-2">
+									<div className="relative">
+										<ContextTextarea
+											value={input}
+											onValueChange={setInput}
+											onContextChange={setContexts}
+											placeholder="Напишите что нужно сделать... (Type @ to mention)"
+											projects={allProjects || []}
+											tasks={allTasks || []}
+											documents={allDocuments || []}
+											className="min-h-[100px] w-full rounded-lg border border-input bg-background px-3 py-2"
+											onKeyDown={(e) => {
+												if (e.key === "Enter" && !e.shiftKey) {
+													e.preventDefault();
+													handleSubmit();
+												}
+											}}
+										/>
+										<div className="absolute right-2 bottom-2">
 											<Button
 												size="icon"
 												onClick={handleSubmit}
 												disabled={!input.trim()}
-												className="rounded-full h-9 w-9 bg-primary hover:bg-primary/90"
+												className="rounded-full h-8 w-8 bg-primary hover:bg-primary/90"
 											>
 												<Send className="h-4 w-4" />
 											</Button>
-										</PromptInputAction>
-									</PromptInputActions>
-								</PromptInput>
-								<p className="text-xs text-muted-foreground text-center mt-2">
-									AI может допускать ошибки. Проверяйте важную информацию.
-								</p>
+										</div>
+									</div>
+									{contexts.length > 0 && (
+										<div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+											<span className="font-medium">Упомянуто:</span>
+											{contexts.map((ctx) => (
+												<span
+													key={ctx.id}
+													className="bg-accent/50 px-2 py-0.5 rounded"
+												>
+													{ctx.path}
+												</span>
+											))}
+										</div>
+									)}
+									<p className="text-xs text-muted-foreground text-center">
+										AI может допускать ошибки. Проверяйте важную информацию.
+									</p>
+								</div>
 							</div>
 						)}
 					</motion.div>

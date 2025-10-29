@@ -54,7 +54,7 @@ export const authComponent = createClient<DataModel, typeof authSchema>(
 		local: {
 			schema: authSchema,
 		},
-		verbose: true,
+		verbose: false,
 
 		triggers: {
 			user: {
