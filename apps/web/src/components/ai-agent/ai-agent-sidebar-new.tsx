@@ -2,6 +2,17 @@
 
 import { ContextTextarea } from "@/components/context-aware-text-area";
 import {
+	Context,
+	ContextCacheUsage,
+	ContextContent,
+	ContextContentBody,
+	ContextContentFooter,
+	ContextContentHeader,
+	ContextInputUsage,
+	ContextOutputUsage,
+	ContextTrigger,
+} from "@/components/ai-elements/context";
+import {
 	ChatContainerContent,
 	ChatContainerRoot,
 	ChatContainerScrollAnchor,
@@ -37,7 +48,7 @@ import {
 	X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Response } from "../ai-elements/response";
 
 interface MentionContext {
@@ -52,6 +63,11 @@ interface MentionContext {
 interface AIAgentSidebarProps {
 	isOpen: boolean;
 	onClose: () => void;
+}
+
+// Estimate tokens from text (rough approximation: ~4 chars per token)
+function estimateTokens(text: string): number {
+	return Math.ceil(text.length / 4);
 }
 
 export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
@@ -207,6 +223,38 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 		(t: { id: string; title: string; _id: string }) => t.id === currentThreadId,
 	);
 
+	// Calculate estimated token usage for the current thread
+	const tokenUsage = useMemo(() => {
+		if (!messages || messages.length === 0) {
+			return {
+				inputTokens: 0,
+				outputTokens: 0,
+				totalTokens: 0,
+			};
+		}
+
+		let inputTokens = 0;
+		let outputTokens = 0;
+
+		for (const message of messages) {
+			const tokens = estimateTokens(message.text || "");
+			if (message.role === "user") {
+				inputTokens += tokens;
+			} else if (message.role === "assistant") {
+				outputTokens += tokens;
+			}
+		}
+
+		return {
+			inputTokens,
+			outputTokens,
+			totalTokens: inputTokens + outputTokens,
+		};
+	}, [messages]);
+
+	// GPT-4o-mini has 128k token context window
+	const MAX_TOKENS = 128000;
+
 	return (
 		<AnimatePresence>
 			{isOpen && (
@@ -242,6 +290,30 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
+								{/* Context Window Indicator */}
+								<Context
+									maxTokens={MAX_TOKENS}
+									usedTokens={tokenUsage.totalTokens}
+									usage={{
+										inputTokens: tokenUsage.inputTokens,
+										outputTokens: tokenUsage.outputTokens,
+										totalTokens: tokenUsage.totalTokens,
+									}}
+									modelId="openai:gpt-4o-mini"
+								>
+									<ContextTrigger />
+									<ContextContent>
+										<ContextContentHeader />
+										<ContextContentBody>
+											<div className="space-y-2">
+												<ContextInputUsage />
+												<ContextOutputUsage />
+												<ContextCacheUsage />
+											</div>
+										</ContextContentBody>
+										<ContextContentFooter />
+									</ContextContent>
+								</Context>
 								<Button
 									variant="ghost"
 									size="icon"
