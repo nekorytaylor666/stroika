@@ -1,8 +1,8 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { authComponent, createAuth } from "./auth";
 import { getCurrentUser } from "./helpers/getCurrentUser";
-import type { Id } from "./_generated/dataModel";
 
 // Get all organizations for the current user
 export const getUserOrganizations = query({
@@ -46,7 +46,7 @@ export const getUserOrganizations = query({
 						joinedAt: membership.createdAt,
 					},
 				};
-			})
+			}),
 		);
 
 		return organizations.filter(Boolean);
@@ -76,8 +76,8 @@ export const getOrganization = query({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
@@ -124,7 +124,7 @@ export const createOrganization = mutation({
 		const response = await auth.api.createOrganization({
 			body: {
 				name: args.name,
-				slug: args.slug || args.name.toLowerCase().replace(/\s+/g, '-'),
+				slug: args.slug || args.name.toLowerCase().replace(/\s+/g, "-"),
 				metadata: args.metadata,
 			},
 			headers: await authComponent.getHeaders(ctx),
@@ -164,8 +164,8 @@ export const updateOrganization = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
@@ -209,8 +209,8 @@ export const switchOrganization = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
@@ -253,8 +253,8 @@ export const getOrganizationMembers = query({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
@@ -282,7 +282,9 @@ export const getOrganizationMembers = query({
 				if (betterAuthUser) {
 					customUser = await ctx.db
 						.query("users")
-						.withIndex("by_betterAuthId", (q) => q.eq("betterAuthId", member.userId))
+						.withIndex("by_betterAuthId", (q) =>
+							q.eq("betterAuthId", member.userId),
+						)
 						.first();
 
 					if (!customUser) {
@@ -296,16 +298,18 @@ export const getOrganizationMembers = query({
 
 				return {
 					...member,
-					user: betterAuthUser ? {
-						id: betterAuthUser._id,
-						email: betterAuthUser.email,
-						name: betterAuthUser.name,
-						image: betterAuthUser.image,
-						// Include custom user data if available
-						customData: customUser,
-					} : null,
+					user: betterAuthUser
+						? {
+								id: betterAuthUser._id,
+								email: betterAuthUser.email,
+								name: betterAuthUser.name,
+								image: betterAuthUser.image,
+								// Include custom user data if available
+								customData: customUser,
+							}
+						: null,
 				};
-			})
+			}),
 		);
 
 		return membersWithDetails.filter((m) => m.user !== null);
@@ -333,12 +337,15 @@ export const inviteToOrganization = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
-		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+		if (
+			!membership ||
+			(membership.role !== "admin" && membership.role !== "owner")
+		) {
 			throw new Error("Only admins and owners can invite members");
 		}
 
@@ -377,12 +384,15 @@ export const removeMember = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
-		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+		if (
+			!membership ||
+			(membership.role !== "admin" && membership.role !== "owner")
+		) {
 			throw new Error("Only admins and owners can remove members");
 		}
 
@@ -420,12 +430,15 @@ export const updateMemberRole = mutation({
 			.filter((q) =>
 				q.and(
 					q.eq(q.field("organizationId"), args.organizationId),
-					q.eq(q.field("userId"), authUser.userId)
-				)
+					q.eq(q.field("userId"), authUser.userId),
+				),
 			)
 			.first();
 
-		if (!membership || (membership.role !== "admin" && membership.role !== "owner")) {
+		if (
+			!membership ||
+			(membership.role !== "admin" && membership.role !== "owner")
+		) {
 			throw new Error("Only admins and owners can update member roles");
 		}
 

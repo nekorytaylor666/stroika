@@ -1,12 +1,12 @@
 import { v } from "convex/values";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { auth, authComponent, createAuth } from "./auth";
 import {
 	getCurrentUser,
 	getCurrentUserWithOrganization,
 } from "./helpers/getCurrentUser";
-import { auth, authComponent, createAuth } from "./auth";
-import type { Id } from "./_generated/dataModel";
 
 // Queries
 export const getAll = query({

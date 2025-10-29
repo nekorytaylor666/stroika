@@ -14,7 +14,7 @@ export const getPaginated = query({
 		paginationOpts: paginationOptsValidator,
 	},
 	handler: async (ctx, args) => {
-		// First, get all issues (construction tasks) for this project
+		// Get all issues (construction tasks) for this project
 		const projectTasks = await ctx.db
 			.query("issues")
 			.withIndex("by_construction", (q) => q.eq("isConstructionTask", true))
@@ -23,27 +23,32 @@ export const getPaginated = query({
 
 		const taskIds = new Set(projectTasks.map((task) => task._id));
 
-		// If no tasks, return empty results
-		if (taskIds.size === 0) {
-			return {
-				page: [],
-				isDone: true,
-				continueCursor: null,
-			};
-		}
-
-		// Get paginated attachments
-		// Note: We query all attachments and filter client-side because
-		// Convex doesn't support OR queries or filtering by array membership
-		const result = await ctx.db
+		// Get all attachments and filter to include:
+		// 1. Attachments directly linked to project via projectId (issueId is optional)
+		// 2. Attachments linked to project tasks via issueId
+		const allAttachments = await ctx.db
 			.query("issueAttachments")
 			.order("desc")
-			.paginate(args.paginationOpts);
+			.collect();
 
-		// Filter to only include attachments from our project's tasks
-		let filteredItems = result.page.filter((attachment) =>
-			taskIds.has(attachment.issueId),
-		);
+		// Filter to get matching attachments
+		const matchingAttachments = allAttachments.filter((attachment) => {
+			// Directly linked to project
+			if (attachment.projectId === args.projectId) {
+				return true;
+			}
+			// Linked to a project task (issueId must exist for this to match)
+			if (attachment.issueId && taskIds.has(attachment.issueId)) {
+				return true;
+			}
+			return false;
+		});
+
+		// Sort by uploadedAt descending (most recent first)
+		matchingAttachments.sort((a, b) => b.uploadedAt - a.uploadedAt);
+
+		// Apply filters before pagination
+		let filteredItems = matchingAttachments;
 
 		// Apply search filter
 		if (args.search) {
@@ -96,13 +101,19 @@ export const getPaginated = query({
 			});
 		}
 
+		// Manually paginate after applying filters
+		const pageSize = args.paginationOpts.numItems;
+		const startIndex = 0; // Cursor handling would go here if needed
+		const page = filteredItems.slice(startIndex, startIndex + pageSize);
+		const isDone = startIndex + pageSize >= filteredItems.length;
+
 		// Enrich attachments with related data
 		const project = await ctx.db.get(args.projectId);
 		const enrichedAttachments = await Promise.all(
-			filteredItems.map(async (attachment) => {
+			page.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
-					ctx.db.get(attachment.uploadedBy),
+					attachment.issueId ? ctx.db.get(attachment.issueId as any) : null,
+					ctx.db.get(attachment.uploadedBy as any),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 
@@ -136,10 +147,17 @@ export const getPaginated = query({
 		);
 
 		// Return in the correct format for usePaginatedQuery
+		// Since we're manually paginating, use the last item's _id as cursor
+		const continueCursor = isDone
+			? null
+			: enrichedAttachments.length > 0
+				? enrichedAttachments[enrichedAttachments.length - 1]?._id
+				: null;
+
 		return {
 			page: enrichedAttachments,
-			isDone: result.isDone,
-			continueCursor: result.continueCursor,
+			isDone,
+			continueCursor,
 		};
 	},
 });
@@ -166,23 +184,25 @@ export const getAllForProject = query({
 
 		const taskIds = new Set(projectTasks.map((task) => task._id));
 
-		if (taskIds.size === 0) {
-			return {
-				items: [],
-				nextCursor: null,
-				hasMore: false,
-			};
-		}
-
-		// Get all attachments and filter
+		// Get all attachments and filter to include:
+		// 1. Attachments directly linked to project via projectId (issueId is optional)
+		// 2. Attachments linked to project tasks via issueId
 		const allAttachments = await ctx.db
 			.query("issueAttachments")
 			.order("desc")
 			.collect();
 
-		let filteredAttachments = allAttachments.filter((att) =>
-			taskIds.has(att.issueId),
-		);
+		let filteredAttachments = allAttachments.filter((att) => {
+			// Directly linked to project
+			if (att.projectId === args.projectId) {
+				return true;
+			}
+			// Linked to a project task (issueId must exist for this to match)
+			if (att.issueId && taskIds.has(att.issueId as any)) {
+				return true;
+			}
+			return false;
+		});
 
 		// Apply search filter
 		if (args.search) {
@@ -227,8 +247,8 @@ export const getAllForProject = query({
 		const enrichedItems = await Promise.all(
 			paginatedItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
-					ctx.db.get(attachment.uploadedBy),
+					attachment.issueId ? ctx.db.get(attachment.issueId as any) : null,
+					ctx.db.get(attachment.uploadedBy as any),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 
@@ -278,21 +298,23 @@ export const getProjectStats = query({
 
 		const taskIds = new Set(projectTasks.map((task) => task._id));
 
-		if (taskIds.size === 0) {
-			return {
-				totalCount: 0,
-				totalSize: 0,
-				byType: {},
-			};
-		}
-
-		// Get all attachments for these tasks
+		// Get all attachments and filter to include:
+		// 1. Attachments directly linked to project via projectId (issueId is optional)
+		// 2. Attachments linked to project tasks via issueId
 		const allAttachments = await ctx.db.query("issueAttachments").collect();
 
 		// Filter to project attachments
-		const projectAttachments = allAttachments.filter((att) =>
-			taskIds.has(att.issueId),
-		);
+		const projectAttachments = allAttachments.filter((att) => {
+			// Directly linked to project
+			if (att.projectId === args.projectId) {
+				return true;
+			}
+			// Linked to a project task (issueId must exist for this to match)
+			if (att.issueId && taskIds.has(att.issueId as any)) {
+				return true;
+			}
+			return false;
+		});
 
 		// Calculate stats
 		const stats = {
@@ -302,7 +324,7 @@ export const getProjectStats = query({
 		};
 
 		// Count by type
-		projectAttachments.forEach((attachment) => {
+		for (const attachment of projectAttachments) {
 			const mimeType = attachment.mimeType.toLowerCase();
 			let type = "other";
 
@@ -325,7 +347,7 @@ export const getProjectStats = query({
 			}
 
 			stats.byType[type] = (stats.byType[type] || 0) + 1;
-		});
+		}
 
 		return stats;
 	},

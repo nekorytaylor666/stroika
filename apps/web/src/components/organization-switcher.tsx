@@ -1,5 +1,6 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import { useNavigate } from "@tanstack/react-router";
@@ -28,7 +29,6 @@ import {
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { authClient } from "@/lib/auth-client";
 
 export function OrganizationSwitcher() {
 	const navigate = useNavigate();

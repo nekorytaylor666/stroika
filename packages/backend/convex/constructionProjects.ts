@@ -1,5 +1,7 @@
 import { v } from "convex/values";
+import { api, components } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
+import { authComponent, createAuth } from "./auth";
 import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 import {
 	canAccessProject,
@@ -7,8 +9,6 @@ import {
 	getUserProjectAccessLevel,
 } from "./permissions/checks";
 import { getAccessibleProjects } from "./permissions/projectAccess";
-import { authComponent, createAuth } from "./auth";
-import { api, components } from "./_generated/api";
 
 // Queries - Get all projects the current user has access to
 export const getAll = query({

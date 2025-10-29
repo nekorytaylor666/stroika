@@ -1,10 +1,10 @@
-import { createAuthClient } from "better-auth/react";
 import {
 	convexClient,
 	crossDomainClient,
 } from "@convex-dev/better-auth/client/plugins";
-import { organizationClient, adminClient } from "better-auth/client/plugins";
 import type { BetterAuthClientPlugin } from "better-auth";
+import { adminClient, organizationClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
 	baseURL: import.meta.env.VITE_CONVEX_SITE_URL,
