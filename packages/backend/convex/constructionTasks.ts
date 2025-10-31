@@ -94,17 +94,10 @@ export const getAll = query({
 export const getByIdentifier = query({
 	args: { identifier: v.string() },
 	handler: async (ctx, args) => {
-		const { organization } = await getCurrentUserWithOrganization(ctx);
-
 		const task = await ctx.db
 			.query("issues")
 			.withIndex("by_identifier", (q) => q.eq("identifier", args.identifier))
-			.filter((q) =>
-				q.and(
-					q.eq(q.field("organizationId"), organization.id),
-					q.eq(q.field("isConstructionTask"), true),
-				),
-			)
+			.filter((q) => q.and(q.eq(q.field("isConstructionTask"), true)))
 			.first();
 
 		if (!task) return null;
@@ -441,7 +434,7 @@ export const createAgentTask = mutation({
 			newValue: args.title,
 		});
 
-		if (args.assigneeId && args.assigneeId !== user._id) {
+		if (args.assigneeId && args.assigneeId !== args.userId) {
 			// Send notification if task is assigned
 			await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
 				issueId: taskId,
@@ -642,8 +635,6 @@ export const updateStatus = mutation({
 	},
 	handler: async (ctx, args) => {
 		console.log("update status", args);
-		const { user } = await getCurrentUserWithOrganization(ctx);
-		if (!user) throw new Error("User or organization not found");
 		// Get current task to track changes
 		const currentTask = await ctx.db.get(args.id);
 		if (!currentTask) throw new Error("Task not found");
@@ -656,7 +647,7 @@ export const updateStatus = mutation({
 
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: args.id,
-				userId: user._id,
+				userId: args.userId,
 				type: "status_changed",
 				oldValue: oldStatus?.name,
 				newValue: newStatus?.name,
@@ -671,7 +662,7 @@ export const updateStatus = mutation({
 				issueId: args.id,
 				oldStatusId: currentTask.statusId,
 				newStatusId: args.statusId,
-				changedBy: user._id,
+				changedBy: args.userId,
 			});
 
 			// Check if task was completed
@@ -682,7 +673,7 @@ export const updateStatus = mutation({
 			) {
 				await ctx.runMutation(api.activities.createActivity, {
 					issueId: args.id,
-					userId: user._id,
+					userId: args.userId,
 					type: "completed",
 					newValue: new Date().toISOString(),
 				});

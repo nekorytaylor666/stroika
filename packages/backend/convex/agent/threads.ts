@@ -14,7 +14,7 @@ import {
 	getCurrentUser,
 	getCurrentUserWithOrganization,
 } from "../helpers/getCurrentUser";
-import { agent, createAgentWithContext } from "./agent";
+import { createAgentWithContext } from "./agent";
 
 /**
  * OPTION 1 (BASIC):
@@ -27,7 +27,22 @@ export const generateTextInAnAction = action({
 		// await authorizeThreadAccess(ctx, threadId);
 		// Note: This example uses the default agent without context.
 		// For context-aware responses, use the sendMessage mutation instead.
-		const result = await agent.generateText(ctx, { threadId }, { prompt });
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization) {
+			throw new Error("User or organization not found");
+		}
+		const contextData = await ctx.runQuery(api.contextData.buildAgentContext);
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			contextData,
+			user._id,
+			organization.id,
+		);
+		const result = await agentWithContext.generateText(
+			ctx,
+			{ threadId },
+			{ prompt },
+		);
 		return result.text;
 	},
 });
@@ -88,7 +103,7 @@ export const generateResponse = internalAction({
 		);
 
 		// Generate text with the context-aware agent
-		const result = await agent.generateText(
+		const result = await agentWithContext.generateText(
 			ctx,
 			{ threadId },
 			{ promptMessageId },

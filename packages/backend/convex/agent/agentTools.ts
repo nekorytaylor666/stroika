@@ -130,7 +130,9 @@ export const createTaskTool = (userId: string, organizationId: string) =>
 			parentTaskId: z
 				.string()
 				.optional()
-				.describe("Parent task identifier for subtasks"),
+				.describe(
+					"Parent task identifier for subtasks. Use task id and not identifier. If no parent task, leave blank.",
+				),
 			priorityId: z.string().describe("Priority ID"),
 			statusId: z.string().describe("Status ID"),
 		}),
@@ -192,7 +194,7 @@ export const updateTaskStatusTool = (
 		description: "Update the status of an existing task",
 		args: z.object({
 			taskIdentifier: z.string().describe("Task identifier (e.g., TASK-001)"),
-			statusName: z.string().describe("New status name"),
+			statusId: z.string().describe("New status id"),
 		}),
 		handler: async (
 			toolCtx: ToolCtx,
@@ -215,17 +217,10 @@ export const updateTaskStatusTool = (
 				throw new Error(`Task "${args.taskIdentifier}" not found`);
 			}
 
-			// Find status by name
-			const statuses = await toolCtx.runQuery(api.status.getAll);
-			const status = statuses.find((s) => s.name === args.statusName);
-			if (!status) {
-				throw new Error(`Status "${args.statusName}" not found`);
-			}
-
 			// Update using the real mutation
 			await toolCtx.runMutation(api.constructionTasks.updateStatus, {
 				id: task._id,
-				statusId: status._id,
+				statusId: args.statusId,
 				userId: userId,
 			});
 
@@ -233,8 +228,8 @@ export const updateTaskStatusTool = (
 				taskId: task._id,
 				identifier: task.identifier,
 				title: task.title,
-				newStatus: args.statusName,
-				message: `Successfully updated status of task ${args.taskIdentifier} to "${args.statusName}"`,
+				newStatus: args.statusId,
+				message: `Successfully updated status of task ${args.taskIdentifier} to "${args.statusId}"`,
 			};
 		},
 	});

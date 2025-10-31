@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { api, components } from "../_generated/api";
 import { internal } from "../_generated/api";
 import { action, mutation, query } from "../_generated/server";
-import { agent, createAgentWithContext } from "./agent";
+import { createAgentWithContext } from "./agent";
 import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
 import { Id } from "../_generated/dataModel";
 
@@ -67,7 +67,7 @@ export const streamResponse = action({
 			ctx,
 			args.contextData,
 			args.userId,
-			args.organizationId
+			args.organizationId,
 		);
 
 		// Continue the thread with the custom context
@@ -106,7 +106,7 @@ export const generateResponse = action({
 			ctx,
 			contextData || "",
 			args.userId,
-			args.organizationId
+			args.organizationId,
 		);
 
 		if (args.threadId) {
@@ -152,8 +152,15 @@ export const abortStream = action({
 		order: v.number(),
 	},
 	handler: async (ctx, args) => {
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			args.contextData,
+			args.userId,
+			args.organizationId,
+		);
+
 		// Use the default agent for aborting (doesn't need context)
-		const threadHandle = await agent.continueThread(ctx, {
+		const threadHandle = await agentWithContext.continueThread(ctx, {
 			threadId: args.threadId,
 			// Note: We don't have userId/orgId here but abort doesn't need them
 			userId: "" as Id<"users">,
