@@ -163,7 +163,7 @@ export function ProfileSettings() {
 					<div className="flex items-center justify-between">
 						<div>
 							<p className="font-medium text-sm">ID пользователя</p>
-							<p className="text-muted-foreground text-sm">{user._id}</p>
+							<p className="text-muted-foreground text-sm">{user.id}</p>
 						</div>
 					</div>
 					<div className="flex items-center justify-between">

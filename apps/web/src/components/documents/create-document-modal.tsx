@@ -129,7 +129,7 @@ export function CreateDocumentModal() {
 									</SelectTrigger>
 									<SelectContent>
 										{users?.map((user) => (
-											<SelectItem key={user._id} value={user._id}>
+											<SelectItem key={user.id} value={user.id}>
 												{user.name}
 											</SelectItem>
 										))}

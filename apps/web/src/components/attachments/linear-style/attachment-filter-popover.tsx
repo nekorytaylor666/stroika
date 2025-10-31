@@ -109,7 +109,7 @@ export function AttachmentFilterPopover() {
 											<>
 												<User className="mr-2 h-4 w-4" />
 												<span className="truncate">
-													{users?.find((u) => u._id === attachmentUploaderId)
+													{users?.find((u) => u.id === attachmentUploaderId)
 														?.name || "Пользователь"}
 												</span>
 											</>
@@ -136,16 +136,16 @@ export function AttachmentFilterPopover() {
 										</Button>
 										{users?.map((user) => (
 											<Button
-												key={user._id}
+												key={user.id}
 												variant="ghost"
 												size="sm"
 												className={cn(
 													"w-full justify-start",
-													attachmentUploaderId === user._id &&
+													attachmentUploaderId === user.id &&
 														"bg-muted font-medium",
 												)}
 												onClick={() => {
-													setAttachmentUploaderId(user._id);
+													setAttachmentUploaderId(user.id);
 												}}
 											>
 												<User className="mr-2 h-4 w-4" />

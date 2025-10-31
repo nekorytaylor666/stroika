@@ -69,7 +69,7 @@ export default function MemberLine({ user, memberId }: MemberLineProps) {
 			<div className="ml-2">
 				<MemberActionsDropdown
 					memberId={memberId as Id<"organizationMembers">}
-					userId={user.id as Id<"users">}
+					userId={user.id as Id<"user">}
 					userName={user.name}
 					userEmail={user.email}
 					currentRoleId={user.roleId as Id<"roles">}

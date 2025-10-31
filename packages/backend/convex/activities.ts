@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 // Create an activity record
 export const createActivity = mutation({
@@ -472,13 +473,16 @@ export const getOrganizationActivities = query({
 // Get activities for a specific user
 export const getUserActivities = query({
 	args: {
-		userId: v.id("users"),
+		userId: v.string(),
 		limit: v.optional(v.number()),
 		cursor: v.optional(v.number()),
 	},
 	handler: async (ctx, args) => {
 		const limit = args.limit || 50;
 		const offset = args.cursor || 0;
+
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 
 		// Get all activities for this user
 		const activities = await ctx.db
@@ -493,10 +497,7 @@ export const getUserActivities = query({
 		// Populate activity data
 		const populatedActivities = await Promise.all(
 			paginatedActivities.map(async (activity) => {
-				const [user, task] = await Promise.all([
-					ctx.db.get(activity.userId),
-					ctx.db.get(activity.issueId),
-				]);
+				const [task] = await Promise.all([ctx.db.get(activity.issueId)]);
 
 				// Get project info if task exists
 				let project = null;

@@ -41,9 +41,12 @@ export const getPaginated = query({
 			.paginate(args.paginationOpts);
 
 		// Filter to only include attachments from our project's tasks
-		let filteredItems = result.page.filter((attachment) =>
-			taskIds.has(attachment.issueId),
+		let filteredItems = result.page.filter(
+			(attachment) =>
+				attachment.projectId && attachment.projectId === args.projectId,
 		);
+
+		console.log(filteredItems);
 
 		// Apply search filter
 		if (args.search) {
@@ -180,8 +183,8 @@ export const getAllForProject = query({
 			.order("desc")
 			.collect();
 
-		let filteredAttachments = allAttachments.filter((att) =>
-			taskIds.has(att.issueId),
+		let filteredAttachments = allAttachments.filter(
+			(att) => att.projectId && att.projectId === args.projectId,
 		);
 
 		// Apply search filter
@@ -227,7 +230,7 @@ export const getAllForProject = query({
 		const enrichedItems = await Promise.all(
 			paginatedItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					ctx.db.get(attachment.issueId),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
 					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);

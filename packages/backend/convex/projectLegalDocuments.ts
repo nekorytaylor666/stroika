@@ -29,7 +29,7 @@ export const uploadDocument = mutation({
 
 		const documentId = await ctx.db.insert("projectLegalDocuments", {
 			constructionProjectId: args.constructionProjectId,
-			organizationId: organization._id,
+			organizationId: organization.id,
 			documentType: args.documentType,
 			fileName: args.fileName,
 			fileUrl: args.storageId,

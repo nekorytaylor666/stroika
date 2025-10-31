@@ -289,11 +289,11 @@ export function PermissionsManagement({
 							<CardContent className="space-y-2">
 								{filteredUsers?.map((user) => (
 									<button
-										key={user._id}
-										onClick={() => setSelectedUser(user._id)}
+										key={user.id}
+										onClick={() => setSelectedUser(user.id)}
 										className={cn(
 											"flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-accent",
-											selectedUser === user._id && "bg-accent",
+											selectedUser === user.id && "bg-accent",
 										)}
 									>
 										<div>
@@ -472,7 +472,7 @@ export function PermissionsManagement({
 				onGrant={async (data) => {
 					if (selectedUser) {
 						await grantUserPermission({
-							userId: selectedUser as Id<"users">,
+							userId: selectedUser as Id<"user">,
 							permissionId: data.permissionId,
 							type: data.type,
 							expiresAt: data.expiresAt,

@@ -26,7 +26,7 @@ import { useState } from "react";
 
 interface ConstructionAssigneeSelectorProps {
 	issueId: Id<"issues">;
-	currentAssigneeId: Id<"users"> | null;
+	currentAssigneeId: Id<"user"> | null;
 	showLabel?: boolean;
 }
 
@@ -43,7 +43,7 @@ export function ConstructionAssigneeSelector({
 		? users?.find((u) => u.id === currentAssigneeId)
 		: null;
 
-	const getTaskCountForUser = (userId: Id<"users"> | null) => {
+	const getTaskCountForUser = (userId: Id<"user"> | null) => {
 		if (!tasks) return 0;
 		return tasks.filter((task) => task.assigneeId === userId).length;
 	};
@@ -133,7 +133,7 @@ export function ConstructionAssigneeSelector({
 									</div>
 									<div className="flex items-center gap-2">
 										<span className="text-muted-foreground text-xs">
-											{getTaskCountForUser(user.id as Id<"users">)}
+											{getTaskCountForUser(user.id as Id<"user">)}
 										</span>
 										{currentAssigneeId === user.id && (
 											<Check className="h-3.5 w-3.5" />

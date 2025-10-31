@@ -1,24 +1,18 @@
 import { v } from "convex/values";
 import { Doc, type Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 export const create = mutation({
 	args: {
 		documentId: v.id("documents"),
 		content: v.string(),
 		parentCommentId: v.optional(v.id("documentComments")),
-		mentionedUserIds: v.optional(v.array(v.id("users"))),
+		mentionedUserIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 		const commentId = await ctx.db.insert("documentComments", {
 			documentId: args.documentId,
 			authorId: user._id,
@@ -122,18 +116,11 @@ export const update = mutation({
 	args: {
 		id: v.id("documentComments"),
 		content: v.string(),
-		mentionedUserIds: v.optional(v.array(v.id("users"))),
+		mentionedUserIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 		const comment = await ctx.db.get(args.id);
 		if (!comment) throw new Error("Comment not found");
 		if (comment.authorId !== user._id) throw new Error("Not authorized");
@@ -233,20 +220,13 @@ export const remove = mutation({
 
 export const getUserMentions = query({
 	args: {
-		userId: v.optional(v.id("users")),
+		userId: v.optional(v.string()),
 		onlyUnread: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
-		// Made public for now - remove auth check
-		// const identity = await ctx.auth.getUserIdentity();
-		// if (!identity) throw new Error("Not authenticated");
-
-		// For now, use a default user ID or skip user tracking
-		const users = await ctx.db.query("users").take(1);
-		const user = users[0];
-		if (!user) throw new Error("No users found in database");
-
-		const targetUserId = args.userId || user._id;
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
+		const targetUserId = args.userId ?? user._id;
 
 		let mentions = await ctx.db
 			.query("documentMentions")

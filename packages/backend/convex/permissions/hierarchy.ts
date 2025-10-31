@@ -9,8 +9,8 @@ import { checkPermission } from "./utils";
  */
 export async function checkHierarchicalPermission(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
-	targetUserId: Id<"users">,
+	userId: Id<"user">,
+	targetUserId: Id<"user">,
 	resource: PermissionResource,
 	action: PermissionAction,
 ): Promise<boolean> {
@@ -121,8 +121,8 @@ async function getDepartmentAncestors(
  */
 export async function getManagedUsers(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
-): Promise<Id<"users">[]> {
+	userId: Id<"user">,
+): Promise<Id<"user">[]> {
 	const userDepartment = await ctx.db
 		.query("userDepartments")
 		.withIndex("by_user_primary", (q) =>
@@ -147,7 +147,7 @@ export async function getManagedUsers(
 	managedDepartments.push(userDepartment.departmentId);
 
 	// Get all users in managed departments with lower positions
-	const managedUsers: Id<"users">[] = [];
+	const managedUsers: Id<"user">[] = [];
 
 	for (const deptId of managedDepartments) {
 		const deptUsers = await ctx.db

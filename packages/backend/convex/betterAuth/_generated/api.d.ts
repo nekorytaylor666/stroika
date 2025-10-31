@@ -1991,6 +1991,7 @@ export type Mounts = {
         userId?: null | string;
       }>
     >;
+    listAllTeamsWithMembers: FunctionReference<"query", "public", {}, any>;
     removeTeamMembersByTeamName: FunctionReference<
       "mutation",
       "public",

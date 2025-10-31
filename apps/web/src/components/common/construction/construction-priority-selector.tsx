@@ -86,7 +86,7 @@ export function ConstructionPrioritySelector({
 			await updatePriority({
 				id: issueId as Id<"issues">,
 				priorityId: priorityId as Id<"priorities">,
-				userId: currentUser._id,
+				userId: currentUser.id as Id<"user">,
 			});
 			setOpen(false);
 		} catch (error) {

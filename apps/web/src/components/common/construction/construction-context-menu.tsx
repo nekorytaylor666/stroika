@@ -149,7 +149,7 @@ export function ConstructionContextMenu({
 			await updateStatus({
 				id: task._id,
 				statusId,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			toast.success("Статус обновлен");
 		} catch (error) {
@@ -157,7 +157,7 @@ export function ConstructionContextMenu({
 		}
 	};
 
-	const handleAssigneeChange = async (assigneeId: Id<"users"> | null) => {
+	const handleAssigneeChange = async (assigneeId: Id<"user"> | null) => {
 		try {
 			await updateAssignee({
 				id: task._id,
@@ -174,7 +174,7 @@ export function ConstructionContextMenu({
 			await updatePriority({
 				id: task._id as Id<"issues">,
 				priorityId,
-				userId: currentUser?._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			toast.success("Приоритет обновлен");
 		} catch (error) {
@@ -202,7 +202,7 @@ export function ConstructionContextMenu({
 			try {
 				await addComment({
 					issueId: task._id as Id<"issues">,
-					authorId: currentUser._id as Id<"users">,
+					authorId: currentUser.id as Id<"user">,
 					content: comment,
 				});
 				toast.success("Комментарий добавлен");
@@ -257,7 +257,7 @@ export function ConstructionContextMenu({
 			await updateTask({
 				id: task._id as Id<"issues">,
 				dueDate: date ? format(date, "yyyy-MM-dd") : undefined,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			setSelectedDate(date);
 			setIsDatePickerOpen(false);

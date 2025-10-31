@@ -39,7 +39,7 @@ interface ConstructionTaskCommentsProps {
 interface Comment {
 	_id: Id<"issueComments">;
 	content: string;
-	authorId: Id<"users">;
+	authorId: Id<"user">;
 	author: any;
 	parentCommentId?: Id<"issueComments">;
 	isResolved: boolean;
@@ -99,7 +99,7 @@ export function ConstructionTaskComments({
 
 		await createComment({
 			issueId,
-			authorId: currentUser._id as Id<"users">,
+			authorId: currentUser.id as Id<"user">,
 			content: newComment,
 			parentCommentId: replyingTo || undefined,
 			mentionedUserIds:
@@ -121,11 +121,11 @@ export function ConstructionTaskComments({
 				?.filter((u) =>
 					mentionedUsernames.includes(u.name.toLowerCase().replace(/\s+/g, "")),
 				)
-				.map((u) => u._id) || [];
+				.map((u) => u.id) || [];
 
 		await updateComment({
 			id: editingComment,
-			userId: currentUser._id as Id<"users">,
+			userId: currentUser.id as Id<"user">,
 			content: editContent,
 			mentionedUserIds,
 		});
@@ -296,7 +296,7 @@ export function ConstructionTaskComments({
 											currentUser &&
 											removeComment({
 												id: comment._id,
-												userId: currentUser._id as Id<"users">,
+												userId: currentUser.id as Id<"user">,
 											})
 										}
 										className="text-red-600"
@@ -323,7 +323,7 @@ export function ConstructionTaskComments({
 										<div className="absolute top-full right-0 left-0 z-10 mt-1 rounded-md border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
 											{filteredUsers.slice(0, 5).map((user) => (
 												<button
-													key={user._id}
+													key={user.id}
 													className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
 													onClick={() => handleMentionSelect(user)}
 												>
@@ -472,12 +472,12 @@ export function ConstructionTaskComments({
 							</div>
 							{filteredUsers.slice(0, 5).map((user) => (
 								<button
-									key={user._id}
+									key={user.id}
 									className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
 									onClick={() => handleMentionSelect(user)}
 								>
 									<Avatar className="h-6 w-6">
-										<AvatarImage src={user.avatarUrl} />
+										<AvatarImage src={user.image} />
 										<AvatarFallback className="text-xs">
 											{user.name.charAt(0)}
 										</AvatarFallback>

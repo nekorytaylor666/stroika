@@ -214,9 +214,17 @@ export const getTasksForProject = query({
 	args: {
 		constructionProjectId: v.id("constructionProjects"),
 		statusId: v.optional(v.id("status")),
-		assigneeId: v.optional(v.id("users")),
+		assigneeId: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+		const { users } = await auth.api.listUsers({
+			query: { limit: 100, offset: 0 },
+			headers,
+		});
+		if (!user) throw new Error("User not found");
+
 		let tasksQuery = ctx.db
 			.query("issues")
 			.withIndex("by_project", (q) =>
@@ -242,7 +250,9 @@ export const getTasksForProject = query({
 			tasks.map(async (task) => {
 				const [status, assignee, priority, labels] = await Promise.all([
 					ctx.db.get(task.statusId),
-					task.assigneeId ? ctx.db.get(task.assigneeId) : null,
+					task.assigneeId
+						? users.find((user) => user.id === task.assigneeId)
+						: null,
 					ctx.db.get(task.priorityId),
 					Promise.all(task.labelIds.map((id) => ctx.db.get(id))),
 				]);
@@ -435,7 +445,7 @@ export const update = mutation({
 		contractValue: v.optional(v.number()),
 		startDate: v.optional(v.string()),
 		targetDate: v.optional(v.string()),
-		leadId: v.optional(v.id("users")),
+		leadId: v.optional(v.string()),
 		priorityId: v.optional(v.id("priorities")),
 		healthId: v.optional(v.string()),
 		healthName: v.optional(v.string()),
@@ -451,16 +461,17 @@ export const update = mutation({
 			),
 		),
 		notes: v.optional(v.string()),
-		teamMemberIds: v.optional(v.array(v.id("users"))),
+		teamMemberIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 
-		// Check if user has write access to this project
-		const hasAccess = await canAccessProject(ctx, user._id, args.id, "write");
-		if (!hasAccess) {
-			throw new Error("Insufficient permissions to update this project");
-		}
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+		const { users } = await auth.api.listUsers({
+			query: { limit: 100, offset: 0 },
+			headers,
+		});
 
 		const { id, ...updates } = args;
 

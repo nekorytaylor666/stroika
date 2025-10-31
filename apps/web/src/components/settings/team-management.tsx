@@ -88,7 +88,7 @@ export function TeamManagement({ organizationId }: TeamManagementProps) {
 	};
 
 	// Get team members info
-	const getTeamMembers = (memberIds: Id<"users">[]) => {
+	const getTeamMembers = (memberIds: Id<"user">[]) => {
 		if (!users) return [];
 		return memberIds
 			.map((id) => users.find((u) => u._id === id))
@@ -433,7 +433,7 @@ function TeamFormModal({
 							</SelectTrigger>
 							<SelectContent>
 								{users?.map((user) => (
-									<SelectItem key={user._id} value={user._id}>
+									<SelectItem key={user.id} value={user.id}>
 										{user.name}
 									</SelectItem>
 								))}
@@ -459,7 +459,7 @@ interface AddMemberModalProps {
 	onOpenChange: (open: boolean) => void;
 	team: any;
 	users: any[] | undefined;
-	onAddMember: (userId: Id<"users">) => Promise<void>;
+	onAddMember: (userId: Id<"user">) => Promise<void>;
 }
 
 function AddMemberModal({
@@ -473,7 +473,7 @@ function AddMemberModal({
 
 	// Filter out users already in the team
 	const availableUsers = users?.filter(
-		(user) => !team?.memberIds.includes(user._id),
+		(user) => !team?.memberIds.includes(user.id),
 	);
 
 	return (
@@ -492,10 +492,10 @@ function AddMemberModal({
 						</SelectTrigger>
 						<SelectContent>
 							{availableUsers?.map((user) => (
-								<SelectItem key={user._id} value={user._id}>
+								<SelectItem key={user.id} value={user.id}>
 									<div className="flex items-center gap-2">
 										<Avatar className="h-6 w-6">
-											<AvatarImage src={user.avatarUrl} />
+											<AvatarImage src={user.image} />
 											<AvatarFallback>
 												{user.name
 													.split(" ")
@@ -517,7 +517,7 @@ function AddMemberModal({
 					<Button
 						onClick={async () => {
 							if (selectedUserId) {
-								await onAddMember(selectedUserId as Id<"users">);
+								await onAddMember(selectedUserId as Id<"user">);
 								onOpenChange(false);
 							}
 						}}

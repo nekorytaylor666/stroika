@@ -20,7 +20,7 @@ import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
 
 export interface SubtaskData {
 	title: string;
-	assigneeId?: Id<"users"> | null;
+	assigneeId?: Id<"user"> | null;
 	dueDate?: string | null;
 	attachments?: UploadedAttachment[];
 }
@@ -34,7 +34,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 	const [isAdding, setIsAdding] = useState(false);
 	const [newSubtask, setNewSubtask] = useState("");
 	const [selectedAssigneeId, setSelectedAssigneeId] =
-		useState<Id<"users"> | null>(null);
+		useState<Id<"user"> | null>(null);
 	const [selectedDueDate, setSelectedDueDate] = useState<Date | undefined>();
 	const [selectedAttachments, setSelectedAttachments] = useState<
 		UploadedAttachment[]
@@ -66,7 +66,7 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 		onChange(subtasks.filter((_, i) => i !== index));
 	};
 
-	const getAssigneeName = (assigneeId: Id<"users"> | null | undefined) => {
+	const getAssigneeName = (assigneeId: Id<"user"> | null | undefined) => {
 		if (!assigneeId) return null;
 		return users?.find((u) => u._id === assigneeId)?.name || null;
 	};
@@ -183,10 +183,10 @@ export function SubtasksInput({ subtasks, onChange }: SubtasksInputProps) {
 									<div className="max-h-64 overflow-y-auto">
 										{users?.map((user) => (
 											<button
-												key={user._id}
+												key={user.id}
 												className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
 												onClick={() => {
-													setSelectedAssigneeId(user._id as Id<"users">);
+													setSelectedAssigneeId(user.id as Id<"user">);
 													setIsAssigneeOpen(false);
 												}}
 											>

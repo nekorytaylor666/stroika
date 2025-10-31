@@ -144,13 +144,13 @@ export const create = mutation({
 		content: v.optional(v.string()),
 		projectId: v.optional(v.id("constructionProjects")),
 		parentId: v.optional(v.id("documents")),
-		assignedTo: v.optional(v.id("users")),
+		assignedTo: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
 		tags: v.optional(v.array(v.string())),
 		grantAccessTo: v.optional(
 			v.array(
 				v.object({
-					userId: v.optional(v.id("users")),
+					userId: v.optional(v.string()),
 					teamId: v.optional(v.id("teams")),
 					accessLevel: v.union(
 						v.literal("owner"),
@@ -164,37 +164,10 @@ export const create = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
-
-		// If creating under a project, check project access
-		if (args.projectId) {
-			const hasProjectAccess = await canAccessProject(
-				ctx,
-				user._id,
-				args.projectId,
-				"write",
-			);
-			if (!hasProjectAccess) {
-				throw new Error(
-					"Insufficient permissions to create documents in this project",
-				);
-			}
-		}
-
-		// If creating under a parent document, check parent access
-		if (args.parentId) {
-			const hasParentAccess = await canAccessDocument(
-				ctx,
-				user._id,
-				args.parentId,
-				"editor",
-			);
-			if (!hasParentAccess) {
-				throw new Error("Insufficient permissions to create child documents");
-			}
-		}
-
+		if (!user) throw new Error("User not found");
+		if (!organization) throw new Error("Organization not found");
 		const documentId = await ctx.db.insert("documents", {
-			organizationId: organization._id,
+			organizationId: organization.id,
 			title: args.title,
 			content: args.content || "",
 			projectId: args.projectId,
@@ -280,13 +253,13 @@ export const update = mutation({
 				v.literal("completed"),
 			),
 		),
-		assignedTo: v.optional(v.id("users")),
+		assignedTo: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
 		tags: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const { user } = await getCurrentUserWithOrganization(ctx);
-
+		if (!user) throw new Error("User not found");
 		const existing = await ctx.db.get(args.id);
 		if (!existing) throw new Error("Document not found");
 

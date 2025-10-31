@@ -280,7 +280,7 @@ export const getByStatus = query({
 });
 
 export const getByAssignee = query({
-	args: { assigneeId: v.id("users") },
+	args: { assigneeId: v.string() },
 	handler: async (ctx, args) => {
 		return await ctx.db
 			.query("issues")
@@ -452,17 +452,18 @@ export const update = mutation({
 		title: v.optional(v.string()),
 		description: v.optional(v.string()),
 		statusId: v.optional(v.id("status")),
-		assigneeId: v.optional(v.id("users")),
+		assigneeId: v.optional(v.string()),
 		priorityId: v.optional(v.id("priorities")),
 		labelIds: v.optional(v.array(v.id("labels"))),
 		cycleId: v.optional(v.string()),
 		projectId: v.optional(v.id("constructionProjects")), // Link to construction project
 		rank: v.optional(v.string()),
 		dueDate: v.optional(v.string()),
-		userId: v.id("users"), // User making the update
 	},
 	handler: async (ctx, args) => {
-		const { id, userId, ...updates } = args;
+		const { id, ...updates } = args;
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 
 		// Get the current task to track changes
 		const currentTask = await ctx.db.get(id);
@@ -477,7 +478,7 @@ export const update = mutation({
 
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: id,
-				userId,
+				userId: user._id,
 				type: "status_changed",
 				oldValue: oldStatus?.name,
 				newValue: newStatus?.name,
@@ -492,7 +493,7 @@ export const update = mutation({
 				issueId: id,
 				oldStatusId: currentTask.statusId,
 				newStatusId: updates.statusId,
-				changedBy: userId,
+				changedBy: user._id,
 			});
 
 			// Check if task was completed
@@ -503,7 +504,7 @@ export const update = mutation({
 			) {
 				await ctx.runMutation(api.activities.createActivity, {
 					issueId: id,
-					userId,
+					userId: user._id,
 					type: "completed",
 					newValue: new Date().toISOString(),
 				});
@@ -516,7 +517,7 @@ export const update = mutation({
 		) {
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: id,
-				userId,
+				userId: user._id,
 				type: "assignee_changed",
 				metadata: {
 					oldAssigneeId: currentTask.assigneeId,
@@ -529,7 +530,7 @@ export const update = mutation({
 				await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
 					issueId: id,
 					assigneeId: updates.assigneeId,
-					assignedBy: userId,
+					assignedBy: user._id,
 				});
 			}
 		}
@@ -537,7 +538,7 @@ export const update = mutation({
 		if (updates.priorityId && updates.priorityId !== currentTask.priorityId) {
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: id,
-				userId,
+				userId: user._id,
 				type: "priority_changed",
 				metadata: {
 					oldPriorityId: currentTask.priorityId,
@@ -550,7 +551,7 @@ export const update = mutation({
 				issueId: id,
 				oldPriorityId: currentTask.priorityId,
 				newPriorityId: updates.priorityId,
-				changedBy: userId,
+				changedBy: user._id,
 			});
 		}
 
@@ -560,7 +561,7 @@ export const update = mutation({
 		) {
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: id,
-				userId,
+				userId: user._id,
 				type: "due_date_changed",
 				oldValue: currentTask.dueDate || undefined,
 				newValue: updates.dueDate || undefined,
@@ -576,9 +577,12 @@ export const updateStatus = mutation({
 	args: {
 		id: v.id("issues"),
 		statusId: v.id("status"),
-		userId: v.id("users"),
+		userId: v.string(),
 	},
 	handler: async (ctx, args) => {
+		console.log("update status", args);
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User or organization not found");
 		// Get current task to track changes
 		const currentTask = await ctx.db.get(args.id);
 		if (!currentTask) throw new Error("Task not found");
@@ -591,7 +595,7 @@ export const updateStatus = mutation({
 
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: args.id,
-				userId: args.userId,
+				userId: user._id,
 				type: "status_changed",
 				oldValue: oldStatus?.name,
 				newValue: newStatus?.name,
@@ -606,7 +610,7 @@ export const updateStatus = mutation({
 				issueId: args.id,
 				oldStatusId: currentTask.statusId,
 				newStatusId: args.statusId,
-				changedBy: args.userId,
+				changedBy: user._id,
 			});
 
 			// Check if task was completed
@@ -617,7 +621,7 @@ export const updateStatus = mutation({
 			) {
 				await ctx.runMutation(api.activities.createActivity, {
 					issueId: args.id,
-					userId: args.userId,
+					userId: user._id,
 					type: "completed",
 					newValue: new Date().toISOString(),
 				});
@@ -672,9 +676,11 @@ export const updatePriority = mutation({
 	args: {
 		id: v.id("issues"),
 		priorityId: v.id("priorities"),
-		userId: v.id("users"), // User making the change
+		userId: v.string(), // User making the change
 	},
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 		// Get current task to check for changes
 		const currentTask = await ctx.db.get(args.id);
 		if (!currentTask) throw new Error("Task not found");
@@ -683,7 +689,7 @@ export const updatePriority = mutation({
 		if (args.priorityId !== currentTask.priorityId) {
 			await ctx.runMutation(api.activities.createActivity, {
 				issueId: args.id,
-				userId: args.userId,
+				userId: user._id,
 				type: "priority_changed",
 				metadata: {
 					oldPriorityId: currentTask.priorityId,
@@ -696,7 +702,7 @@ export const updatePriority = mutation({
 				issueId: args.id,
 				oldPriorityId: currentTask.priorityId,
 				newPriorityId: args.priorityId,
-				changedBy: args.userId,
+				changedBy: user._id,
 			});
 		}
 

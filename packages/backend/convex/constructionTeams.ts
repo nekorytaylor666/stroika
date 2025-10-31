@@ -572,7 +572,7 @@ export const getTeamMembers = query({
 export const addMembers = mutation({
 	args: {
 		teamId: v.id("constructionTeams"),
-		userIds: v.array(v.id("users")),
+		userIds: v.array(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const team = await ctx.db.get(args.teamId);
@@ -584,7 +584,9 @@ export const addMembers = mutation({
 		const currentMembers = new Set(team.memberIds || []);
 
 		// Add new members (avoid duplicates)
-		args.userIds.forEach((userId) => currentMembers.add(userId));
+		for (const userId of args.userIds) {
+			currentMembers.add(userId);
+		}
 
 		// Update team
 		await ctx.db.patch(args.teamId, {

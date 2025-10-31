@@ -125,7 +125,7 @@ export function ConstructionTaskDetails({
 				await (updateTask as any)({
 					id: currentTask._id as Id<"issues">,
 					title,
-					userId: currentUser?._id as Id<"users">,
+					userId: currentUser?._id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Error updating title:", error);
@@ -140,7 +140,7 @@ export function ConstructionTaskDetails({
 				await (updateTask as any)({
 					id: currentTask._id as Id<"issues">,
 					description,
-					userId: currentUser?._id as Id<"users">,
+					userId: currentUser?._id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Error updating description:", error);
@@ -448,7 +448,7 @@ export function ConstructionTaskDetails({
 													await updateTaskAssignee({
 														id: currentTask._id as Id<"issues">,
 														assigneeId: undefined,
-														userId: currentUser._id,
+														userId: currentUser.id as Id<"user">,
 													});
 												}
 											}}
@@ -463,7 +463,7 @@ export function ConstructionTaskDetails({
 													if (updateTaskAssignee) {
 														await updateTaskAssignee({
 															id: currentTask._id as Id<"issues">,
-															assigneeId: user.id as Id<"users">,
+															assigneeId: user.id as Id<"user">,
 														});
 													}
 												}}
@@ -507,7 +507,7 @@ export function ConstructionTaskDetails({
 														await updateTaskPriority({
 															id: currentTask._id as Id<"issues">,
 															priorityId: p._id as Id<"priorities">,
-															userId: currentUser._id,
+															userId: currentUser.id as Id<"user">,
 														});
 													}
 												}}
@@ -566,7 +566,7 @@ export function ConstructionTaskDetails({
 														dueDate: date
 															? date.toISOString().split("T")[0]
 															: undefined,
-														userId: currentUser?._id as Id<"users">,
+														userId: currentUser?._id as Id<"user">,
 													});
 													setIsDatePickerOpen(false);
 												}
@@ -584,7 +584,7 @@ export function ConstructionTaskDetails({
 															await updateTask({
 																id: currentTask._id as Id<"issues">,
 																dueDate: undefined,
-																userId: currentUser?._id as Id<"users">,
+																userId: currentUser?._id as Id<"user">,
 															});
 															setIsDatePickerOpen(false);
 														}

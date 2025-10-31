@@ -134,7 +134,7 @@ export function ConstructionTaskDetailsPage({
 				await updateTask({
 					id: task._id as Id<"issues">,
 					title,
-					userId: currentUser?._id as Id<"users">,
+					userId: currentUser?._id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Error updating title:", error);
@@ -149,7 +149,7 @@ export function ConstructionTaskDetailsPage({
 				await updateTask({
 					id: task._id as Id<"issues">,
 					description,
-					userId: currentUser?._id as Id<"users">,
+					userId: currentUser?._id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Error updating description:", error);
@@ -170,7 +170,7 @@ export function ConstructionTaskDetailsPage({
 				await updateTask({
 					id: task._id as Id<"issues">,
 					dueDate: date.toISOString(),
-					userId: currentUser?._id as Id<"users">,
+					userId: currentUser?._id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Error updating due date:", error);

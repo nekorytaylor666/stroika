@@ -87,7 +87,7 @@ export function ProjectTaskCreateModal({
 				labelIds: selectedLabels.map((label) => label._id),
 				cycleId: "construction-cycle",
 				projectId: projectId, // Construction project ID
-				userId: currentUser?._id as Id<"users">,
+				userId: currentUser?._id as Id<"user">,
 				rank: `${Date.now()}`,
 				dueDate: undefined,
 			});

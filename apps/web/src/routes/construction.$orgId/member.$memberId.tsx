@@ -253,7 +253,7 @@ function MemberDetailsPage() {
 					<TabsContent value="activity" className="p-8">
 						<LinearActivityFeed
 							type="user"
-							userId={member.user?._id as Id<"users">}
+							userId={member.user?._id as Id<"user">}
 							className="max-w-4xl"
 						/>
 					</TabsContent>

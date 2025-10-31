@@ -43,7 +43,7 @@ interface ConstructionTaskForm {
 	title: string;
 	description: string;
 	statusId: Id<"status"> | null;
-	assigneeId: Id<"users"> | null;
+	assigneeId: Id<"user"> | null;
 	priorityId: Id<"priorities"> | null;
 	labelIds: Id<"labels">[];
 	cycleId: string;
@@ -137,7 +137,7 @@ export function ConstructionCreateTaskDrawer() {
 				priorityId: addTaskForm.priorityId,
 				labelIds: addTaskForm.labelIds,
 				cycleId: addTaskForm.cycleId,
-				userId: currentUser?._id as Id<"users">,
+				userId: currentUser?._id as Id<"user">,
 				projectId: addTaskForm.projectId || undefined,
 				rank: addTaskForm.rank,
 				dueDate: addTaskForm.dueDate,
@@ -170,7 +170,7 @@ export function ConstructionCreateTaskDrawer() {
 						labelIds: [],
 						projectId: addTaskForm.projectId || undefined,
 						dueDate: subtask.dueDate || undefined,
-						userId: currentUser?._id as Id<"users">,
+						userId: currentUser?._id as Id<"user">,
 					});
 
 					// Attach files to subtask if any

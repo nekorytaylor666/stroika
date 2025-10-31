@@ -128,7 +128,7 @@ export const useConstructionData = () => {
 		title: string;
 		description: string;
 		statusId: Id<"status">;
-		assigneeId?: Id<"users">;
+		assigneeId?: Id<"user">;
 		priorityId: Id<"priorities">;
 		labelIds: Id<"labels">[];
 		cycleId: string;
@@ -142,7 +142,7 @@ export const useConstructionData = () => {
 			}
 			const newTaskId = await createTask({
 				...taskData,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			return newTaskId;
 		} catch (error) {
@@ -159,7 +159,7 @@ export const useConstructionData = () => {
 			await updateTask({
 				id,
 				...updates,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 		} catch (error) {
 			console.error("Failed to update task:", error);

@@ -234,7 +234,7 @@ const KanbanColumn: FC<{
 						await updateTaskStatus({
 							id: item._id as Id<"issues">,
 							statusId: status._id as Id<"status">,
-							userId: currentUser._id as Id<"users">,
+							userId: currentUser.id as Id<"user">,
 						});
 					} catch (error) {
 						console.error("Failed to update task status:", error);

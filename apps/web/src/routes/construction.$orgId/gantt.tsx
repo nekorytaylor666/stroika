@@ -67,7 +67,7 @@ type ProjectWithTasks = {
 		color: string;
 	} | null;
 	lead: {
-		_id: Id<"users">;
+		_id: Id<"user">;
 		name: string;
 	} | null;
 	priority: {
@@ -85,7 +85,7 @@ type ProjectWithTasks = {
 			color: string;
 		} | null;
 		assignee: {
-			_id: Id<"users">;
+			_id: Id<"user">;
 			name: string;
 		} | null;
 	}>;

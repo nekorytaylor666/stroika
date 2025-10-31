@@ -6,7 +6,7 @@ import type { PermissionAction, PermissionResource } from "./types";
 
 export async function checkPermission(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	resource: PermissionResource,
 	action: PermissionAction,
 ): Promise<boolean> {
@@ -75,7 +75,7 @@ export async function checkPermission(
 
 export async function getUserPermissions(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 ): Promise<Array<{ resource: PermissionResource; action: PermissionAction }>> {
 	const user = await ctx.db.get(userId);
 	if (!user || !user.isActive) {
@@ -141,7 +141,7 @@ export async function getUserPermissions(
 
 export async function requirePermission(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	resource: PermissionResource,
 	action: PermissionAction,
 ): Promise<void> {
@@ -156,9 +156,9 @@ export async function requirePermission(
 // Helper to log permission changes
 export async function logPermissionChange(
 	ctx: MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	action: string,
-	targetUserId?: Id<"users">,
+	targetUserId?: Id<"user">,
 	targetRoleId?: Id<"roles">,
 	details?: any,
 ): Promise<void> {

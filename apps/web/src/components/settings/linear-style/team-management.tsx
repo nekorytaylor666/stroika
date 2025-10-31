@@ -1,7 +1,5 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -11,13 +9,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,33 +18,33 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
-import type { Id } from "@stroika/backend";
-import { useMutation, useQuery } from "convex/react";
-import {
-	Building,
-	Hash,
-	MoreHorizontal,
-	Plus,
-	Search,
-	Settings,
-	Trash2,
-	UserPlus,
-	Users,
-} from "lucide-react";
+import { useQuery } from "convex/react";
+import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-
-interface LinearTeamManagementProps {
-	organizationId?: string;
-}
+import { authClient } from "@/lib/auth-client";
+import {
+	useQuery as useTanstackQuery,
+	useMutation as useTanstackMutation,
+} from "@tanstack/react-query";
+import { toast } from "sonner";
+import { TeamsList } from "./teams-list";
 
 interface TeamFormData {
 	name: string;
 	shortName: string;
 	color: string;
 	department: string;
+}
+
+interface Team {
+	_id: string;
+	name: string;
+	organizationId: string;
+	_creationTime?: number;
+	createdAt?: number;
+	updatedAt?: number;
 }
 
 const defaultColors = [
@@ -67,13 +58,11 @@ const defaultColors = [
 	"#48DBFB",
 ];
 
-export function LinearTeamManagement({
-	organizationId,
-}: LinearTeamManagementProps) {
+export function LinearTeamManagement() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-	const [selectedTeam, setSelectedTeam] = useState<any>(null);
+	const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 	const [formData, setFormData] = useState<TeamFormData>({
 		name: "",
 		shortName: "",
@@ -82,55 +71,65 @@ export function LinearTeamManagement({
 	});
 
 	// Get current user's organizations
-	const userOrganizations = useQuery(api.organizations.getUserOrganizations);
-	const currentOrg = userOrganizations?.find(
-		(org) => org.slug === organizationId,
-	);
+	const { data: currentOrg } = authClient.useActiveOrganization();
 
 	// Queries
-	const teams = useQuery(
-		api.teams.list,
-		currentOrg ? { organizationId: currentOrg._id } : "skip",
-	);
-	const members = useQuery(
-		api.organizationMembers.list,
-		currentOrg ? { organizationId: currentOrg._id } : "skip",
-	);
+	const { data: teams, refetch: refetchTeams } = useTanstackQuery({
+		queryKey: [`organization-teams-${currentOrg?.id}`],
+		queryFn: async () => {
+			const { data } = await authClient.organization.listTeams();
+			return data;
+		},
+		enabled: !!currentOrg?.id,
+	});
 
-	// Mutations
-	const createTeam = useMutation(api.teams.create);
-	const updateTeam = useMutation(api.teams.update);
-	const deleteTeam = useMutation(api.teams.deleteTeam);
-	const addMemberToTeam = useMutation(api.teams.addMember);
-	const removeMemberFromTeam = useMutation(api.teams.removeMember);
+	const teamsWithMembers = useQuery(api.teams.listAllTeamsWithMembers);
 
-	// Filter teams based on search - handle nested structure
-	const flattenTeams = (teams: any[]): any[] => {
-		let result: any[] = [];
-		teams?.forEach((team) => {
-			result.push(team);
-			if (team.children && team.children.length > 0) {
-				result = result.concat(flattenTeams(team.children));
-			}
-		});
-		return result;
-	};
-
-	const allTeams = teams ? flattenTeams(teams) : [];
-	const filteredTeams = allTeams.filter((team) => {
-		const matchesSearch =
-			searchQuery === "" ||
-			team.name.toLowerCase().includes(searchQuery.toLowerCase());
-		return matchesSearch;
+	const createTeam = useTanstackMutation({
+		mutationFn: async (args: { name: string; organizationId: string }) => {
+			const { data } = await authClient.organization.createTeam({
+				organizationId: args.organizationId,
+				name: args.name,
+			});
+			return data;
+		},
+		onSuccess: () => {
+			toast.success("Команда успешно создана");
+			refetchTeams();
+		},
+	});
+	const updateTeam = useTanstackMutation({
+		mutationFn: async (args: { teamId: string; data: { name?: string } }) => {
+			const { data } = await authClient.organization.updateTeam({
+				teamId: args.teamId,
+				data: args.data,
+			});
+			return data;
+		},
+		onSuccess: () => {
+			toast.success("Команда успешно обновлена");
+			refetchTeams();
+		},
+	});
+	const deleteTeam = useTanstackMutation({
+		mutationFn: async (args: { teamId: string }) => {
+			const { data } = await authClient.organization.removeTeam({
+				teamId: args.teamId,
+			});
+			return data;
+		},
+		onSuccess: () => {
+			toast.success("Команда успешно удалена");
+			refetchTeams();
+		},
 	});
 
 	const handleCreateTeam = async () => {
 		if (!currentOrg) return;
 
-		await createTeam({
-			organizationId: currentOrg._id,
+		await createTeam.mutateAsync({
+			organizationId: currentOrg.id,
 			name: formData.name,
-			description: `${formData.department} team`,
 		});
 		setIsCreateModalOpen(false);
 		setFormData({
@@ -143,20 +142,21 @@ export function LinearTeamManagement({
 
 	const handleUpdateTeam = async () => {
 		if (selectedTeam) {
-			await updateTeam({
+			await updateTeam.mutateAsync({
 				teamId: selectedTeam._id,
-				name: formData.name,
-				description: selectedTeam.description,
+				data: {
+					name: formData.name,
+				},
 			});
 			setIsEditModalOpen(false);
 		}
 	};
 
-	const handleDeleteTeam = async (teamId: Id<"teams">) => {
-		await deleteTeam({ teamId });
+	const handleDeleteTeam = async (teamId: string) => {
+		await deleteTeam.mutateAsync({ teamId });
 	};
 
-	const openEditModal = (team: any) => {
+	const openEditModal = (team: Team) => {
 		setSelectedTeam(team);
 		setFormData({
 			name: team.name,
@@ -196,121 +196,15 @@ export function LinearTeamManagement({
 				</div>
 
 				{/* Teams grid */}
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{filteredTeams?.map((team) => {
-						const teamMembers = team.members || [];
-						return (
-							<div
-								key={team._id}
-								className="group relative rounded-lg border p-6 transition-all hover:shadow-sm"
-							>
-								{/* Team header */}
-								<div className="mb-4 flex items-start justify-between">
-									<div className="flex items-center gap-3">
-										<div
-											className="flex h-10 w-10 items-center justify-center rounded-lg"
-											style={{ backgroundColor: team.color }}
-										>
-											<Hash className="h-5 w-5 text-white" />
-										</div>
-										<div>
-											<h3 className="font-semibold">{team.name}</h3>
-											<p className="text-muted-foreground text-sm">
-												{team.memberCount || 0} members
-											</p>
-										</div>
-									</div>
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-8 w-8 opacity-0 group-hover:opacity-100"
-											>
-												<MoreHorizontal className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem onClick={() => openEditModal(team)}>
-												<Settings className="mr-2 h-4 w-4" />
-												Настроить
-											</DropdownMenuItem>
-											<DropdownMenuItem>
-												<UserPlus className="mr-2 h-4 w-4" />
-												Добавить участников
-											</DropdownMenuItem>
-											<DropdownMenuSeparator />
-											<DropdownMenuItem
-												className="text-red-600"
-												onClick={() => handleDeleteTeam(team._id)}
-											>
-												<Trash2 className="mr-2 h-4 w-4" />
-												Удалить команду
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</div>
-
-								{/* Team info */}
-								<div className="space-y-3">
-									{team.leader && (
-										<div>
-											<p className="text-muted-foreground text-xs">
-												Руководитель
-											</p>
-											<div className="mt-1 flex items-center gap-2">
-												<Avatar className="h-6 w-6">
-													<AvatarImage src={team.leader.avatarUrl} />
-													<AvatarFallback className="text-xs">
-														{team.leader.name.charAt(0).toUpperCase()}
-													</AvatarFallback>
-												</Avatar>
-												<span className="text-sm">{team.leader.name}</span>
-											</div>
-										</div>
-									)}
-
-									<div>
-										<p className="mb-2 text-muted-foreground text-xs">
-											Участники ({teamMembers.length})
-										</p>
-										<div className="-space-x-2 flex">
-											{teamMembers.slice(0, 5).map((member) => (
-												<Avatar
-													key={member._id}
-													className="h-8 w-8 border-2 border-background"
-												>
-													<AvatarImage src={member.avatarUrl} />
-													<AvatarFallback className="text-xs">
-														{member.name
-															.split(" ")
-															.map((n) => n[0])
-															.join("")
-															.toUpperCase()}
-													</AvatarFallback>
-												</Avatar>
-											))}
-											{teamMembers.length > 5 && (
-												<div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted font-medium text-xs">
-													+{teamMembers.length - 5}
-												</div>
-											)}
-										</div>
-									</div>
-
-									{team.parentTeam && (
-										<div>
-											<p className="text-muted-foreground text-xs">
-												Подчиняется
-											</p>
-											<p className="text-sm">{team.parentTeam.name}</p>
-										</div>
-									)}
-								</div>
-							</div>
-						);
-					})}
-				</div>
+				<TeamsList
+					teams={teamsWithMembers}
+					searchQuery={searchQuery}
+					onEdit={openEditModal}
+					onDelete={handleDeleteTeam}
+					onAddMember={() =>
+						toast.info("Добавление участников скоро будет доступно")
+					}
+				/>
 			</div>
 
 			{/* Create Team Modal */}

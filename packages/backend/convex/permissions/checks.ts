@@ -11,7 +11,7 @@ import type {
 // Check if user can access a project
 export async function canAccessProject(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	projectId: Id<"constructionProjects">,
 	requiredLevel?: AccessLevel,
 ): Promise<boolean> {
@@ -101,7 +101,7 @@ export async function canAccessProject(
 // Check if user can manage members (add, remove, change roles)
 export async function canManageMembers(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
 	const organization = await ctx.db.get(organizationId);
@@ -130,7 +130,7 @@ export async function canManageMembers(
 // Check if user can create projects
 export async function canCreateProject(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
 	const organization = await ctx.db.get(organizationId);
@@ -178,7 +178,7 @@ export async function canCreateProject(
 // Check if user can access a document
 export async function canAccessDocument(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	documentId: Id<"documents">,
 	requiredLevel?: "owner" | "editor" | "commenter" | "viewer",
 ): Promise<boolean> {
@@ -251,7 +251,7 @@ export async function canAccessDocument(
 // Check if user has resource permission
 export async function hasResourcePermission(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	resourceType: "project" | "document" | "issue" | "team",
 	resourceId: string,
 	action: PermissionAction,
@@ -309,7 +309,7 @@ export async function hasResourcePermission(
 // Check if user is organization owner
 export async function isOrganizationOwner(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
 	const organization = await ctx.db.get(organizationId);
@@ -319,7 +319,7 @@ export async function isOrganizationOwner(
 // Check if user is director
 export async function isDirector(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
 	const membership = await ctx.db
@@ -338,7 +338,7 @@ export async function isDirector(
 // Check if user has admin role
 export async function isAdmin(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	organizationId: Id<"organizations">,
 ): Promise<boolean> {
 	// Check if user is organization owner first
@@ -364,7 +364,7 @@ export async function isAdmin(
 // Get user's highest access level for a project
 export async function getUserProjectAccessLevel(
 	ctx: QueryCtx | MutationCtx,
-	userId: Id<"users">,
+	userId: Id<"user">,
 	projectId: Id<"constructionProjects">,
 ): Promise<AccessLevel | null> {
 	const user = await ctx.db.get(userId);

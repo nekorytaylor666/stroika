@@ -42,7 +42,7 @@ export const notifyTaskStatusChanged = mutation({
 		issueId: v.id("issues"),
 		oldStatusId: v.id("status"),
 		newStatusId: v.id("status"),
-		changedBy: v.id("users"),
+		changedBy: v.string(),
 	},
 	handler: async (ctx, args) => {
 		// Get issue details
@@ -78,7 +78,7 @@ export const notifyTaskCommented = mutation({
 	args: {
 		issueId: v.id("issues"),
 		commentId: v.id("issueComments"),
-		commentAuthorId: v.id("users"),
+		commentAuthorId: v.string(),
 	},
 	handler: async (ctx, args) => {
 		// Get issue details
@@ -91,7 +91,7 @@ export const notifyTaskCommented = mutation({
 		if (!comment || !author) return;
 
 		// Collect users to notify
-		const usersToNotify = new Set<Id<"users">>();
+		const usersToNotify = new Set<Id<"user">>();
 
 		// Notify assignee
 		if (issue.assigneeId && issue.assigneeId !== args.commentAuthorId) {
@@ -133,7 +133,7 @@ export const notifyTaskPriorityChanged = mutation({
 		issueId: v.id("issues"),
 		oldPriorityId: v.id("priorities"),
 		newPriorityId: v.id("priorities"),
-		changedBy: v.id("users"),
+		changedBy: v.string(),
 	},
 	handler: async (ctx, args) => {
 		// Get issue details
