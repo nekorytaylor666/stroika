@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useNavigate } from "@tanstack/react-router";
+import type { UserWithRole } from "better-auth/plugins";
 import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -51,7 +52,6 @@ import { ConstructionTaskAttachmentsGrid } from "./construction-task-attachments
 import { ConstructionTaskComments } from "./construction-task-comments";
 import type { ConstructionTask } from "./construction-tasks";
 import { TimelineChart } from "./construction-timeline-chart";
-import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionTaskDetailsProps {
 	task: ConstructionTask | null;

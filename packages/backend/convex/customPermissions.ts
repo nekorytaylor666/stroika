@@ -30,10 +30,10 @@
  * - project_owner: Full owner with all permissions including project deletion
  */
 
+import { v } from "convex/values";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
 import { getCurrentUser } from "./helpers/getCurrentUser";
 
 export const createCustomRole = mutation({
@@ -405,7 +405,7 @@ export const hasPermissionForProject = query({
 		roleDisplayName?: string;
 	}> => {
 		const { resource, action } = args;
-		let { projectId } = args;
+		const { projectId } = args;
 
 		// Get current user if userId not provided
 		let userId = args.userId;

@@ -1,3 +1,5 @@
+import Loader from "@/components/loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,8 +33,6 @@ import {
 	GanttToday,
 } from "@/components/ui/shadcn-io/gantt";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import Loader from "@/components/loader";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useConstructionGanttData } from "@/hooks/use-construction-gantt-data";
 import { useProjectPermissions } from "@/hooks/use-permissions";

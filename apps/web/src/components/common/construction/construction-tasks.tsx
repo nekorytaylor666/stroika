@@ -358,7 +358,7 @@ export default function ConstructionTasks({
 											name={task.title}
 											index={index}
 											parent={status._id}
-											className="cursor-pointer p-0 transition-colors hover:bg-accent/50 w-full"
+											className="w-full cursor-pointer p-0 transition-colors hover:bg-accent/50"
 										>
 											<div
 												onClick={() => openTaskDetails(task)}

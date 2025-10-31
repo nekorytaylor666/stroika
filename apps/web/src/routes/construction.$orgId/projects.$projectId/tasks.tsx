@@ -1,9 +1,9 @@
 import { ConstructionTasksContainer } from "@/components/common/construction/construction-tasks";
 import { ConstructionFilter } from "@/components/layout/headers/construction/filter";
+import Loader from "@/components/loader";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import Loader from "@/components/loader";
 import { useMobile } from "@/hooks/use-mobile";
 import { useProjectPermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,7 @@ import { useSearchStore } from "@/store/search-store";
 import { useViewStore } from "@/store/view-store";
 import type { Id } from "@stroika/backend";
 import { createFileRoute } from "@tanstack/react-router";
-import { Grid3X3, List, Plus, Search, Lock } from "lucide-react";
+import { Grid3X3, List, Lock, Plus, Search } from "lucide-react";
 
 export const Route = createFileRoute(
 	"/construction/$orgId/projects/$projectId/tasks",

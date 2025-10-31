@@ -16,6 +16,7 @@ import { DialogTitle } from "@radix-ui/react-dialog";
 import { RiEditLine } from "@remixicon/react";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
+import type { UserWithRole } from "better-auth/plugins";
 import { useMutation, useQuery } from "convex/react";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -27,7 +28,6 @@ import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
 import { type SubtaskData, SubtasksInput } from "./subtasks-input";
-import type { UserWithRole } from "better-auth/plugins";
 
 interface ConstructionTaskForm {
 	identifier: string;

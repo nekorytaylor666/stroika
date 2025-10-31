@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { mutation, query } from "./_generated/server";
 import { authComponent, createAuth } from "./auth";
 
 // Get current authenticated user (now uses the one from auth.ts)

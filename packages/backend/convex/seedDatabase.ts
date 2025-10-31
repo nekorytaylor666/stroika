@@ -1,9 +1,9 @@
+import { v } from "convex/values";
+import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { action, mutation } from "./_generated/server";
-import type { MutationCtx, ActionCtx } from "./_generated/server";
+import type { ActionCtx, MutationCtx } from "./_generated/server";
 import { authComponent, createAuth } from "./auth";
-import { api } from "./_generated/api";
-import { v } from "convex/values";
 
 // Utility function to cast Better Auth string IDs to Convex user IDs
 // This is needed because Better Auth uses string IDs but Convex expects typed IDs

@@ -14,6 +14,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePermissions } from "@/hooks/use-permissions";
 import type { Id } from "@stroika/backend";
 import { api } from "@stroika/backend";
 import { useMutation } from "convex/react";
@@ -28,7 +29,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { usePermissions } from "@/hooks/use-permissions";
 import EditUserDialog from "./edit-user-dialog";
 import RoleSelectorDialog from "./role-selector-dialog";
 
