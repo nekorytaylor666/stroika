@@ -396,17 +396,72 @@ export const getTaskStats = query({
 	},
 });
 
-// Mutations
+export const createAgentTask = mutation({
+	args: {
+		title: v.string(),
+		description: v.string(),
+		statusId: v.string(),
+		assigneeId: v.string(),
+		userId: v.string(),
+		organizationId: v.string(),
+		priorityId: v.string(),
+		labelIds: v.optional(v.array(v.string())),
+		projectId: v.optional(v.string()),
+		parentTaskId: v.optional(v.string()),
+		dueDate: v.optional(v.string()),
+		rank: v.optional(v.string()),
+		identifier: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		console.log(args.userId, args.organizationId);
+		const taskId = await ctx.db.insert("issues", {
+			title: args.title,
+			description: args.description,
+			statusId: args.statusId,
+			assigneeId: args.assigneeId,
+			organizationId: args.organizationId,
+			priorityId: args.priorityId,
+			labelIds: args.labelIds || [],
+			projectId: args.projectId,
+			parentTaskId: args.parentTaskId,
+			dueDate: args.dueDate,
+			rank: args.rank || Date.now().toString(),
+			identifier:
+				args.identifier ||
+				`СТРФ-${Math.floor(Math.random() * 999)
+					.toString()
+					.padStart(3, "0")}`,
+			createdAt: new Date().toISOString(),
+			isConstructionTask: true,
+		});
+		await ctx.runMutation(api.activities.createActivity, {
+			issueId: taskId,
+			userId: args.userId,
+			type: "created",
+			newValue: args.title,
+		});
+
+		if (args.assigneeId && args.assigneeId !== user._id) {
+			// Send notification if task is assigned
+			await ctx.runMutation(api.issueNotifications.notifyTaskAssigned, {
+				issueId: taskId,
+				assigneeId: args.assigneeId,
+				assignedBy: args.userId,
+			});
+		}
+
+		return taskId;
+	},
+});
 export const create = mutation({
 	args: {
-		identifier: v.string(),
+		identifier: v.optional(v.string()),
 		title: v.string(),
 		description: v.string(),
 		statusId: v.string(),
 		assigneeId: v.optional(v.string()),
 		priorityId: v.string(),
-		labelIds: v.array(v.string()),
-		cycleId: v.string(),
+		labelIds: v.optional(v.array(v.string())),
 		projectId: v.optional(v.string()), // Link to construction project
 		rank: v.string(),
 		dueDate: v.optional(v.string()),
@@ -419,6 +474,12 @@ export const create = mutation({
 
 		const taskId = await ctx.db.insert("issues", {
 			...args,
+			labelIds: args.labelIds || [],
+			identifier:
+				args.identifier ||
+				`СТРФ-${Math.floor(Math.random() * 999)
+					.toString()
+					.padStart(3, "0")}`,
 			organizationId: organization.id,
 			createdAt: new Date().toISOString(),
 			isConstructionTask: true,

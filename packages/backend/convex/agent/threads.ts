@@ -10,7 +10,10 @@ import { v } from "convex/values";
 // See the docs at https://docs.convex.dev/agents/messages
 import { api, components, internal } from "../_generated/api";
 import { action, internalAction, mutation, query } from "../_generated/server";
-import { getCurrentUser } from "../helpers/getCurrentUser";
+import {
+	getCurrentUser,
+	getCurrentUserWithOrganization,
+} from "../helpers/getCurrentUser";
 import { agent, createAgentWithContext } from "./agent";
 
 /**
@@ -40,7 +43,7 @@ export const sendMessage = mutation({
 	args: { prompt: v.string(), threadId: v.string() },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
-		const user = await getCurrentUser(ctx);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 		if (!user) {
 			throw new Error("User not authenticated");
 		}
@@ -56,6 +59,8 @@ export const sendMessage = mutation({
 			threadId,
 			promptMessageId: messageId,
 			contextData: contextData || "",
+			userId: user._id,
+			organizationId: organization.id,
 		});
 	},
 });
@@ -67,13 +72,27 @@ export const generateResponse = internalAction({
 		promptMessageId: v.string(),
 		threadId: v.string(),
 		contextData: v.string(),
+		userId: v.string(),
+		organizationId: v.string(),
 	},
-	handler: async (ctx, { promptMessageId, threadId, contextData }) => {
+	handler: async (
+		ctx,
+		{ promptMessageId, threadId, contextData, userId, organizationId },
+	) => {
 		// Create agent with context
-		const agentWithContext = await createAgentWithContext(ctx, contextData);
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			contextData,
+			userId,
+			organizationId,
+		);
 
 		// Generate text with the context-aware agent
-		await agentWithContext.generateText(ctx, { threadId }, { promptMessageId });
+		const result = await agent.generateText(
+			ctx,
+			{ threadId },
+			{ promptMessageId },
+		);
 	},
 });
 

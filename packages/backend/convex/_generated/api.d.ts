@@ -10,6 +10,7 @@
 
 import type * as activities from "../activities.js";
 import type * as agent_agent from "../agent/agent.js";
+import type * as agent_agentTools from "../agent/agentTools.js";
 import type * as agent_messages from "../agent/messages.js";
 import type * as agent_threads from "../agent/threads.js";
 import type * as attachments_projectAttachments from "../attachments/projectAttachments.js";
@@ -101,6 +102,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   "agent/agent": typeof agent_agent;
+  "agent/agentTools": typeof agent_agentTools;
   "agent/messages": typeof agent_messages;
   "agent/threads": typeof agent_threads;
   "attachments/projectAttachments": typeof attachments_projectAttachments;

@@ -5,6 +5,8 @@ import { api, components } from "../_generated/api";
 import { internal } from "../_generated/api";
 import { action, mutation, query } from "../_generated/server";
 import { agent, createAgentWithContext } from "./agent";
+import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
+import { Id } from "../_generated/dataModel";
 
 /**
  * Send a message and initiate streaming response
@@ -18,6 +20,12 @@ export const sendMessage = mutation({
 		const identity = await ctx.auth.getUserIdentity();
 		if (!identity) {
 			throw new Error("Not authenticated");
+		}
+
+		// Get user and organization
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization) {
+			throw new Error("User or organization not found");
 		}
 
 		// Verify thread belongs to user
@@ -34,6 +42,8 @@ export const sendMessage = mutation({
 			threadId: args.threadId,
 			message: args.message,
 			contextData: contextData || "",
+			userId: user._id,
+			organizationId: organization.id as Id<"organizations">,
 		});
 
 		return { success: true };
@@ -48,12 +58,24 @@ export const streamResponse = action({
 		threadId: v.id("_agent_threads"),
 		message: v.string(),
 		contextData: v.string(),
+		userId: v.id("users"),
+		organizationId: v.id("organizations"),
 	},
 	handler: async (ctx, args) => {
-		// Create the agent with context
-		const agentWithContext = await createAgentWithContext(ctx, args.contextData);
+		// Create the agent with context including userId and organizationId
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			args.contextData,
+			args.userId,
+			args.organizationId
+		);
+
+		// Continue the thread with the custom context
 		const threadHandle = await agentWithContext.continueThread(ctx, {
 			threadId: args.threadId,
+			// Pass the context to the tools
+			userId: args.userId,
+			organizationId: args.organizationId,
 		});
 
 		// Stream the response
@@ -62,6 +84,62 @@ export const streamResponse = action({
 		});
 
 		return { success: true };
+	},
+});
+
+/**
+ * Alternative direct generation without thread (for simpler use cases)
+ */
+export const generateResponse = action({
+	args: {
+		message: v.string(),
+		threadId: v.optional(v.id("_agent_threads")),
+		userId: v.id("users"),
+		organizationId: v.id("organizations"),
+	},
+	handler: async (ctx, args) => {
+		// Get context data
+		const contextData = await ctx.runQuery(api.contextData.buildAgentContext);
+
+		// Create the agent with context
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			contextData || "",
+			args.userId,
+			args.organizationId
+		);
+
+		if (args.threadId) {
+			// Use existing thread
+			const threadHandle = await agentWithContext.continueThread(ctx, {
+				threadId: args.threadId,
+				userId: args.userId,
+				organizationId: args.organizationId,
+			});
+
+			const response = await threadHandle.generateText({
+				prompt: args.message,
+			});
+
+			return response.text;
+		} else {
+			// Create new thread
+			const { thread } = await agentWithContext.createThread(ctx, {
+				userId: args.userId,
+			});
+
+			const threadHandle = await agentWithContext.continueThread(ctx, {
+				threadId: thread._id,
+				userId: args.userId,
+				organizationId: args.organizationId,
+			});
+
+			const response = await threadHandle.generateText({
+				prompt: args.message,
+			});
+
+			return response.text;
+		}
 	},
 });
 
@@ -77,6 +155,9 @@ export const abortStream = action({
 		// Use the default agent for aborting (doesn't need context)
 		const threadHandle = await agent.continueThread(ctx, {
 			threadId: args.threadId,
+			// Note: We don't have userId/orgId here but abort doesn't need them
+			userId: "" as Id<"users">,
+			organizationId: "" as Id<"organizations">,
 		});
 
 		await threadHandle.abortStreamByOrder({ order: args.order });
