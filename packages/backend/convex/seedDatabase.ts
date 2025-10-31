@@ -7,12 +7,12 @@ import { authComponent, createAuth } from "./auth";
 
 // Utility function to cast Better Auth string IDs to Convex user IDs
 // This is needed because Better Auth uses string IDs but Convex expects typed IDs
-function asUserId(stringId: string): Id<"users"> {
-	return stringId as Id<"users">;
+function asUserId(stringId: string): Id<"user"> {
+	return stringId as Id<"user">;
 }
 
-function asUserIdArray(stringIds: string[]): Id<"users">[] {
-	return stringIds as Id<"users">[];
+function asUserIdArray(stringIds: string[]): Id<"user">[] {
+	return stringIds as Id<"user">[];
 }
 
 // Helper function to clear all data from the database

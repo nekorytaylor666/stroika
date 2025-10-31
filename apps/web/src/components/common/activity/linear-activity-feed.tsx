@@ -40,7 +40,7 @@ type ActivityType = "organization" | "project" | "team" | "user";
 interface LinearActivityFeedProps {
 	type: ActivityType;
 	projectId?: Id<"constructionProjects">;
-	userId?: Id<"users">;
+	userId?: Id<"user">;
 	departmentId?: Id<"departments">;
 	limit?: number;
 	showLoadMore?: boolean;

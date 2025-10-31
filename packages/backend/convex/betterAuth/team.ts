@@ -1,9 +1,10 @@
-import { doc } from "convex-helpers/validators";
-import { v } from "convex/values";
-import type { Doc } from "../_generated/dataModel";
+import { api } from "./_generated/api";
 import { mutation, query } from "../_generated/server";
-import { api, components } from "./_generated/api";
+import { v } from "convex/values";
+import { doc } from "convex-helpers/validators";
 import schema from "./schema";
+import type { Doc, Id } from "../_generated/dataModel";
+import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
 export const addTeamMembers = mutation({
 	args: {
 		teamId: v.id("team"),
@@ -96,8 +97,36 @@ export const getTeamMembersByTeamName = query({
 			.collect();
 
 		const users = await ctx.runQuery(api.users.listUsers, {
-			ids: members.map((member) => member.userId),
+			ids: members.map((member) => member.userId as Id<"user">),
 		});
 		return users;
+	},
+});
+
+export const listAllTeamsWithMembers = query({
+	args: {},
+	handler: async (ctx) => {
+		const teams = await ctx.db.query("team").collect();
+		console.log("teams", teams);
+		const teamsWithMembers = await Promise.all(
+			teams.map(async (team) => {
+				const members = await ctx.db
+					.query("teamMember")
+					.filter((q) => q.eq(q.field("teamId"), team._id))
+					.collect();
+				const users = await Promise.all(
+					members.map(async (member) => {
+						return await ctx.db.get(member.userId as Id<"user">);
+					}),
+				);
+				// Filter out null users
+
+				return {
+					...team,
+					members: users,
+				};
+			}),
+		);
+		return teamsWithMembers;
 	},
 });

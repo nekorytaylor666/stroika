@@ -79,7 +79,7 @@ export function MemberManagement({ organizationId }: MemberManagementProps) {
 
 		const matchesRole = roleFilter === "all" || user.roleId === roleFilter;
 
-		const userDept = userDepartments?.find((ud) => ud.userId === user._id);
+		const userDept = userDepartments?.find((ud) => ud.userId === user.id);
 		const matchesDepartment =
 			departmentFilter === "all" || userDept?.departmentId === departmentFilter;
 
@@ -93,14 +93,14 @@ export function MemberManagement({ organizationId }: MemberManagementProps) {
 	};
 
 	// Get department info for a user
-	const getUserDepartment = (userId: Id<"users">) => {
+	const getUserDepartment = (userId: Id<"user">) => {
 		const userDept = userDepartments?.find((ud) => ud.userId === userId);
 		if (!userDept || !departments) return null;
 		return departments.find((d) => d._id === userDept.departmentId);
 	};
 
 	// Handle role change
-	const handleRoleChange = async (userId: Id<"users">, roleId: Id<"roles">) => {
+	const handleRoleChange = async (userId: Id<"user">, roleId: Id<"roles">) => {
 		try {
 			await updateUserRole({ userId, roleId });
 		} catch (error) {
@@ -223,13 +223,13 @@ export function MemberManagement({ organizationId }: MemberManagementProps) {
 					<TableBody>
 						{filteredUsers?.map((user) => {
 							const role = getUserRole(user.roleId);
-							const department = getUserDepartment(user._id);
+							const department = getUserDepartment(user.id);
 							return (
-								<TableRow key={user._id}>
+								<TableRow key={user.id}>
 									<TableCell>
 										<div className="flex items-center gap-3">
 											<Avatar className="h-8 w-8">
-												<AvatarImage src={user.avatarUrl} />
+												<AvatarImage src={user.image} />
 												<AvatarFallback>
 													{user.name
 														.split(" ")
@@ -318,9 +318,9 @@ interface MemberEditModalProps {
 	roles: any[] | undefined;
 	departments: any[] | undefined;
 	userDepartments: any[] | undefined;
-	onRoleChange: (userId: Id<"users">, roleId: Id<"roles">) => Promise<void>;
+	onRoleChange: (userId: Id<"user">, roleId: Id<"roles">) => Promise<void>;
 	onDepartmentChange: (
-		userId: Id<"users">,
+		userId: Id<"user">,
 		departmentId: Id<"departments"> | null,
 		positionId: Id<"organizationalPositions">,
 	) => Promise<void>;

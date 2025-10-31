@@ -60,7 +60,7 @@ export function EditableUserSelect({
 
 	const normalizedValue = Array.isArray(value) ? value : value ? [value] : [];
 	const selectedUsers = users.filter((user) =>
-		normalizedValue.includes(user._id),
+		normalizedValue.includes(user.id),
 	);
 
 	const handleSelect = async (userId: string) => {
@@ -125,10 +125,10 @@ export function EditableUserSelect({
 					<div className="-space-x-2 flex">
 						{selectedUsers.slice(0, maxDisplay).map((user) => (
 							<Avatar
-								key={user._id}
+								key={user.id}
 								className="h-5 w-5 border-2 border-background"
 							>
-								<AvatarImage src={user.avatarUrl} />
+								<AvatarImage src={user.image} />
 								<AvatarFallback className="text-xs">
 									{user.name[0]}
 								</AvatarFallback>
@@ -145,11 +145,11 @@ export function EditableUserSelect({
 				<div className="flex flex-wrap items-center gap-1">
 					{selectedUsers.map((user) => (
 						<span
-							key={user._id}
+							key={user.id}
 							className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
 						>
 							<Avatar className="h-4 w-4">
-								<AvatarImage src={user.avatarUrl} />
+								<AvatarImage src={user.image} />
 								<AvatarFallback className="text-[10px]">
 									{user.name[0]}
 								</AvatarFallback>
@@ -165,7 +165,7 @@ export function EditableUserSelect({
 		return (
 			<span className="flex items-center gap-2">
 				<Avatar className="h-5 w-5">
-					<AvatarImage src={user.avatarUrl} />
+					<AvatarImage src={user.image} />
 					<AvatarFallback className="text-xs">{user.name[0]}</AvatarFallback>
 				</Avatar>
 				{user.name}
@@ -212,12 +212,12 @@ export function EditableUserSelect({
 						<CommandList>
 							<CommandGroup>
 								{users.map((user) => {
-									const isSelected = normalizedValue.includes(user._id);
+									const isSelected = normalizedValue.includes(user.id);
 									return (
 										<CommandItem
-											key={user._id}
+											key={user.id}
 											value={user.name}
-											onSelect={() => handleSelect(user._id)}
+											onSelect={() => handleSelect(user.id)}
 											className="flex items-center gap-2"
 										>
 											<Avatar className="h-6 w-6">

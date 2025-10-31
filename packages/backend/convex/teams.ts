@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getCurrentUser } from "./helpers/getCurrentUser";
+import { components } from "./_generated/api";
 
 // Create a new team
 export const create = mutation({
@@ -577,5 +578,15 @@ export const deleteTeam = mutation({
 		});
 
 		return { success: true };
+	},
+});
+
+export const listAllTeamsWithMembers = query({
+	args: {},
+	handler: async (ctx) => {
+		const response = await ctx.runQuery(
+			components.betterAuth.team.listAllTeamsWithMembers,
+		);
+		return response;
 	},
 });

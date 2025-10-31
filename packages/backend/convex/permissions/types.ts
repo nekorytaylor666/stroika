@@ -60,13 +60,13 @@ export interface RoleWithPermissions extends Role {
 
 export interface ProjectAccessCheck {
 	projectId: Id<"constructionProjects">;
-	userId: Id<"users">;
+	userId: Id<"user">;
 	requiredLevel: AccessLevel;
 }
 
 export interface ResourceAccessCheck {
 	resourceType: "project" | "document" | "issue" | "team";
 	resourceId: string;
-	userId: Id<"users">;
+	userId: Id<"user">;
 	requiredPermissions: string[];
 }

@@ -86,8 +86,8 @@ export function ParentTaskDisplay({ parentTaskId }: ParentTaskDisplayProps) {
 		try {
 			await updateTask({
 				id: parentTask._id as Id<"issues">,
-				assigneeId: userId ? (userId as Id<"users">) : undefined,
-				userId: currentUser?._id as Id<"users">,
+				assigneeId: userId ? (userId as Id<"user">) : undefined,
+				userId: currentUser?._id as Id<"user">,
 			});
 			toast.success(userId ? "Исполнитель обновлен" : "Исполнитель удален");
 		} catch (error) {
@@ -183,16 +183,16 @@ export function ParentTaskDisplay({ parentTaskId }: ParentTaskDisplayProps) {
 														</div>
 														{users?.map((user) => (
 															<button
-																key={user._id}
+																key={user.id}
 																className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
 																onClick={() => {
-																	handleAssigneeChange(user._id);
+																	handleAssigneeChange(user.id);
 																	setIsAssigneeOpen(false);
 																}}
 															>
 																<ConstructionAssigneeUser user={user} />
 																<span className="truncate">{user.name}</span>
-																{parentTask.assignee?._id === user._id && (
+																{parentTask.assignee?.id === user.id && (
 																	<CheckCircle2 className="ml-auto h-3 w-3 text-primary" />
 																)}
 															</button>

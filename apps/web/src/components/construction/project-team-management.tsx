@@ -54,9 +54,7 @@ export function ProjectTeamManagement({
 	projectId,
 }: ProjectTeamManagementProps) {
 	const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-	const [selectedUserId, setSelectedUserId] = useState<Id<"users"> | null>(
-		null,
-	);
+	const [selectedUserId, setSelectedUserId] = useState<Id<"user"> | null>(null);
 
 	// Fetch team data with statistics
 	const teamData = useQuery(api.constructionTeams.getProjectTeamWithStats, {
@@ -90,7 +88,7 @@ export function ProjectTeamManagement({
 		}
 	};
 
-	const handleRemoveMember = async (userId: Id<"users">) => {
+	const handleRemoveMember = async (userId: Id<"user">) => {
 		try {
 			const result = await removeTeamMember({
 				projectId,
@@ -118,7 +116,7 @@ export function ProjectTeamManagement({
 
 	// Filter out existing team members from available users
 	const availableUsers = allUsers?.filter(
-		(user) => !teamData.members.some((member) => member._id === user._id),
+		(user) => !teamData.members.some((member) => member._id === user.id),
 	);
 
 	return (
@@ -210,7 +208,7 @@ export function ProjectTeamManagement({
 						<UserSelector
 							users={availableUsers || []}
 							value={selectedUserId || undefined}
-							onChange={(userId) => setSelectedUserId(userId as Id<"users">)}
+							onChange={(userId) => setSelectedUserId(userId as Id<"user">)}
 							placeholder="Выберите участника..."
 						/>
 						<div className="flex justify-end gap-2">
@@ -235,7 +233,7 @@ export function ProjectTeamManagement({
 }
 
 interface TeamMember {
-	_id: Id<"users">;
+	_id: Id<"user">;
 	name: string;
 	email: string;
 	avatarUrl?: string | null;

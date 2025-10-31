@@ -56,7 +56,7 @@ export function TeamMembersTab({
 		member.user?.name?.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
-	const handleRemoveMember = async (userId: Id<"users">) => {
+	const handleRemoveMember = async (userId: Id<"user">) => {
 		try {
 			await removeMember({ teamId, userId });
 			toast.success("Участник удален из команды");

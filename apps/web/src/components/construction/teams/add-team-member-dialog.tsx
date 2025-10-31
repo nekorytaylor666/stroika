@@ -34,7 +34,7 @@ export function AddTeamMemberDialog({
 	organizationId,
 }: AddTeamMemberDialogProps) {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedUsers, setSelectedUsers] = useState<Set<Id<"users">>>(
+	const [selectedUsers, setSelectedUsers] = useState<Set<Id<"user">>>(
 		new Set(),
 	);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +51,7 @@ export function AddTeamMemberDialog({
 		user.name?.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
-	const handleToggleUser = (userId: Id<"users">) => {
+	const handleToggleUser = (userId: Id<"user">) => {
 		const newSelected = new Set(selectedUsers);
 		if (newSelected.has(userId)) {
 			newSelected.delete(userId);
@@ -135,13 +135,13 @@ export function AddTeamMemberDialog({
 							<div className="space-y-2">
 								{filteredUsers.map((user) => (
 									<div
-										key={user._id}
+										key={user.id}
 										className="flex cursor-pointer items-center gap-3 rounded-md p-3 hover:bg-accent"
-										onClick={() => handleToggleUser(user._id)}
+										onClick={() => handleToggleUser(user.id)}
 									>
 										<Checkbox
-											checked={selectedUsers.has(user._id)}
-											onCheckedChange={() => handleToggleUser(user._id)}
+											checked={selectedUsers.has(user.id)}
+											onCheckedChange={() => handleToggleUser(user.id)}
 											onClick={(e) => e.stopPropagation()}
 										/>
 										<Avatar className="h-10 w-10">

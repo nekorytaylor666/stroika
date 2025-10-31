@@ -149,7 +149,7 @@ export function ConstructionContextMenu({
 			await updateStatus({
 				id: task._id,
 				statusId,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			toast.success("Статус обновлен");
 		} catch (error) {
@@ -157,7 +157,7 @@ export function ConstructionContextMenu({
 		}
 	};
 
-	const handleAssigneeChange = async (assigneeId: Id<"users"> | null) => {
+	const handleAssigneeChange = async (assigneeId: Id<"user"> | null) => {
 		try {
 			await updateAssignee({
 				id: task._id,
@@ -174,7 +174,7 @@ export function ConstructionContextMenu({
 			await updatePriority({
 				id: task._id as Id<"issues">,
 				priorityId,
-				userId: currentUser?._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			toast.success("Приоритет обновлен");
 		} catch (error) {
@@ -202,7 +202,7 @@ export function ConstructionContextMenu({
 			try {
 				await addComment({
 					issueId: task._id as Id<"issues">,
-					authorId: currentUser._id as Id<"users">,
+					authorId: currentUser.id as Id<"user">,
 					content: comment,
 				});
 				toast.success("Комментарий добавлен");
@@ -257,7 +257,7 @@ export function ConstructionContextMenu({
 			await updateTask({
 				id: task._id as Id<"issues">,
 				dueDate: date ? format(date, "yyyy-MM-dd") : undefined,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 			setSelectedDate(date);
 			setIsDatePickerOpen(false);
@@ -310,7 +310,7 @@ export function ConstructionContextMenu({
 						<User className="mr-2 size-4" /> Исполнитель
 						{task.assigneeId && (
 							<span className="ml-auto text-muted-foreground text-xs">
-								{users.find((u) => u._id === task.assigneeId)?.name || ""}
+								{users.find((u) => u.id === task.assigneeId)?.name || ""}
 							</span>
 						)}
 					</ContextMenuSubTrigger>
@@ -336,13 +336,13 @@ export function ConstructionContextMenu({
 								<CommandGroup heading="Сотрудники">
 									{users.map((user) => (
 										<CommandItem
-											key={user._id}
-											value={user.name || user._id}
-											onSelect={() => handleAssigneeChange(user._id)}
+											key={user.id}
+											value={user.name || user.id}
+											onSelect={() => handleAssigneeChange(user.id)}
 											className="flex items-center gap-2"
 										>
 											<Avatar className="size-6">
-												<AvatarImage src={user.avatarUrl || undefined} />
+												<AvatarImage src={user.image || undefined} />
 												<AvatarFallback className="text-xs">
 													{user.name?.slice(0, 2).toUpperCase() || "??"}
 												</AvatarFallback>
@@ -357,7 +357,7 @@ export function ConstructionContextMenu({
 													</span>
 												)}
 											</div>
-											{task.assigneeId === user._id && (
+											{task.assigneeId === user.id && (
 												<CheckCircle2 className="ml-auto size-4 text-muted-foreground" />
 											)}
 										</CommandItem>

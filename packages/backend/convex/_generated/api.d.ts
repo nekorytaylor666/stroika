@@ -2151,6 +2151,7 @@ export declare const components: {
           userId?: null | string;
         }>
       >;
+      listAllTeamsWithMembers: FunctionReference<"query", "internal", {}, any>;
       removeTeamMembersByTeamName: FunctionReference<
         "mutation",
         "internal",

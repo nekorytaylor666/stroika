@@ -164,7 +164,7 @@ export function ConstructionProjectDetails({
 		onOpenChange(false);
 	};
 
-	const handleTeamMemberToggle = (userId: Id<"users">) => {
+	const handleTeamMemberToggle = (userId: Id<"user">) => {
 		setFormData((prev) => ({
 			...prev,
 			teamMemberIds: prev.teamMemberIds.includes(userId)
@@ -473,7 +473,7 @@ export function ConstructionProjectDetails({
 											onValueChange={(value) =>
 												setFormData({
 													...formData,
-													leadId: value as Id<"users">,
+													leadId: value as Id<"user">,
 												})
 											}
 										>
@@ -482,7 +482,7 @@ export function ConstructionProjectDetails({
 											</SelectTrigger>
 											<SelectContent>
 												{users?.map((user) => (
-													<SelectItem key={user._id} value={user._id}>
+													<SelectItem key={user.id} value={user.id}>
 														{user.name}
 													</SelectItem>
 												))}
@@ -491,7 +491,7 @@ export function ConstructionProjectDetails({
 									) : (
 										<div className="flex items-center gap-2">
 											<Avatar className="h-8 w-8">
-												<AvatarImage src={project.lead?.avatarUrl} />
+												<AvatarImage src={project.lead?.image} />
 												<AvatarFallback>
 													{project.lead?.name.slice(0, 2).toUpperCase()}
 												</AvatarFallback>
@@ -508,15 +508,13 @@ export function ConstructionProjectDetails({
 											<div className="grid grid-cols-2 gap-2">
 												{users?.map((user) => (
 													<label
-														key={user._id}
+														key={user.id}
 														className="flex cursor-pointer items-center space-x-2 rounded p-2 hover:bg-muted"
 													>
 														<input
 															type="checkbox"
-															checked={formData.teamMemberIds.includes(
-																user._id,
-															)}
-															onChange={() => handleTeamMemberToggle(user._id)}
+															checked={formData.teamMemberIds.includes(user.id)}
+															onChange={() => handleTeamMemberToggle(user.id)}
 															className="rounded"
 														/>
 														<Avatar className="h-6 w-6">
@@ -541,7 +539,7 @@ export function ConstructionProjectDetails({
 														className="flex items-center gap-2"
 													>
 														<Avatar className="h-8 w-8">
-															<AvatarImage src={member.avatarUrl} />
+															<AvatarImage src={member.image} />
 															<AvatarFallback>
 																{member.name.slice(0, 2).toUpperCase()}
 															</AvatarFallback>

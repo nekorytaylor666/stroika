@@ -78,7 +78,7 @@ export function ConstructionProjectCreateDialog({
 		startDate: new Date(),
 		targetDate: undefined as Date | undefined,
 		notes: "",
-		teamMemberIds: [] as Id<"users">[],
+		teamMemberIds: [] as Id<"user">[],
 		healthId: "no-update",
 		healthName: "Нет обновлений",
 		healthColor: "#6B7280",
@@ -105,7 +105,7 @@ export function ConstructionProjectCreateDialog({
 		try {
 			// Filter out any undefined or invalid team member IDs
 			const validTeamMemberIds = formData.teamMemberIds.filter(
-				(id): id is Id<"users"> =>
+				(id): id is Id<"user"> =>
 					id !== undefined && id !== null && id !== "undefined",
 			);
 
@@ -117,7 +117,7 @@ export function ConstructionProjectCreateDialog({
 				projectType: formData.projectType,
 				statusId: formData.statusId as Id<"status">,
 				priorityId: formData.priorityId as Id<"priorities">,
-				leadId: formData.leadId as Id<"users">,
+				leadId: formData.leadId as Id<"user">,
 				startDate: formData.startDate.toISOString(),
 				targetDate: formData.targetDate?.toISOString(),
 				notes: formData.notes,
@@ -158,7 +158,7 @@ export function ConstructionProjectCreateDialog({
 		}
 	};
 
-	const handleTeamMemberToggle = (userId: Id<"users">) => {
+	const handleTeamMemberToggle = (userId: Id<"user">) => {
 		// Ensure userId is valid before proceeding
 		if (!userId || userId === "undefined" || userId === undefined) {
 			console.warn(

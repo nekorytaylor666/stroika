@@ -27,7 +27,7 @@ interface RoleSelectorDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	memberId: Id<"organizationMembers">;
-	userId: Id<"users">;
+	userId: Id<"user">;
 	userName: string;
 	currentRoleId: Id<"roles">;
 	organizationId: Id<"organizations">;

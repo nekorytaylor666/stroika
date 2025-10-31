@@ -641,7 +641,7 @@ export function ProjectTeamManagementLinear({
 														</Badge>
 													)}
 												</div>
-												{selectedUserIds.includes(user._id) && (
+												{selectedUserIds.includes(user.id) && (
 													<Check className="h-5 w-5 flex-shrink-0 text-primary" />
 												)}
 											</div>

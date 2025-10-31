@@ -50,9 +50,7 @@ export function OrgSwitcher() {
 	const [newOrgDescription, setNewOrgDescription] = useState("");
 
 	// Get user's organizations
-	const organizations = useQuery(api.organizations.getUserOrganizations);
-	const createOrganization = useMutation(api.organizations.create);
-	const switchOrganization = useMutation(api.organizations.switchOrganization);
+	const { data: organizations } = authClient.useListOrganizations();
 
 	// Get current organization based on URL
 	const currentOrg =
@@ -63,13 +61,19 @@ export function OrgSwitcher() {
 		if (!newOrgName.trim()) return;
 
 		try {
-			const result = await createOrganization({
+			const result = await authClient.organization.create({
 				name: newOrgName,
-				description: newOrgDescription || undefined,
+				slug: newOrgName
+					.toLowerCase()
+					.replace(/\s+/g, "-")
+					.replace(/[^a-z0-9-]/g, ""),
+				metadata: {
+					description: newOrgDescription || undefined,
+				},
 			});
 
 			// Navigate to the new organization
-			navigate({ to: `/construction/${result.slug}` });
+			navigate({ to: `/construction/${result.data?.id}/inbox` });
 			setCreateOrgOpen(false);
 			setNewOrgName("");
 			setNewOrgDescription("");
@@ -80,8 +84,8 @@ export function OrgSwitcher() {
 
 	const handleSwitchOrg = async (orgId: string, slug: string) => {
 		try {
-			await switchOrganization({ organizationId: orgId as any });
-			navigate({ to: `/construction/${slug}` });
+			await authClient.organization.setActive({ organizationId: orgId });
+			navigate({ to: `/construction/${orgId}/inbox` });
 		} catch (error) {
 			console.error("Failed to switch organization:", error);
 		}
@@ -98,9 +102,12 @@ export function OrgSwitcher() {
 									size="lg"
 									className="h-8 p-1 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 								>
-									{currentOrg?.logoUrl ? (
+									{currentOrg?.logo ? (
 										<Avatar className="size-6">
-											<AvatarImage src={currentOrg.logoUrl} />
+											<AvatarImage
+												src={currentOrg.logo || undefined}
+												alt={currentOrg.name}
+											/>
 											<AvatarFallback className="text-xs">
 												{currentOrg.name.charAt(0).toUpperCase()}
 											</AvatarFallback>
@@ -152,12 +159,15 @@ export function OrgSwitcher() {
 									<DropdownMenuSubContent>
 										{organizations?.map((org) => (
 											<DropdownMenuItem
-												key={org._id}
-												onClick={() => handleSwitchOrg(org._id, org.slug)}
+												key={org.id}
+												onClick={() => handleSwitchOrg(org.id, org.slug)}
 											>
-												{org.logoUrl ? (
+												{org.logo ? (
 													<Avatar className="mr-2 size-5">
-														<AvatarImage src={org.logoUrl} />
+														<AvatarImage
+															src={org.logo || undefined}
+															alt={org.name}
+														/>
 														<AvatarFallback className="text-xs">
 															{org.name.charAt(0).toUpperCase()}
 														</AvatarFallback>
@@ -168,7 +178,7 @@ export function OrgSwitcher() {
 													</div>
 												)}
 												{org.name}
-												{currentOrg?._id === org._id && (
+												{currentOrg?.id === org.id && (
 													<span className="ml-auto text-muted-foreground text-xs">
 														Current
 													</span>

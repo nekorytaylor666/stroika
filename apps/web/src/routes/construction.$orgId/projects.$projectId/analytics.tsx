@@ -259,10 +259,10 @@ function ProjectAnalyticsPage() {
 							<SelectContent>
 								<SelectItem value="all">Все пользователи</SelectItem>
 								{users?.map((user) => (
-									<SelectItem key={user._id} value={user._id}>
+									<SelectItem key={user.id} value={user.id}>
 										<div className="flex items-center gap-2">
 											<Avatar className="h-6 w-6">
-												<AvatarImage src={user.avatarUrl || undefined} />
+												<AvatarImage src={user.image || undefined} />
 												<AvatarFallback className="text-xs">
 													{user.name?.slice(0, 2).toUpperCase() || "??"}
 												</AvatarFallback>

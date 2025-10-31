@@ -102,7 +102,7 @@ export default function Members() {
 											key={member._id}
 											memberId={member._id}
 											user={{
-												id: member.user._id,
+												id: member.user.id,
 												name: member.user.name,
 												email: member.user.email,
 												avatarUrl: member.user.avatarUrl,

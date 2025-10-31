@@ -18,7 +18,7 @@ import { toast } from "sonner";
 interface EditUserDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	userId: Id<"users">;
+	userId: Id<"user">;
 	userName: string;
 	userEmail: string;
 	onUpdate?: () => void;

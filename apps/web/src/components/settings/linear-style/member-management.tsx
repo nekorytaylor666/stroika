@@ -27,10 +27,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
+import {
+	useQuery as useTanstackQuery,
+	useMutation as useTanstackMutation,
+} from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
@@ -46,14 +51,9 @@ import {
 	UserPlus,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
-interface LinearMemberManagementProps {
-	organizationId?: string;
-}
-
-export function LinearMemberManagement({
-	organizationId,
-}: LinearMemberManagementProps) {
+export function LinearMemberManagement() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedMember, setSelectedMember] = useState<any>(null);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -62,28 +62,63 @@ export function LinearMemberManagement({
 	const [inviteRoleId, setInviteRoleId] = useState<Id<"roles">>();
 
 	// Get current user's organizations
-	const userOrganizations = useQuery(api.organizations.getUserOrganizations);
-	const currentOrg = userOrganizations?.find(
-		(org) => org.slug === organizationId,
-	);
+	const { data: currentOrg } = authClient.useActiveOrganization();
 
 	// Queries
-	const members = useQuery(
-		api.organizationMembers.list,
-		currentOrg ? { organizationId: currentOrg._id } : "skip",
-	);
-	const roles = useQuery(api.permissions.queries.getAllRoles);
-	const invites = useQuery(
-		api.invites.listInvites,
-		currentOrg ? { organizationId: currentOrg._id } : "skip",
-	);
-	const teams = useQuery(
-		api.teams.list,
-		currentOrg ? { organizationId: currentOrg._id } : "skip",
-	);
+	const { data: members, refetch: refetchMembers } = useTanstackQuery({
+		queryKey: [`organization-members-${currentOrg?.id}`],
+		queryFn: async () => {
+			const { data } = await authClient.organization.listMembers();
+			console.log(data);
+			return data.members;
+		},
+		enabled: !!currentOrg?.id,
+	});
+	const { data: invites } = useTanstackQuery({
+		queryKey: [`organization-invitations-${currentOrg?.id}`],
+		queryFn: async () => {
+			const { data } = await authClient.organization.listInvitations();
+			return data;
+		},
+		enabled: !!currentOrg?.id,
+	});
 
+	const { data: teams } = useTanstackQuery({
+		queryKey: [`organization-teams-${currentOrg?.id}`],
+		queryFn: async () => {
+			const { data } = await authClient.organization.listTeams();
+			return data;
+		},
+		enabled: !!currentOrg?.id,
+	});
+
+	const { data: roles } = useTanstackQuery({
+		queryKey: [`organization-roles-${currentOrg?.id}`],
+		queryFn: async () => {
+			const { data } = await authClient.permissions.roles.getRoles();
+			return data;
+		},
+		enabled: !!currentOrg?.id,
+	});
 	// Mutations
-	const updateMemberRole = useMutation(api.organizationMembers.updateRole);
+	const updateMemberRole = useTanstackMutation({
+		mutationFn: async (args: {
+			memberId: Id<"member">;
+			role: "owner" | "admin" | "member";
+		}) => {
+			const { memberId, role } = args;
+			const { data } = await authClient.organization.updateMemberRole({
+				memberId,
+				organizationId: currentOrg?.id,
+				role,
+			});
+			return data;
+		},
+		onSuccess(data, variables, onMutateResult, context) {
+			toast.success("Роль успешно обновлена");
+			refetchMembers();
+		},
+	});
 	const removeMember = useMutation(api.organizationMembers.removeMember);
 	const createInvite = useMutation(api.invites.createInvite);
 	const cancelInvite = useMutation(api.invites.cancelInvite);
@@ -104,11 +139,9 @@ export function LinearMemberManagement({
 	);
 
 	const handleInvite = async () => {
-		if (!currentOrg || !inviteEmail || !inviteRoleId) return;
-
 		try {
 			const result = await createInvite({
-				organizationId: currentOrg._id,
+				organizationId: currentOrg.id,
 				email: inviteEmail,
 				roleId: inviteRoleId,
 			});
@@ -126,26 +159,27 @@ export function LinearMemberManagement({
 		}
 	};
 
-	const handleUpdateRole = async (userId: Id<"users">, roleId: Id<"roles">) => {
-		if (!currentOrg) return;
-
+	const handleUpdateRole = async (
+		memberId: Id<"member">,
+		role: "owner" | "admin" | "member",
+	) => {
 		try {
-			await updateMemberRole({
-				organizationId: currentOrg._id,
-				userId,
-				roleId,
+			console.log("Updating role for user:", memberId, "with role:", role);
+			await updateMemberRole.mutateAsync({
+				memberId,
+				role,
 			});
 		} catch (error) {
 			console.error("Failed to update role:", error);
 		}
 	};
 
-	const handleRemoveMember = async (userId: Id<"users">) => {
+	const handleRemoveMember = async (userId: Id<"user">) => {
 		if (!currentOrg) return;
 
 		try {
 			await removeMember({
-				organizationId: currentOrg._id,
+				organizationId: currentOrg.id,
 				userId,
 			});
 		} catch (error) {
@@ -158,6 +192,7 @@ export function LinearMemberManagement({
 		setIsEditModalOpen(true);
 	};
 
+	console.log(members);
 	return (
 		<>
 			<div className="space-y-6">
@@ -218,13 +253,13 @@ export function LinearMemberManagement({
 
 								return (
 									<tr
-										key={member._id}
+										key={member.id}
 										className="group transition-colors hover:bg-muted/50"
 									>
 										<td className="px-6 py-4">
 											<div className="flex items-center">
 												<Avatar className="h-8 w-8">
-													<AvatarImage src={member.user?.avatarUrl} />
+													<AvatarImage src={member.user?.image} />
 													<AvatarFallback>
 														{member.user?.name
 															.split(" ")
@@ -245,11 +280,11 @@ export function LinearMemberManagement({
 										</td>
 										<td className="px-6 py-4">
 											<Select
-												value={member.role?._id}
+												value={member.role}
 												onValueChange={(value) =>
 													handleUpdateRole(
-														member.user!._id,
-														value as Id<"roles">,
+														member.id,
+														value as "owner" | "admin" | "member",
 													)
 												}
 											>
@@ -258,9 +293,7 @@ export function LinearMemberManagement({
 														{member.role ? (
 															<div className="flex items-center gap-2">
 																<Shield className="h-3 w-3 text-muted-foreground" />
-																<span className="text-sm">
-																	{member.role.displayName}
-																</span>
+																<span className="text-sm">{member.role}</span>
 															</div>
 														) : (
 															<span className="text-muted-foreground text-sm">
@@ -270,9 +303,9 @@ export function LinearMemberManagement({
 													</SelectValue>
 												</SelectTrigger>
 												<SelectContent>
-													{roles?.map((r) => (
-														<SelectItem key={r._id} value={r._id}>
-															{r.displayName}
+													{["owner", "admin", "member"].map((r) => (
+														<SelectItem key={r} value={r}>
+															{r}
 														</SelectItem>
 													))}
 												</SelectContent>
@@ -283,7 +316,7 @@ export function LinearMemberManagement({
 												<div className="flex flex-wrap gap-1">
 													{memberTeams.map((team) => (
 														<Badge
-															key={team._id}
+															key={team.id}
 															variant="secondary"
 															className="text-xs"
 														>
@@ -311,7 +344,7 @@ export function LinearMemberManagement({
 											</Badge>
 										</td>
 										<td className="px-6 py-4 text-muted-foreground text-sm">
-											{format(new Date(member.joinedAt), "d MMM yyyy", {
+											{format(new Date(member.createdAt), "d MMM yyyy", {
 												locale: ru,
 											})}
 										</td>
@@ -340,7 +373,7 @@ export function LinearMemberManagement({
 													<DropdownMenuSeparator />
 													<DropdownMenuItem
 														className="text-red-600"
-														onClick={() => handleRemoveMember(member.user!._id)}
+														onClick={() => handleRemoveMember(member.user!.id)}
 													>
 														<UserMinus className="mr-2 h-4 w-4" />
 														Удалить из организации
@@ -393,8 +426,8 @@ export function LinearMemberManagement({
 										onValueChange={(value) => {
 											if (currentOrg && selectedMember.user) {
 												handleUpdateRole(
-													selectedMember.user._id,
-													value as Id<"roles">,
+													selectedMember.id,
+													value as "owner" | "admin" | "member",
 												);
 												setSelectedMember({
 													...selectedMember,
@@ -407,9 +440,9 @@ export function LinearMemberManagement({
 											<SelectValue />
 										</SelectTrigger>
 										<SelectContent>
-											{roles?.map((role) => (
-												<SelectItem key={role._id} value={role._id}>
-													{role.displayName}
+											{["owner", "admin", "member"].map((role) => (
+												<SelectItem key={role} value={role}>
+													{role}
 												</SelectItem>
 											))}
 										</SelectContent>

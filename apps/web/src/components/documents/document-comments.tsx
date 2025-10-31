@@ -38,7 +38,7 @@ interface DocumentCommentsProps {
 interface Comment {
 	_id: Id<"documentComments">;
 	content: string;
-	authorId: Id<"users">;
+	authorId: Id<"user">;
 	author: any;
 	parentCommentId?: Id<"documentComments">;
 	isResolved: boolean;
@@ -401,7 +401,7 @@ export function DocumentComments({ documentId }: DocumentCommentsProps) {
 								<div className="max-h-48 overflow-y-auto p-2">
 									{filteredUsers.map((user) => (
 										<button
-											key={user._id}
+											key={user.id}
 											onClick={() => handleMentionSelect(user)}
 											className="flex w-full items-center gap-2 rounded p-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700"
 										>

@@ -42,7 +42,7 @@ export function OrganizationSwitcher() {
 	const { data: activeOrganization, isPending: isActiveOrganizationPending } =
 		authClient.useActiveOrganization();
 
-	console.log(organizations);
+	console.log("organizations", organizations);
 	const handleCreateOrg = async () => {
 		if (!newOrgName.trim()) return;
 

@@ -2,19 +2,22 @@ import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Doc, type Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";
 
 export const create = mutation({
 	args: {
 		issueId: v.id("issues"),
-		authorId: v.id("users"),
+		authorId: v.string(),
 		content: v.string(),
 		parentCommentId: v.optional(v.id("issueComments")),
-		mentionedUserIds: v.optional(v.array(v.id("users"))),
+		mentionedUserIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
+		const { user } = await getCurrentUserWithOrganization(ctx);
+		if (!user) throw new Error("User not found");
 		const commentId = await ctx.db.insert("issueComments", {
 			issueId: args.issueId,
-			authorId: args.authorId,
+			authorId: user._id,
 			content: args.content,
 			parentCommentId: args.parentCommentId,
 			isResolved: false,
@@ -29,7 +32,7 @@ export const create = mutation({
 					commentId,
 					issueId: args.issueId,
 					mentionedUserId,
-					mentionedBy: args.authorId,
+					mentionedBy: user._id,
 					createdAt: Date.now(),
 					isRead: false,
 				});
@@ -40,7 +43,7 @@ export const create = mutation({
 		await ctx.runMutation(api.issueNotifications.notifyTaskCommented, {
 			issueId: args.issueId,
 			commentId,
-			commentAuthorId: args.authorId,
+			commentAuthorId: user._id,
 		});
 
 		return commentId;
@@ -112,9 +115,9 @@ export const list = query({
 export const update = mutation({
 	args: {
 		id: v.id("issueComments"),
-		userId: v.id("users"),
+		userId: v.string(),
 		content: v.string(),
-		mentionedUserIds: v.optional(v.array(v.id("users"))),
+		mentionedUserIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const comment = await ctx.db.get(args.id);

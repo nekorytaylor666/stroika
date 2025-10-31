@@ -18,7 +18,7 @@ import { admin, organization } from "better-auth/plugins";
 const getUserId = async (ctx: any) => {
 	const authUser = await authComponent.getAuthUser(ctx);
 	if (authUser && authUser.userId) {
-		return authUser.userId as Id<"users">;
+		return authUser.userId as Id<"user">;
 	}
 
 	// Fall back to old auth system
@@ -201,7 +201,7 @@ export const getCurrentUser = query({
 		}
 
 		// Try multiple methods to get the user from the users table
-		let user = await ctx.db.get(authUser.userId as Id<"users">);
+		let user = await ctx.db.get(authUser.userId as Id<"user">);
 
 		if (!user) {
 			// Try to find by betterAuthId
@@ -262,7 +262,7 @@ export const viewer = query({
 		}
 
 		// Try multiple methods to get the user from the users table
-		let user = await ctx.db.get(authUser.userId as Id<"users">);
+		let user = await ctx.db.get(authUser.userId as Id<"user">);
 
 		if (!user) {
 			// Try to find by betterAuthId
@@ -323,7 +323,7 @@ export const me = query({
 		}
 
 		// Try multiple methods to get the user from the users table
-		let user = await ctx.db.get(authUser.userId as Id<"users">);
+		let user = await ctx.db.get(authUser.userId as Id<"user">);
 
 		if (!user) {
 			// Try to find by betterAuthId

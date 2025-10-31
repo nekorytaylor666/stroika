@@ -32,7 +32,7 @@ function UserActivityPage() {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto">
 				<div className="px-8 py-6">
-					<LinearActivityFeed type="user" userId={userId as Id<"users">} />
+					<LinearActivityFeed type="user" userId={userId as Id<"user">} />
 				</div>
 			</div>
 		</div>

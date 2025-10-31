@@ -326,9 +326,9 @@ export function ConstructionFilter() {
 								</CommandItem>
 								{users?.map((user) => (
 									<CommandItem
-										key={user._id}
-										value={user._id}
-										onSelect={() => toggleFilter("assignee", user._id)}
+										key={user.id}
+										value={user.id}
+										onSelect={() => toggleFilter("assignee", user.id)}
 										className="flex items-center justify-between"
 									>
 										<div className="flex items-center gap-2">
@@ -343,11 +343,11 @@ export function ConstructionFilter() {
 											</Avatar>
 											{user.name || "Unnamed"}
 										</div>
-										{filters.assignee.includes(user._id) && (
+										{filters.assignee.includes(user.id) && (
 											<CheckIcon size={16} className="ml-auto" />
 										)}
 										<span className="text-muted-foreground text-xs">
-											{getTasksByAssignee(user._id).length}
+											{getTasksByAssignee(user.id).length}
 										</span>
 									</CommandItem>
 								))}

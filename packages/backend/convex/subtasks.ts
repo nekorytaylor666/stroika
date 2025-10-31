@@ -62,13 +62,16 @@ export const createSubtask = mutation({
 		title: v.string(),
 		description: v.string(),
 		statusId: v.id("status"),
-		assigneeId: v.optional(v.id("users")),
+		assigneeId: v.optional(v.string()),
 		priorityId: v.id("priorities"),
 		labelIds: v.array(v.id("labels")),
 		projectId: v.optional(v.id("constructionProjects")),
 		dueDate: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization) throw new Error("User or organization not found");
+
 		// Get parent task to inherit some properties
 		const parentTask = await ctx.db.get(args.parentTaskId);
 		if (!parentTask) {

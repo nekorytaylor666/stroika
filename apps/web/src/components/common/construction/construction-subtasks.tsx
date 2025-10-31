@@ -126,12 +126,12 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 				title: newSubtaskTitle.trim(),
 				description: "",
 				statusId: defaultStatus._id,
-				assigneeId: selectedAssigneeId as Id<"users"> | undefined,
+				assigneeId: selectedAssigneeId as Id<"user"> | undefined,
 				priorityId: priorityId as Id<"priorities">,
 				labelIds: [],
 				projectId: task.projectId as Id<"constructionProjects"> | undefined,
 				dueDate: selectedDueDate?.toISOString(),
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 
 			toast.success("Подзадача создана");
@@ -159,7 +159,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 			await updateTaskStatus({
 				id: subtask._id,
 				statusId: newStatusId,
-				userId: currentUser._id as Id<"users">,
+				userId: currentUser.id as Id<"user">,
 			});
 		} catch (error) {
 			console.error("Failed to update subtask status:", error);
@@ -242,10 +242,10 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 									<div className="max-h-64 overflow-y-auto">
 										{users?.map((user) => (
 											<button
-												key={user._id}
+												key={user.id}
 												className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
 												onClick={() => {
-													setSelectedAssigneeId(user._id);
+													setSelectedAssigneeId(user.id);
 													setIsAssigneeOpen(false);
 												}}
 											>
@@ -422,7 +422,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 											await updateTaskStatus({
 												id: subtask._id,
 												statusId: newStatus._id,
-												userId: currentUser._id as Id<"users">,
+												userId: currentUser.id as Id<"user">,
 											});
 										} catch (error) {
 											console.error("Failed to update status:", error);
@@ -479,7 +479,7 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 													await updateTask({
 														id: subtask._id,
 														dueDate: date?.toISOString(),
-														userId: currentUser._id as Id<"users">,
+														userId: currentUser.id as Id<"user">,
 													});
 													toast.success("Срок обновлен");
 													setOpenDatePickers((prev) => ({
@@ -558,11 +558,11 @@ export function ConstructionSubtasks({ task }: ConstructionSubtasksProps) {
 										<div className="max-h-64 overflow-y-auto">
 											{users?.map((user) => (
 												<button
-													key={user._id}
+													key={user.id}
 													className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
 													onClick={() => {
-														setSelectedAssigneeId(user._id);
-														setIsAssigneeOpen(false);
+														setSIelectedAssigneeId(user.id);
+														setsAssigneeOpen(false);
 													}}
 												>
 													<ConstructionAssigneeUser user={user} />

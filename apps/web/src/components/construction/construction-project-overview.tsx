@@ -139,11 +139,11 @@ export function ConstructionProjectOverview({
 	const users = allUsers
 		?.filter((user): user is NonNullable<typeof user> => user !== null)
 		.map((user) => ({
-			_id: user._id,
+			_id: user.id,
 			name: user.name,
 			email: user.email,
-			avatarUrl: user.avatarUrl,
-			role: user.position,
+			avatarUrl: user.image,
+			role: user.role,
 		}));
 
 	if (!projectData) {

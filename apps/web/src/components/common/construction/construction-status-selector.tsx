@@ -108,7 +108,7 @@ export function ConstructionStatusSelector({
 				await updateTaskStatus({
 					id: issueId as Id<"issues">,
 					statusId: newStatusId as Id<"status">,
-					userId: currentUser._id as Id<"users">,
+					userId: currentUser.id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Failed to update status:", error);

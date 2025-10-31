@@ -105,9 +105,16 @@ export const getById = query({
 
 // Alias for getById for compatibility with frontend
 export const get = query({
-	args: { userId: v.id("users") },
+	args: { userId: v.string() },
 	handler: async (ctx, args) => {
-		return await ctx.db.get(args.userId);
+		const { auth, headers } = await authComponent.getAuth(createAuth, ctx);
+		const user = await auth.api.getUser({
+			query: {
+				id: args.userId,
+			},
+			headers,
+		});
+		return user;
 	},
 });
 

@@ -31,24 +31,13 @@ export const getPaginated = query({
 			.order("desc")
 			.collect();
 
-		// Filter to get matching attachments
-		const matchingAttachments = allAttachments.filter((attachment) => {
-			// Directly linked to project
-			if (attachment.projectId === args.projectId) {
-				return true;
-			}
-			// Linked to a project task (issueId must exist for this to match)
-			if (attachment.issueId && taskIds.has(attachment.issueId)) {
-				return true;
-			}
-			return false;
-		});
+		// Filter to only include attachments from our project's tasks
+		let filteredItems = result.page.filter(
+			(attachment) =>
+				attachment.projectId && attachment.projectId === args.projectId,
+		);
 
-		// Sort by uploadedAt descending (most recent first)
-		matchingAttachments.sort((a, b) => b.uploadedAt - a.uploadedAt);
-
-		// Apply filters before pagination
-		let filteredItems = matchingAttachments;
+		console.log(filteredItems);
 
 		// Apply search filter
 		if (args.search) {
@@ -192,17 +181,9 @@ export const getAllForProject = query({
 			.order("desc")
 			.collect();
 
-		let filteredAttachments = allAttachments.filter((att) => {
-			// Directly linked to project
-			if (att.projectId === args.projectId) {
-				return true;
-			}
-			// Linked to a project task (issueId must exist for this to match)
-			if (att.issueId && taskIds.has(att.issueId as any)) {
-				return true;
-			}
-			return false;
-		});
+		let filteredAttachments = allAttachments.filter(
+			(att) => att.projectId && att.projectId === args.projectId,
+		);
 
 		// Apply search filter
 		if (args.search) {
@@ -247,8 +228,8 @@ export const getAllForProject = query({
 		const enrichedItems = await Promise.all(
 			paginatedItems.map(async (attachment) => {
 				const [issue, uploader, fileUrl] = await Promise.all([
-					attachment.issueId ? ctx.db.get(attachment.issueId as any) : null,
-					ctx.db.get(attachment.uploadedBy as any),
+					attachment.issueId ? ctx.db.get(attachment.issueId) : null,
+					ctx.db.get(attachment.uploadedBy),
 					ctx.storage.getUrl(attachment.fileUrl as any),
 				]);
 

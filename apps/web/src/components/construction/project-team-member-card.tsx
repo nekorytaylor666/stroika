@@ -37,7 +37,7 @@ import {
 import { motion } from "motion/react";
 
 interface TeamMember {
-	_id: Id<"users">;
+	_id: Id<"user">;
 	name: string;
 	email: string;
 	avatarUrl?: string | null;

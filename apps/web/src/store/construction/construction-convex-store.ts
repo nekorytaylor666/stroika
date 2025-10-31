@@ -9,7 +9,7 @@ export interface ConstructionTask {
 	title: string;
 	description: string;
 	statusId: Id<"status">;
-	assigneeId?: Id<"users">;
+	assigneeId?: Id<"user">;
 	priorityId: Id<"priorities">;
 	labelIds: Id<"labels">[];
 	createdAt: string;
@@ -35,7 +35,7 @@ export interface ConstructionProject {
 	contractValue: number;
 	startDate: string;
 	targetDate?: string;
-	leadId: Id<"users">;
+	leadId: Id<"user">;
 	priorityId: Id<"priorities">;
 	healthId: string;
 	healthName: string;
@@ -44,7 +44,7 @@ export interface ConstructionProject {
 	location: string;
 	projectType: "residential" | "commercial" | "industrial" | "infrastructure";
 	notes?: string;
-	teamMemberIds: Id<"users">[];
+	teamMemberIds: Id<"user">[];
 	// Populated fields
 	status?: any;
 	lead?: any;
@@ -59,7 +59,7 @@ export interface ConstructionTeam {
 	icon: string;
 	joined: boolean;
 	color: string;
-	memberIds: Id<"users">[];
+	memberIds: Id<"user">[];
 	projectIds: Id<"constructionProjects">[];
 	department: "design" | "construction" | "engineering" | "management";
 	workload: number;
@@ -147,7 +147,7 @@ interface ConstructionConvexState {
 		id: Id<"constructionProjects">,
 	) => ConstructionProject | undefined;
 	getTeamById: (id: Id<"constructionTeams">) => ConstructionTeam | undefined;
-	getUserById: (id: Id<"users">) => any | undefined;
+	getUserById: (id: Id<"user">) => any | undefined;
 	getLabelById: (id: Id<"labels">) => any | undefined;
 	getPriorityById: (id: Id<"priorities">) => any | undefined;
 	getStatusById: (id: Id<"status">) => any | undefined;
@@ -436,7 +436,7 @@ export const useConstructionConvexStore = create<ConstructionConvexState>()(
 			getProjectById: (id) =>
 				get().projects.find((project) => project._id === id),
 			getTeamById: (id) => get().teams.find((team) => team._id === id),
-			getUserById: (id) => get().users.find((user) => user._id === id),
+			getUserById: (id) => get().users.find((user) => user.id === id),
 			getLabelById: (id) => get().labels.find((label) => label._id === id),
 			getPriorityById: (id) =>
 				get().priorities.find((priority) => priority._id === id),

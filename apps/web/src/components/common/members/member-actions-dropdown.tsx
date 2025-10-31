@@ -34,7 +34,7 @@ import RoleSelectorDialog from "./role-selector-dialog";
 
 interface MemberActionsDropdownProps {
 	memberId: Id<"organizationMembers">;
-	userId: Id<"users">;
+	userId: Id<"user">;
 	userName: string;
 	userEmail: string;
 	currentRoleId: Id<"roles">;

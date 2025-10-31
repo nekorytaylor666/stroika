@@ -12,20 +12,14 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import type { Id } from "@stroika/backend";
+import type { UserWithRole } from "better-auth/plugins";
 import { Check, ChevronsUpDown, User } from "lucide-react";
 import { useEffect, useState } from "react";
 
-interface User {
-	_id: Id<"users">;
-	name: string;
-	email: string;
-	avatarUrl?: string | null;
-}
-
 interface UserSelectorProps {
-	users: User[];
-	value?: Id<"users">;
-	onChange: (userId: Id<"users"> | undefined) => void;
+	users: UserWithRole[];
+	value?: Id<"user">;
+	onChange: (userId: Id<"user"> | undefined) => void;
 	placeholder?: string;
 	disabled?: boolean;
 }
@@ -39,7 +33,7 @@ export function UserSelector({
 }: UserSelectorProps) {
 	const [open, setOpen] = useState(false);
 
-	const selectedUser = users.find((user) => user._id === value);
+	const selectedUser = users.find((user) => user.id === value);
 
 	// Keyboard shortcut to open dialog
 	useEffect(() => {
@@ -67,7 +61,7 @@ export function UserSelector({
 				{selectedUser ? (
 					<div className="flex items-center gap-2">
 						<Avatar className="h-6 w-6">
-							<AvatarImage src={selectedUser.avatarUrl || undefined} />
+							<AvatarImage src={selectedUser.image || undefined} />
 							<AvatarFallback className="text-xs">
 								{selectedUser.name
 									.split(" ")
@@ -91,10 +85,10 @@ export function UserSelector({
 					<CommandGroup heading="Пользователи">
 						{users.map((user) => (
 							<CommandItem
-								key={user._id}
-								value={user.name + " " + user.email}
+								key={user.id}
+								value={`${user.name} ${user.email}`}
 								onSelect={() => {
-									onChange(user._id === value ? undefined : user._id);
+									onChange(user.id === value ? undefined : user.id);
 									setOpen(false);
 								}}
 								className="cursor-pointer"
@@ -102,11 +96,11 @@ export function UserSelector({
 								<Check
 									className={cn(
 										"mr-2 h-4 w-4",
-										value === user._id ? "opacity-100" : "opacity-0",
+										value === user.id ? "opacity-100" : "opacity-0",
 									)}
 								/>
 								<Avatar className="mr-2 h-6 w-6">
-									<AvatarImage src={user.avatarUrl || undefined} />
+									<AvatarImage src={user.image || undefined} />
 									<AvatarFallback className="text-xs">
 										{user.name
 											.split(" ")

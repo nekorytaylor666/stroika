@@ -156,7 +156,7 @@ export default function ConstructionTasks({
 				await updateTaskStatus({
 					id: taskId as Id<"issues">,
 					statusId: newStatusId as Id<"status">,
-					userId: currentUser._id as Id<"users">,
+					userId: currentUser.id as Id<"user">,
 				});
 			} catch (error) {
 				console.error("Failed to update task status:", error);

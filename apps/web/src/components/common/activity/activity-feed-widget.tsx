@@ -10,7 +10,7 @@ import { LinearActivityFeed } from "./linear-activity-feed";
 interface ActivityFeedWidgetProps {
 	type: "organization" | "project" | "team" | "user";
 	projectId?: Id<"constructionProjects">;
-	userId?: Id<"users">;
+	userId?: Id<"user">;
 	departmentId?: Id<"departments">;
 	title?: string;
 	showViewAll?: boolean;
