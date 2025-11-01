@@ -10,6 +10,7 @@
 
 import type * as activities from "../activities.js";
 import type * as agent_agent from "../agent/agent.js";
+import type * as agent_agentTools from "../agent/agentTools.js";
 import type * as agent_messages from "../agent/messages.js";
 import type * as agent_threads from "../agent/threads.js";
 import type * as attachments_projectAttachments from "../attachments/projectAttachments.js";
@@ -20,6 +21,7 @@ import type * as betterAuth__generated_server from "../betterAuth/_generated/ser
 import type * as betterAuth_adapter from "../betterAuth/adapter.js";
 import type * as betterAuth_auth from "../betterAuth/auth.js";
 import type * as betterAuth_customPermissions from "../betterAuth/customPermissions.js";
+import type * as betterAuth_members from "../betterAuth/members.js";
 import type * as betterAuth_permissions from "../betterAuth/permissions.js";
 import type * as betterAuth_team from "../betterAuth/team.js";
 import type * as betterAuth_users from "../betterAuth/users.js";
@@ -29,6 +31,7 @@ import type * as comments from "../comments.js";
 import type * as constructionProjects from "../constructionProjects.js";
 import type * as constructionTasks from "../constructionTasks.js";
 import type * as constructionTeams from "../constructionTeams.js";
+import type * as contextData from "../contextData.js";
 import type * as customPermissions from "../customPermissions.js";
 import type * as debug from "../debug.js";
 import type * as debugAuth from "../debugAuth.js";
@@ -99,6 +102,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
   "agent/agent": typeof agent_agent;
+  "agent/agentTools": typeof agent_agentTools;
   "agent/messages": typeof agent_messages;
   "agent/threads": typeof agent_threads;
   "attachments/projectAttachments": typeof attachments_projectAttachments;
@@ -109,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   "betterAuth/adapter": typeof betterAuth_adapter;
   "betterAuth/auth": typeof betterAuth_auth;
   "betterAuth/customPermissions": typeof betterAuth_customPermissions;
+  "betterAuth/members": typeof betterAuth_members;
   "betterAuth/permissions": typeof betterAuth_permissions;
   "betterAuth/team": typeof betterAuth_team;
   "betterAuth/users": typeof betterAuth_users;
@@ -118,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   constructionProjects: typeof constructionProjects;
   constructionTasks: typeof constructionTasks;
   constructionTeams: typeof constructionTeams;
+  contextData: typeof contextData;
   customPermissions: typeof customPermissions;
   debug: typeof debug;
   debugAuth: typeof debugAuth;
@@ -2101,6 +2107,14 @@ export declare const components: {
           resource: string;
           role: string;
         },
+        any
+      >;
+    };
+    members: {
+      listMembersByOrg: FunctionReference<
+        "query",
+        "internal",
+        { organizationId: string },
         any
       >;
     };

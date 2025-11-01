@@ -2,16 +2,6 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
-import {
-	ChevronRight,
-	Folder,
-	File,
-	Building,
-	CheckSquare,
-	FileText,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
 	Command,
 	CommandEmpty,
@@ -25,6 +15,16 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+	Building,
+	CheckSquare,
+	ChevronRight,
+	File,
+	FileText,
+	Folder,
+} from "lucide-react";
+import { useRef, useState } from "react";
 
 interface FileNode {
 	name: string;
@@ -35,9 +35,10 @@ interface FileNode {
 	children?: FileNode[];
 }
 
-interface MentionContext {
+export interface MentionContext {
 	id: string;
 	path: string;
+	displayName?: string; // Human-readable name for display
 	start: number;
 	end: number;
 	entityType?: "project" | "task" | "document";
@@ -48,6 +49,7 @@ interface ContextTextareaProps {
 	placeholder?: string;
 	value?: string;
 	onValueChange?: (value: string) => void;
+	contexts?: MentionContext[];
 	onContextChange?: (contexts: MentionContext[]) => void;
 	className?: string;
 	fileSystem?: FileNode[];
@@ -117,6 +119,7 @@ export function ContextTextarea({
 	placeholder = "Type @ to mention files...",
 	value: controlledValue,
 	onValueChange,
+	contexts: controlledContexts,
 	onContextChange,
 	className,
 	fileSystem,
@@ -131,7 +134,8 @@ export function ContextTextarea({
 	const [mentionSearch, setMentionSearch] = useState("");
 	const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
 	const [currentPath, setCurrentPath] = useState<string[]>([]);
-	const [contexts, setContexts] = useState<MentionContext[]>([]);
+	const [internalContexts, setInternalContexts] = useState<MentionContext[]>([]);
+	const contexts = controlledContexts ?? internalContexts;
 	const [cursorPosition, setCursorPosition] = useState(0);
 
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -254,54 +258,13 @@ export function ContextTextarea({
 		onKeyDown?.(e);
 
 		if (e.key === "Backspace") {
-			const cursorPos = e.currentTarget.selectionStart || 0;
-
+			// If the mention popup is open and search is empty, close it
 			if (showMentions && mentionSearch === "") {
 				setShowMentions(false);
 				setCurrentPath([]);
 				mentionStartRef.current = -1;
 				preventAtDetectionRef.current = true;
-
 				return;
-			}
-
-			const mentionAtCursor = contexts.find((ctx) => ctx.end === cursorPos);
-
-			if (mentionAtCursor && !showMentions) {
-				e.preventDefault();
-				const beforeMention = value.slice(0, mentionAtCursor.start);
-				const afterMention = value.slice(mentionAtCursor.end);
-				const newValue = beforeMention + afterMention;
-
-				if (onValueChange) {
-					onValueChange(newValue);
-				} else {
-					setInternalValue(newValue);
-				}
-
-				const newContexts = contexts
-					.filter((ctx) => ctx.id !== mentionAtCursor.id)
-					.map((ctx) => {
-						if (ctx.start > mentionAtCursor.end) {
-							const offset = mentionAtCursor.end - mentionAtCursor.start;
-							return {
-								...ctx,
-								start: ctx.start - offset,
-								end: ctx.end - offset,
-							};
-						}
-						return ctx;
-					});
-
-				setContexts(newContexts);
-				onContextChange?.(newContexts);
-
-				setTimeout(() => {
-					textareaRef.current?.setSelectionRange(
-						mentionAtCursor.start,
-						mentionAtCursor.start,
-					);
-				}, 0);
 			}
 		}
 	};
@@ -359,6 +322,7 @@ export function ContextTextarea({
 
 	const insertMention = (
 		path: string,
+		displayName: string,
 		entityType?: "project" | "task" | "document",
 		entityId?: string,
 	) => {
@@ -374,9 +338,10 @@ export function ContextTextarea({
 			return;
 		}
 
+		// Remove the @mention text from the textarea value
 		const beforeMention = value.slice(0, mentionStartRef.current);
 		const afterMention = value.slice(cursorPosition);
-		const newValue = `${beforeMention}@${path} ${afterMention}`;
+		const newValue = `${beforeMention}${afterMention}`;
 
 		if (onValueChange) {
 			onValueChange(newValue);
@@ -384,18 +349,23 @@ export function ContextTextarea({
 			setInternalValue(newValue);
 		}
 
+		// Add to contexts (but not to the text)
 		const newContext: MentionContext = {
 			id: Math.random().toString(36).substr(2, 9),
 			path,
-			start: mentionStartRef.current,
-			end: mentionStartRef.current + path.length + 1,
+			displayName,
+			start: -1, // Not in text anymore
+			end: -1, // Not in text anymore
 			entityType,
 			entityId,
 		};
 
 		const newContexts = [...contexts, newContext];
-		setContexts(newContexts);
-		onContextChange?.(newContexts);
+		if (onContextChange) {
+			onContextChange(newContexts);
+		} else {
+			setInternalContexts(newContexts);
+		}
 
 		setShowMentions(false);
 		setCurrentPath([]);
@@ -404,7 +374,7 @@ export function ContextTextarea({
 
 		setTimeout(() => {
 			textareaRef.current?.focus();
-			const newCursorPos = beforeMention.length + path.length + 2;
+			const newCursorPos = beforeMention.length;
 			textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
 		}, 0);
 	};
@@ -421,73 +391,20 @@ export function ContextTextarea({
 		}
 	};
 
-	const renderHighlightedText = () => {
-		if (contexts.length === 0) return null;
-
-		const parts: { text: string; isMention: boolean; path?: string }[] = [];
-		let lastIndex = 0;
-
-		const sortedContexts = [...contexts].sort((a, b) => a.start - b.start);
-
-		for (const context of sortedContexts) {
-			if (context.start > lastIndex) {
-				parts.push({
-					text: value.slice(lastIndex, context.start),
-					isMention: false,
-				});
-			}
-
-			parts.push({
-				text: value.slice(context.start, context.end),
-				isMention: true,
-				path: context.path,
-			});
-
-			lastIndex = context.end;
-		}
-
-		if (lastIndex < value.length) {
-			parts.push({ text: value.slice(lastIndex), isMention: false });
-		}
-
-		return (
-			<div className="pointer-events-none absolute inset-0 whitespace-pre-wrap p-3 text-sm text-transparent wrap-break-word">
-				{parts.map((part, index) => {
-					const key = part.isMention
-						? `mention-${part.path}-${index}`
-						: `text-${index}-${part.text.slice(0, 10)}`;
-					return part.isMention ? (
-						<span
-							key={key}
-							className="rounded bg-accent/50 px-1 text-accent-foreground"
-						>
-							{part.text}
-						</span>
-					) : (
-						<span key={key}>{part.text}</span>
-					);
-				})}
-			</div>
-		);
-	};
 
 	return (
-		<div className="relative">
-			<div className="relative">
-				{renderHighlightedText()}
-				<textarea
-					ref={textareaRef}
-					value={value}
-					onChange={handleTextChange}
-					onKeyDown={handleKeyDown}
-					placeholder={placeholder}
-					className={cn(
-						"relative z-10 min-h-[44px] w-full resize-none bg-transparent text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-						className,
-					)}
-					style={{ caretColor: "currentColor" }}
-				/>
-			</div>
+		<div className="relative w-full">
+			<textarea
+				ref={textareaRef}
+				value={value}
+				onChange={handleTextChange}
+				onKeyDown={handleKeyDown}
+				placeholder={placeholder}
+				className={cn(
+					"min-h-[44px] w-full resize-none bg-transparent text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+					className,
+				)}
+			/>
 
 			<Popover open={showMentions} onOpenChange={setShowMentions}>
 				<PopoverTrigger asChild>
@@ -529,6 +446,7 @@ export function ContextTextarea({
 												} else {
 													insertMention(
 														item.path,
+														item.name,
 														item.entityType,
 														item.entityId,
 													);
@@ -567,13 +485,6 @@ export function ContextTextarea({
 					</Command>
 				</PopoverContent>
 			</Popover>
-
-			{contexts.length > 0 && (
-				<div className="mt-2 text-xs text-muted-foreground">
-					<span className="font-medium">Selected contexts:</span>{" "}
-					{contexts.map((c) => c.path).join(", ")}
-				</div>
-			)}
 		</div>
 	);
 }

@@ -1,15 +1,21 @@
-// See the docs at https://docs.convex.dev/agents/messages
-import { components, internal } from "../_generated/api";
-import { action, internalAction, mutation, query } from "../_generated/server";
+import { openai } from "@ai-sdk/openai";
+import { Agent } from "@convex-dev/agent";
 import {
+	createThread as createThreadAgent,
 	listMessages,
 	saveMessage,
-	createThread as createThreadAgent,
+	storeFile,
 } from "@convex-dev/agent";
-import { v } from "convex/values";
-import { agent } from "./agent";
 import { paginationOptsValidator } from "convex/server";
-import { getCurrentUser } from "../helpers/getCurrentUser";
+import { v } from "convex/values";
+// See the docs at https://docs.convex.dev/agents/messages
+import { api, components, internal } from "../_generated/api";
+import { action, internalAction, mutation, query } from "../_generated/server";
+import {
+	getCurrentUser,
+	getCurrentUserWithOrganization,
+} from "../helpers/getCurrentUser";
+import { createAgentWithContext } from "./agent";
 
 /**
  * OPTION 1 (BASIC):
@@ -20,7 +26,24 @@ export const generateTextInAnAction = action({
 	args: { prompt: v.string(), threadId: v.string() },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
-		const result = await agent.generateText(ctx, { threadId }, { prompt });
+		// Note: This example uses the default agent without context.
+		// For context-aware responses, use the sendMessage mutation instead.
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user || !organization) {
+			throw new Error("User or organization not found");
+		}
+		const contextData = await ctx.runQuery(api.contextData.buildAgentContext);
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			contextData,
+			user._id,
+			organization.id,
+		);
+		const result = await agentWithContext.generateText(
+			ctx,
+			{ threadId },
+			{ prompt },
+		);
 		return result.text;
 	},
 });
@@ -33,16 +56,32 @@ export const generateTextInAnAction = action({
 
 // Save a user message, and kick off an async response.
 export const sendMessage = mutation({
-	args: { prompt: v.string(), threadId: v.string() },
-	handler: async (ctx, { prompt, threadId }) => {
+	args: {
+		prompt: v.string(),
+		threadId: v.string(),
+		fileIds: v.optional(v.array(v.string())),
+	},
+	handler: async (ctx, { prompt, threadId, fileIds }) => {
 		// await authorizeThreadAccess(ctx, threadId);
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		// Fetch context data in the mutation (which has auth)
+		const contextData = await ctx.runQuery(api.contextData.buildAgentContext);
+
 		const { messageId } = await saveMessage(ctx, components.agent, {
 			threadId,
 			prompt,
+			fileIds,
 		});
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
 			promptMessageId: messageId,
+			contextData: contextData || "",
+			userId: user._id,
+			organizationId: organization.id,
 		});
 	},
 });
@@ -50,9 +89,31 @@ export const sendMessage = mutation({
 // Generate a response to a user message.
 // Any clients listing the messages will automatically get the new message.
 export const generateResponse = internalAction({
-	args: { promptMessageId: v.string(), threadId: v.string() },
-	handler: async (ctx, { promptMessageId, threadId }) => {
-		await agent.generateText(ctx, { threadId }, { promptMessageId });
+	args: {
+		promptMessageId: v.string(),
+		threadId: v.string(),
+		contextData: v.string(),
+		userId: v.string(),
+		organizationId: v.string(),
+	},
+	handler: async (
+		ctx,
+		{ promptMessageId, threadId, contextData, userId, organizationId },
+	) => {
+		// Create agent with context
+		const agentWithContext = await createAgentWithContext(
+			ctx,
+			contextData,
+			userId,
+			organizationId,
+		);
+
+		// Generate text with the context-aware agent
+		const result = await agentWithContext.generateText(
+			ctx,
+			{ threadId },
+			{ promptMessageId },
+		);
 	},
 });
 
@@ -216,5 +277,45 @@ export const getThreadDetails = query({
 		}
 
 		return thread;
+	},
+});
+
+/**
+ * Upload a file and store it for use with the agent
+ */
+export const uploadFile = mutation({
+	args: {
+		storageId: v.id("_storage"),
+		contentType: v.string(),
+		filename: v.string(),
+	},
+	handler: async (ctx, { storageId, contentType, filename }) => {
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		// Store the file using the agent component's storeFile function
+		const fileId = await storeFile(ctx, components.agent, {
+			storageId,
+			contentType,
+			filename,
+		});
+
+		return fileId;
+	},
+});
+
+/**
+ * Generate an upload URL for file storage
+ */
+export const generateUploadUrl = mutation({
+	handler: async (ctx) => {
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		return await ctx.storage.generateUploadUrl();
 	},
 });

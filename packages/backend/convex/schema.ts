@@ -193,7 +193,7 @@ export default defineSchema({
 		priorityId: v.string(),
 		labelIds: v.array(v.string()),
 		createdAt: v.string(),
-		cycleId: v.string(),
+		cycleId: v.optional(v.string()),
 		projectId: v.optional(v.string()),
 		rank: v.string(),
 		dueDate: v.optional(v.string()),

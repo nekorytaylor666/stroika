@@ -108,6 +108,7 @@ export function ConstructionTaskDetails({
 	}, [currentTask]);
 
 	if (!currentTask) return null;
+	console.log("currentTask", currentTask);
 
 	const assignee = currentTask.assigneeId
 		? users?.find((u) => u.id === currentTask.assigneeId)

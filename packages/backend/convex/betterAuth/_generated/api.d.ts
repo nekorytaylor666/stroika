@@ -11,6 +11,7 @@
 import type * as adapter from "../adapter.js";
 import type * as auth from "../auth.js";
 import type * as customPermissions from "../customPermissions.js";
+import type * as members from "../members.js";
 import type * as permissions from "../permissions.js";
 import type * as team from "../team.js";
 import type * as users from "../users.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   adapter: typeof adapter;
   auth: typeof auth;
   customPermissions: typeof customPermissions;
+  members: typeof members;
   permissions: typeof permissions;
   team: typeof team;
   users: typeof users;
@@ -1955,6 +1957,14 @@ export type Mounts = {
         resource: string;
         role: string;
       },
+      any
+    >;
+  };
+  members: {
+    listMembersByOrg: FunctionReference<
+      "query",
+      "public",
+      { organizationId: string },
       any
     >;
   };
