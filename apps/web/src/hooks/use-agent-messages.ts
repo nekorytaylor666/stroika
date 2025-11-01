@@ -31,13 +31,13 @@ export function useAgentMessages(threadId: Id<"_agent_threads"> | null) {
 	);
 
 	const handleSendMessage = useCallback(
-		async (prompt: string) => {
+		async (prompt: string, fileIds?: string[]) => {
 			if (!threadId) {
 				throw new Error("No thread selected");
 			}
 
 			try {
-				await sendMessage({ threadId, prompt });
+				await sendMessage({ threadId, prompt, fileIds });
 			} catch (error) {
 				console.error("Failed to send message:", error);
 				throw error;

@@ -4,6 +4,7 @@ import {
 	createThread as createThreadAgent,
 	listMessages,
 	saveMessage,
+	storeFile,
 } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
@@ -55,8 +56,12 @@ export const generateTextInAnAction = action({
 
 // Save a user message, and kick off an async response.
 export const sendMessage = mutation({
-	args: { prompt: v.string(), threadId: v.string() },
-	handler: async (ctx, { prompt, threadId }) => {
+	args: {
+		prompt: v.string(),
+		threadId: v.string(),
+		fileIds: v.optional(v.array(v.string())),
+	},
+	handler: async (ctx, { prompt, threadId, fileIds }) => {
 		// await authorizeThreadAccess(ctx, threadId);
 		const { user, organization } = await getCurrentUserWithOrganization(ctx);
 		if (!user) {
@@ -69,6 +74,7 @@ export const sendMessage = mutation({
 		const { messageId } = await saveMessage(ctx, components.agent, {
 			threadId,
 			prompt,
+			fileIds,
 		});
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
@@ -271,5 +277,45 @@ export const getThreadDetails = query({
 		}
 
 		return thread;
+	},
+});
+
+/**
+ * Upload a file and store it for use with the agent
+ */
+export const uploadFile = mutation({
+	args: {
+		storageId: v.id("_storage"),
+		contentType: v.string(),
+		filename: v.string(),
+	},
+	handler: async (ctx, { storageId, contentType, filename }) => {
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		// Store the file using the agent component's storeFile function
+		const fileId = await storeFile(ctx, components.agent, {
+			storageId,
+			contentType,
+			filename,
+		});
+
+		return fileId;
+	},
+});
+
+/**
+ * Generate an upload URL for file storage
+ */
+export const generateUploadUrl = mutation({
+	handler: async (ctx) => {
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new Error("User not authenticated");
+		}
+
+		return await ctx.storage.generateUploadUrl();
 	},
 });

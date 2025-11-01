@@ -15,6 +15,7 @@ export const sendMessage = mutation({
 	args: {
 		threadId: v.id("_agent_threads"),
 		message: v.string(),
+		fileIds: v.optional(v.array(v.string())),
 	},
 	handler: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -41,6 +42,7 @@ export const sendMessage = mutation({
 		await ctx.scheduler.runAfter(0, internal.agent.messages.streamResponse, {
 			threadId: args.threadId,
 			message: args.message,
+			fileIds: args.fileIds,
 			contextData: contextData || "",
 			userId: user._id,
 			organizationId: organization.id as Id<"organizations">,
@@ -57,6 +59,7 @@ export const streamResponse = action({
 	args: {
 		threadId: v.id("_agent_threads"),
 		message: v.string(),
+		fileIds: v.optional(v.array(v.string())),
 		contextData: v.string(),
 		userId: v.id("users"),
 		organizationId: v.id("organizations"),
@@ -78,9 +81,10 @@ export const streamResponse = action({
 			organizationId: args.organizationId,
 		});
 
-		// Stream the response
+		// Stream the response with file attachments if provided
 		await threadHandle.streamText({
 			prompt: args.message,
+			fileIds: args.fileIds,
 		});
 
 		return { success: true };
@@ -94,6 +98,7 @@ export const generateResponse = action({
 	args: {
 		message: v.string(),
 		threadId: v.optional(v.id("_agent_threads")),
+		fileIds: v.optional(v.array(v.string())),
 		userId: v.id("users"),
 		organizationId: v.id("organizations"),
 	},
@@ -119,6 +124,7 @@ export const generateResponse = action({
 
 			const response = await threadHandle.generateText({
 				prompt: args.message,
+				fileIds: args.fileIds,
 			});
 
 			return response.text;
@@ -136,6 +142,7 @@ export const generateResponse = action({
 
 			const response = await threadHandle.generateText({
 				prompt: args.message,
+				fileIds: args.fileIds,
 			});
 
 			return response.text;
