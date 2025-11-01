@@ -5,6 +5,7 @@ import {
 	listMessages,
 	saveMessage,
 	storeFile,
+	syncStreams,
 } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
@@ -23,7 +24,7 @@ import { createAgentWithContext } from "./agent";
  */
 
 export const generateTextInAnAction = action({
-	args: { prompt: v.string(), threadId: v.string() },
+	args: { prompt: v.string(), threadId: v.id("_agent_threads") },
 	handler: async (ctx, { prompt, threadId }) => {
 		// await authorizeThreadAccess(ctx, threadId);
 		// Note: This example uses the default agent without context.
@@ -91,10 +92,10 @@ export const sendMessage = mutation({
 export const generateResponse = internalAction({
 	args: {
 		promptMessageId: v.string(),
-		threadId: v.string(),
+		threadId: v.id("_agent_threads"),
 		contextData: v.string(),
-		userId: v.string(),
-		organizationId: v.string(),
+		userId: v.id("users"),
+		organizationId: v.id("organizations"),
 	},
 	handler: async (
 		ctx,
@@ -108,11 +109,17 @@ export const generateResponse = internalAction({
 			organizationId,
 		);
 
-		// Generate text with the context-aware agent
-		const result = await agentWithContext.generateText(
+		// Stream text with the context-aware agent
+		const result = await agentWithContext.streamText(
 			ctx,
 			{ threadId },
 			{ promptMessageId },
+			{
+				saveStreamDeltas: {
+					chunking: "word",
+					throttleMs: 50,
+				},
+			},
 		);
 	},
 });
@@ -132,12 +139,24 @@ export const listThreadMessages = query({
 	handler: async (ctx, args) => {
 		const { threadId, paginationOpts } = args;
 		// await authorizeThreadAccess(ctx, threadId);
+
+		// Get messages from the agent component
 		const messages = await listMessages(ctx, components.agent, {
 			threadId,
 			paginationOpts,
 		});
-		// You could add more fields here, join with other tables, etc.
-		return messages;
+
+		// IMPORTANT: Sync streaming deltas for real-time updates
+		// This ensures that streaming messages are properly synchronized
+		const streams = await syncStreams(ctx, components.agent, {
+			threadId,
+		});
+		
+		// Return both messages and streams for proper client-side rendering
+		return {
+			...messages,
+			streams,
+		};
 	},
 });
 
