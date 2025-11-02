@@ -1,9 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -90,7 +86,6 @@ export function CreateNewIssue() {
 			assigneeId: null,
 			priorityId: defaultPriorityId || null,
 			labelIds: [],
-			cycleId: "cycle-1",
 			projectId: defaultProjectId || null, // Use project from store
 			rank: `rank-${Date.now()}`,
 			attachments: [],
@@ -128,7 +123,10 @@ export function CreateNewIssue() {
 			description: template.defaultDescription || "",
 			statusId: template.defaultStatusId || prev.statusId,
 			priorityId: template.defaultPriorityId || prev.priorityId,
-			labelIds: template.defaultLabelIds?.length > 0 ? template.defaultLabelIds : prev.labelIds,
+			labelIds:
+				template.defaultLabelIds?.length > 0
+					? template.defaultLabelIds
+					: prev.labelIds,
 			assigneeId: template.defaultAssigneeId || prev.assigneeId,
 			projectId: template.defaultProjectId || prev.projectId,
 			// Convert template subtasks to form subtasks
@@ -136,12 +134,14 @@ export function CreateNewIssue() {
 				template.subtasksParsed?.map((subtask: any) => ({
 					title: subtask.title,
 					description: subtask.description || "",
-					assigneeId: subtask.defaultAssigneeId || template.defaultAssigneeId || null,
+					assigneeId:
+						subtask.defaultAssigneeId || template.defaultAssigneeId || null,
 					dueDate: undefined,
 					attachments: [],
 					// Include status and priority from subtask if available
 					statusId: subtask.defaultStatusId || template.defaultStatusId || null,
-					priorityId: subtask.defaultPriorityId || template.defaultPriorityId || null,
+					priorityId:
+						subtask.defaultPriorityId || template.defaultPriorityId || null,
 				})) || prev.subtasks,
 			// Preserve other form fields
 			dueDate: prev.dueDate,
@@ -172,8 +172,6 @@ export function CreateNewIssue() {
 				assigneeId: addTaskForm.assigneeId || undefined,
 				priorityId: addTaskForm.priorityId,
 				labelIds: addTaskForm.labelIds,
-				cycleId: addTaskForm.cycleId,
-				userId: currentUser?.id as Id<"user">,
 				projectId: addTaskForm.projectId || undefined,
 				rank: addTaskForm.rank,
 				dueDate: addTaskForm.dueDate,
@@ -300,7 +298,8 @@ export function CreateNewIssue() {
 					<div className="flex w-full flex-wrap items-center justify-start gap-1.5">
 						<ConstructionStatusSelector
 							status={
-								statuses?.find((s: any) => s._id === addTaskForm.statusId) || null
+								statuses?.find((s: any) => s._id === addTaskForm.statusId) ||
+								null
 							}
 							onChange={(newStatus) =>
 								setAddTaskForm({
@@ -311,8 +310,9 @@ export function CreateNewIssue() {
 						/>
 						<PrioritySelector
 							priority={
-								priorities?.find((p: any) => p._id === addTaskForm.priorityId) ||
-								null
+								priorities?.find(
+									(p: any) => p._id === addTaskForm.priorityId,
+								) || null
 							}
 							onChange={(newPriority) =>
 								setAddTaskForm({
@@ -334,7 +334,8 @@ export function CreateNewIssue() {
 						/>
 						<ProjectSelector
 							project={
-								projects?.find((p: any) => p._id === addTaskForm.projectId) || null
+								projects?.find((p: any) => p._id === addTaskForm.projectId) ||
+								null
 							}
 							onChange={(newProject) =>
 								setAddTaskForm({
@@ -376,7 +377,9 @@ export function CreateNewIssue() {
 							onCheckedChange={setCreateMore}
 							className="h-4 w-7"
 						/>
-						<Label htmlFor="create-more" className="text-xs">Создать ещё</Label>
+						<Label htmlFor="create-more" className="text-xs">
+							Создать ещё
+						</Label>
 					</div>
 					<Button
 						size="sm"

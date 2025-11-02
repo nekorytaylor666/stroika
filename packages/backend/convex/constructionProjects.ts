@@ -860,3 +860,407 @@ export const getProjectTimelineData = query({
 		};
 	},
 });
+
+// Organization-level queries for overview dashboard
+export const getOrganizationOverview = query({
+	handler: async (ctx) => {
+		const { user, organization } = await getCurrentUserWithOrganization(ctx);
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
+		// Get all projects for the organization
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		// Get all tasks for all projects
+		const allTasks = await Promise.all(
+			projects.map(async (project) => {
+				const tasks = await ctx.db
+					.query("issues")
+					.withIndex("by_project", (q) => q.eq("projectId", project._id))
+					.collect();
+				return { projectId: project._id, tasks };
+			}),
+		);
+
+		// Get all statuses to identify completion statuses
+		const statuses = await ctx.db.query("status").collect();
+		const completionStatusIds = statuses
+			.filter(
+				(s) =>
+					s.name === "завершено" ||
+					s.name === "Завершено" ||
+					s.name === "Done" ||
+					s.name === "Completed" ||
+					s.name === "Готово",
+			)
+			.map((s) => s._id);
+
+		// Calculate stats for each project
+		const projectsWithStats = await Promise.all(
+			projects.map(async (project) => {
+				const projectTasks = allTasks.find(
+					(t) => t.projectId === project._id,
+				)?.tasks || [];
+
+				// Get task statuses
+				const tasksWithStatus = await Promise.all(
+					projectTasks.map(async (task) => {
+						const status = await ctx.db.get(task.statusId);
+						return { ...task, status };
+					}),
+				);
+
+				// Calculate task stats
+				const taskStats = {
+					total: projectTasks.length,
+					completed: 0,
+					inProgress: 0,
+					notStarted: 0,
+					overdue: 0,
+				};
+
+				const now = new Date();
+				for (const task of tasksWithStatus) {
+					if (!task.status) continue;
+
+					// Check if completed
+					if (completionStatusIds.includes(task.statusId)) {
+						taskStats.completed++;
+					} else if (
+						task.status.name === "В работе" ||
+						task.status.name === "На проверке" ||
+						task.status.name.toLowerCase().includes("progress")
+					) {
+						taskStats.inProgress++;
+					} else {
+						taskStats.notStarted++;
+					}
+
+					// Check if overdue
+					if (task.dueDate && !completionStatusIds.includes(task.statusId)) {
+						const dueDate = new Date(task.dueDate);
+						if (dueDate < now) {
+							taskStats.overdue++;
+						}
+					}
+				}
+
+				// Calculate project delay
+				const targetDate = project.targetDate
+					? new Date(project.targetDate)
+					: null;
+				const isDelayed =
+					targetDate &&
+					targetDate < now &&
+					taskStats.completed < taskStats.total;
+
+				// Get related data
+				const [status, priority, lead] = await Promise.all([
+					ctx.db.get(project.statusId),
+					ctx.db.get(project.priorityId),
+					ctx.db.get(project.leadId),
+				]);
+
+				return {
+					...project,
+					status,
+					priority,
+					lead,
+					taskStats,
+					percentComplete: taskStats.total > 0
+						? Math.round((taskStats.completed / taskStats.total) * 100)
+						: 0,
+					isDelayed,
+					daysDelayed: isDelayed && targetDate
+						? Math.floor((now.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24))
+						: 0,
+				};
+			}),
+		);
+
+		// Calculate organization-level stats
+		const orgStats = {
+			totalProjects: projects.length,
+			activeProjects: 0,
+			completedProjects: 0,
+			delayedProjects: 0,
+			totalTasks: 0,
+			completedTasks: 0,
+			inProgressTasks: 0,
+			overdueTasks: 0,
+			totalContractValue: 0,
+			averageProgress: 0,
+			projectsAtRisk: 0,
+		};
+
+		for (const project of projectsWithStats) {
+			// Count project status
+			if (project.percentComplete === 100) {
+				orgStats.completedProjects++;
+			} else {
+				orgStats.activeProjects++;
+			}
+
+			if (project.isDelayed) {
+				orgStats.delayedProjects++;
+			}
+
+			// Sum task stats
+			orgStats.totalTasks += project.taskStats.total;
+			orgStats.completedTasks += project.taskStats.completed;
+			orgStats.inProgressTasks += project.taskStats.inProgress;
+			orgStats.overdueTasks += project.taskStats.overdue;
+
+			// Sum contract value
+			orgStats.totalContractValue += project.contractValue;
+
+			// Check if at risk
+			if (
+				project.healthId === "at-risk" ||
+				project.healthId === "off-track" ||
+				project.taskStats.overdue > 0 ||
+				project.isDelayed
+			) {
+				orgStats.projectsAtRisk++;
+			}
+		}
+
+		// Calculate average progress
+		if (projectsWithStats.length > 0) {
+			const totalProgress = projectsWithStats.reduce(
+				(sum, p) => sum + p.percentComplete,
+				0,
+			);
+			orgStats.averageProgress = Math.round(
+				totalProgress / projectsWithStats.length,
+			);
+		}
+
+		return {
+			orgStats,
+			projects: projectsWithStats,
+			organization,
+		};
+	},
+});
+
+export const getOrganizationMonthlyRevenue = query({
+	handler: async (ctx) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
+		// Get all projects for the organization
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		// Get all monthly revenue data
+		const allRevenue = await Promise.all(
+			projects.map(async (project) => {
+				const revenue = await ctx.db
+					.query("monthlyRevenue")
+					.withIndex("by_project", (q) =>
+						q.eq("constructionProjectId", project._id),
+					)
+					.collect();
+				return {
+					projectId: project._id,
+					projectName: project.name,
+					revenue,
+				};
+			}),
+		);
+
+		// Group by month and aggregate
+		const monthlyData = new Map();
+
+		for (const projectRevenue of allRevenue) {
+			for (const rev of projectRevenue.revenue) {
+				if (!monthlyData.has(rev.month)) {
+					monthlyData.set(rev.month, {
+						month: rev.month,
+						totalPlanned: 0,
+						totalActual: 0,
+						projects: [],
+					});
+				}
+
+				const monthData = monthlyData.get(rev.month);
+				monthData.totalPlanned += rev.planned;
+				monthData.totalActual += rev.actual;
+				monthData.projects.push({
+					projectId: projectRevenue.projectId,
+					projectName: projectRevenue.projectName,
+					planned: rev.planned,
+					actual: rev.actual,
+				});
+			}
+		}
+
+		// Convert to array and sort by month
+		const sortedMonths = Array.from(monthlyData.values()).sort(
+			(a, b) => a.month.localeCompare(b.month),
+		);
+
+		// Calculate cumulative totals
+		let cumulativePlanned = 0;
+		let cumulativeActual = 0;
+
+		const monthlyDataWithCumulative = sortedMonths.map((month) => {
+			cumulativePlanned += month.totalPlanned;
+			cumulativeActual += month.totalActual;
+
+			return {
+				...month,
+				cumulativePlanned,
+				cumulativeActual,
+				variance: month.totalActual - month.totalPlanned,
+				variancePercent:
+					month.totalPlanned > 0
+						? ((month.totalActual - month.totalPlanned) / month.totalPlanned) *
+							100
+						: 0,
+			};
+		});
+
+		return {
+			monthlyRevenue: monthlyDataWithCumulative,
+			totalPlanned: cumulativePlanned,
+			totalActual: cumulativeActual,
+			totalVariance: cumulativeActual - cumulativePlanned,
+		};
+	},
+});
+
+export const getOrganizationTimeline = query({
+	handler: async (ctx) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		if (!organization) {
+			throw new Error("Organization not found");
+		}
+
+		// Get all projects for the organization
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		// Get timeline data for each project
+		const projectTimelines = await Promise.all(
+			projects.map(async (project) => {
+				// Get all tasks for this project
+				const tasks = await ctx.db
+					.query("issues")
+					.withIndex("by_project", (q) => q.eq("projectId", project._id))
+					.collect();
+
+				// Get task details
+				const tasksWithDetails = await Promise.all(
+					tasks.map(async (task) => {
+						const status = await ctx.db.get(task.statusId);
+						return {
+							...task,
+							status,
+							isCompleted: status
+								? status.name === "завершено" ||
+									status.name === "Завершено" ||
+									status.name === "Done" ||
+									status.name === "Completed" ||
+									status.name === "Готово"
+								: false,
+						};
+					}),
+				);
+
+				const now = new Date();
+				const startDate = new Date(project.startDate);
+				const targetDate = project.targetDate
+					? new Date(project.targetDate)
+					: null;
+
+				// Calculate project progress
+				const totalTasks = tasksWithDetails.length;
+				const completedTasks = tasksWithDetails.filter((t) => t.isCompleted)
+					.length;
+				const percentComplete =
+					totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+				// Calculate expected progress based on timeline
+				let expectedProgress = 0;
+				if (targetDate) {
+					const totalDuration = targetDate.getTime() - startDate.getTime();
+					const elapsed = now.getTime() - startDate.getTime();
+					expectedProgress = Math.min(100, (elapsed / totalDuration) * 100);
+				}
+
+				// Identify delayed tasks
+				const delayedTasks = tasksWithDetails.filter((task) => {
+					if (task.isCompleted || !task.dueDate) return false;
+					return new Date(task.dueDate) < now;
+				});
+
+				// Calculate project delay status
+				let delayStatus = "on-track";
+				let daysDelayed = 0;
+
+				if (targetDate && targetDate < now && percentComplete < 100) {
+					delayStatus = "delayed";
+					daysDelayed = Math.floor(
+						(now.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24),
+					);
+				} else if (percentComplete < expectedProgress - 10) {
+					// More than 10% behind expected progress
+					delayStatus = "at-risk";
+				}
+
+				return {
+					projectId: project._id,
+					projectName: project.name,
+					startDate: project.startDate,
+					targetDate: project.targetDate,
+					percentComplete,
+					expectedProgress,
+					delayStatus,
+					daysDelayed,
+					totalTasks,
+					completedTasks,
+					delayedTasks: delayedTasks.length,
+					healthStatus: project.healthName,
+					healthColor: project.healthColor,
+				};
+			}),
+		);
+
+		// Sort by delay status (delayed first, then at-risk, then on-track)
+		const sortedTimelines = projectTimelines.sort((a, b) => {
+			const statusOrder = { delayed: 0, "at-risk": 1, "on-track": 2 };
+			return statusOrder[a.delayStatus] - statusOrder[b.delayStatus];
+		});
+
+		return {
+			timelines: sortedTimelines,
+			summary: {
+				total: projectTimelines.length,
+				onTrack: projectTimelines.filter((p) => p.delayStatus === "on-track")
+					.length,
+				atRisk: projectTimelines.filter((p) => p.delayStatus === "at-risk")
+					.length,
+				delayed: projectTimelines.filter((p) => p.delayStatus === "delayed")
+					.length,
+			},
+		};
+	},
+});

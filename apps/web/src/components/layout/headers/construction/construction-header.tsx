@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import {
 	Activity,
 	Calendar,
+	ChartBar,
 	Filter,
 	LayoutGrid,
 	List,
@@ -22,9 +23,9 @@ import { useState } from "react";
 
 export default function ConstructionHeader() {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [view, setView] = useState<"activity" | "board" | "list" | "gantt">(
-		"activity",
-	);
+	const [view, setView] = useState<
+		"overview" | "activity" | "board" | "list" | "gantt"
+	>("overview");
 	const navigate = useNavigate();
 	const { orgId } = useParams({ from: "/construction/$orgId" });
 
@@ -33,6 +34,9 @@ export default function ConstructionHeader() {
 
 		// Navigate to different routes based on view
 		switch (newView) {
+			case "overview":
+				navigate({ to: `/construction/${orgId}/overview` });
+				break;
 			case "activity":
 				navigate({ to: `/construction/${orgId}/activity` });
 				break;
@@ -55,6 +59,10 @@ export default function ConstructionHeader() {
 
 				<Tabs value={view} onValueChange={handleViewChange}>
 					<TabsList className="h-9">
+						<TabsTrigger value="overview" className="h-7">
+							<ChartBar className="mr-2 h-4 w-4" />
+							Обзор
+						</TabsTrigger>
 						<TabsTrigger value="activity" className="h-7">
 							<Activity className="mr-2 h-4 w-4" />
 							Активность

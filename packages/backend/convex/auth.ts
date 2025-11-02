@@ -121,7 +121,7 @@ export const createAuth = (
 		session: {
 			expiresIn: 60 * 60 * 24, // 1 day
 		},
-		trustedOrigins: [siteUrl],
+		trustedOrigins: [siteUrl, "https://stroika.pages.dev"],
 		database: authComponent.adapter(ctx),
 		// Configure simple, non-verified email/password to get started
 		emailAndPassword: {

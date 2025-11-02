@@ -21,6 +21,7 @@ import { Route as ConstructionOrgIdRouteRouteImport } from './routes/constructio
 import { Route as ConstructionOrgIdIndexRouteImport } from './routes/construction.$orgId/index'
 import { Route as ConstructionOrgIdSettingsRouteImport } from './routes/construction.$orgId/settings'
 import { Route as ConstructionOrgIdPermissionsRouteImport } from './routes/construction.$orgId/permissions'
+import { Route as ConstructionOrgIdOverviewRouteImport } from './routes/construction.$orgId/overview'
 import { Route as ConstructionOrgIdMembersRouteImport } from './routes/construction.$orgId/members'
 import { Route as ConstructionOrgIdInboxRouteImport } from './routes/construction.$orgId/inbox'
 import { Route as ConstructionOrgIdGanttRouteImport } from './routes/construction.$orgId/gantt'
@@ -109,6 +110,12 @@ const ConstructionOrgIdPermissionsRoute =
   ConstructionOrgIdPermissionsRouteImport.update({
     id: '/permissions',
     path: '/permissions',
+    getParentRoute: () => ConstructionOrgIdRouteRoute,
+  } as any)
+const ConstructionOrgIdOverviewRoute =
+  ConstructionOrgIdOverviewRouteImport.update({
+    id: '/overview',
+    path: '/overview',
     getParentRoute: () => ConstructionOrgIdRouteRoute,
   } as any)
 const ConstructionOrgIdMembersRoute =
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/construction/$orgId/gantt': typeof ConstructionOrgIdGanttRoute
   '/construction/$orgId/inbox': typeof ConstructionOrgIdInboxRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
+  '/construction/$orgId/overview': typeof ConstructionOrgIdOverviewRoute
   '/construction/$orgId/permissions': typeof ConstructionOrgIdPermissionsRoute
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
   '/construction/$orgId/': typeof ConstructionOrgIdIndexRoute
@@ -332,6 +340,7 @@ export interface FileRoutesByTo {
   '/construction/$orgId/gantt': typeof ConstructionOrgIdGanttRoute
   '/construction/$orgId/inbox': typeof ConstructionOrgIdInboxRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
+  '/construction/$orgId/overview': typeof ConstructionOrgIdOverviewRoute
   '/construction/$orgId/permissions': typeof ConstructionOrgIdPermissionsRoute
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
   '/construction/$orgId': typeof ConstructionOrgIdIndexRoute
@@ -374,6 +383,7 @@ export interface FileRoutesById {
   '/construction/$orgId/gantt': typeof ConstructionOrgIdGanttRoute
   '/construction/$orgId/inbox': typeof ConstructionOrgIdInboxRoute
   '/construction/$orgId/members': typeof ConstructionOrgIdMembersRoute
+  '/construction/$orgId/overview': typeof ConstructionOrgIdOverviewRoute
   '/construction/$orgId/permissions': typeof ConstructionOrgIdPermissionsRoute
   '/construction/$orgId/settings': typeof ConstructionOrgIdSettingsRoute
   '/construction/$orgId/': typeof ConstructionOrgIdIndexRoute
@@ -417,6 +427,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/gantt'
     | '/construction/$orgId/inbox'
     | '/construction/$orgId/members'
+    | '/construction/$orgId/overview'
     | '/construction/$orgId/permissions'
     | '/construction/$orgId/settings'
     | '/construction/$orgId/'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/gantt'
     | '/construction/$orgId/inbox'
     | '/construction/$orgId/members'
+    | '/construction/$orgId/overview'
     | '/construction/$orgId/permissions'
     | '/construction/$orgId/settings'
     | '/construction/$orgId'
@@ -498,6 +510,7 @@ export interface FileRouteTypes {
     | '/construction/$orgId/gantt'
     | '/construction/$orgId/inbox'
     | '/construction/$orgId/members'
+    | '/construction/$orgId/overview'
     | '/construction/$orgId/permissions'
     | '/construction/$orgId/settings'
     | '/construction/$orgId/'
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/permissions'
       fullPath: '/construction/$orgId/permissions'
       preLoaderRoute: typeof ConstructionOrgIdPermissionsRouteImport
+      parentRoute: typeof ConstructionOrgIdRouteRoute
+    }
+    '/construction/$orgId/overview': {
+      id: '/construction/$orgId/overview'
+      path: '/overview'
+      fullPath: '/construction/$orgId/overview'
+      preLoaderRoute: typeof ConstructionOrgIdOverviewRouteImport
       parentRoute: typeof ConstructionOrgIdRouteRoute
     }
     '/construction/$orgId/members': {
@@ -874,6 +894,7 @@ interface ConstructionOrgIdRouteRouteChildren {
   ConstructionOrgIdGanttRoute: typeof ConstructionOrgIdGanttRoute
   ConstructionOrgIdInboxRoute: typeof ConstructionOrgIdInboxRoute
   ConstructionOrgIdMembersRoute: typeof ConstructionOrgIdMembersRoute
+  ConstructionOrgIdOverviewRoute: typeof ConstructionOrgIdOverviewRoute
   ConstructionOrgIdPermissionsRoute: typeof ConstructionOrgIdPermissionsRoute
   ConstructionOrgIdSettingsRoute: typeof ConstructionOrgIdSettingsRoute
   ConstructionOrgIdIndexRoute: typeof ConstructionOrgIdIndexRoute
@@ -902,6 +923,7 @@ const ConstructionOrgIdRouteRouteChildren: ConstructionOrgIdRouteRouteChildren =
     ConstructionOrgIdGanttRoute: ConstructionOrgIdGanttRoute,
     ConstructionOrgIdInboxRoute: ConstructionOrgIdInboxRoute,
     ConstructionOrgIdMembersRoute: ConstructionOrgIdMembersRoute,
+    ConstructionOrgIdOverviewRoute: ConstructionOrgIdOverviewRoute,
     ConstructionOrgIdPermissionsRoute: ConstructionOrgIdPermissionsRoute,
     ConstructionOrgIdSettingsRoute: ConstructionOrgIdSettingsRoute,
     ConstructionOrgIdIndexRoute: ConstructionOrgIdIndexRoute,
