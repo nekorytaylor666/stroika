@@ -4,21 +4,21 @@ import "@xyflow/react/dist/style.css";
 import { Controls } from "./controls";
 
 type CanvasProps = ReactFlowProps & {
-  children?: ReactNode;
+	children?: ReactNode;
 };
 
 export const Canvas = ({ children, ...props }: CanvasProps) => (
-  <ReactFlow
-    deleteKeyCode={["Backspace", "Delete"]}
-    fitView
-    panOnDrag={false}
-    panOnScroll
-    selectionOnDrag={true}
-    zoomOnDoubleClick={false}
-    {...props}
-  >
-    <Background bgColor="var(--sidebar)" />
-    <Controls />
-    {children}
-  </ReactFlow>
+	<ReactFlow
+		deleteKeyCode={["Backspace", "Delete"]}
+		fitView
+		panOnDrag={false}
+		panOnScroll
+		selectionOnDrag={true}
+		zoomOnDoubleClick={false}
+		{...props}
+	>
+		<Background bgColor="var(--sidebar)" />
+		<Controls />
+		{children}
+	</ReactFlow>
 );

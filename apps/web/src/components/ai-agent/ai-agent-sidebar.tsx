@@ -245,14 +245,14 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 						</div>
 
 						{/* Input Area */}
-						<div className="border-t bg-muted/30 p-4 w-full">
+						<div className="w-full border-t bg-muted/30 p-4">
 							<PromptInput
 								value={input}
 								onValueChange={setInput}
 								onSubmit={handleSubmit}
 								isLoading={isLoading}
 								maxHeight={200}
-								className="bg-background w-full"
+								className="w-full bg-background"
 							>
 								<PromptInputTextarea
 									placeholder="Напишите что нужно сделать..."

@@ -134,7 +134,9 @@ export function ContextTextarea({
 	const [mentionSearch, setMentionSearch] = useState("");
 	const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
 	const [currentPath, setCurrentPath] = useState<string[]>([]);
-	const [internalContexts, setInternalContexts] = useState<MentionContext[]>([]);
+	const [internalContexts, setInternalContexts] = useState<MentionContext[]>(
+		[],
+	);
 	const contexts = controlledContexts ?? internalContexts;
 	const [cursorPosition, setCursorPosition] = useState(0);
 
@@ -390,7 +392,6 @@ export function ContextTextarea({
 			setMentionSearch("");
 		}
 	};
-
 
 	return (
 		<div className="relative w-full">

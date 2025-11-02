@@ -3,9 +3,11 @@ import { Agent } from "@convex-dev/agent";
 import {
 	createThread as createThreadAgent,
 	listMessages,
+	listUIMessages,
 	saveMessage,
 	storeFile,
 	syncStreams,
+	vStreamArgs,
 } from "@convex-dev/agent";
 import { paginationOptsValidator } from "convex/server";
 import { v } from "convex/values";
@@ -92,10 +94,10 @@ export const sendMessage = mutation({
 export const generateResponse = internalAction({
 	args: {
 		promptMessageId: v.string(),
-		threadId: v.id("_agent_threads"),
+		threadId: v.string(),
 		contextData: v.string(),
-		userId: v.id("users"),
-		organizationId: v.id("organizations"),
+		userId: v.string(),
+		organizationId: v.string(),
 	},
 	handler: async (
 		ctx,
@@ -110,6 +112,10 @@ export const generateResponse = internalAction({
 		);
 
 		// Stream text with the context-aware agent
+		console.log(
+			`Starting stream for thread ${threadId}, message ${promptMessageId}`,
+		);
+
 		const result = await agentWithContext.streamText(
 			ctx,
 			{ threadId },
@@ -121,6 +127,15 @@ export const generateResponse = internalAction({
 				},
 			},
 		);
+
+		// Log streaming chunks as they arrive
+		let chunkCount = 0;
+		for await (const chunk of result.textStream) {
+			chunkCount++;
+			console.log(`Stream chunk ${chunkCount}: "${chunk}"`);
+		}
+
+		console.log(`Stream completed with ${chunkCount} chunks`);
 	},
 });
 
@@ -135,26 +150,24 @@ export const listThreadMessages = query({
 	args: {
 		threadId: v.string(),
 		paginationOpts: paginationOptsValidator,
+		streamArgs: vStreamArgs,
 	},
 	handler: async (ctx, args) => {
-		const { threadId, paginationOpts } = args;
+		const { threadId, streamArgs } = args;
 		// await authorizeThreadAccess(ctx, threadId);
 
-		// Get messages from the agent component
-		const messages = await listMessages(ctx, components.agent, {
-			threadId,
-			paginationOpts,
-		});
-
-		// IMPORTANT: Sync streaming deltas for real-time updates
-		// This ensures that streaming messages are properly synchronized
+		// Sync streaming deltas for real-time updates
 		const streams = await syncStreams(ctx, components.agent, {
 			threadId,
+			streamArgs,
 		});
-		
-		// Return both messages and streams for proper client-side rendering
+
+		// Get messages using listUIMessages for proper streaming support
+		const paginated = await listUIMessages(ctx, components.agent, args);
+
+		// Return both paginated messages and streams
 		return {
-			...messages,
+			...paginated,
 			streams,
 		};
 	},

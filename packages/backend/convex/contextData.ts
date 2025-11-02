@@ -1,5 +1,5 @@
 import { api, components } from "./_generated/api";
-import { type Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { authComponent, createAuth } from "./auth";
 import { getCurrentUserWithOrganization } from "./helpers/getCurrentUser";

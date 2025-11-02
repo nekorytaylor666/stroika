@@ -18,16 +18,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
+import {
+	useMutation as useTanstackMutation,
+	useQuery as useTanstackQuery,
+} from "@tanstack/react-query";
 import { useQuery } from "convex/react";
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
-import {
-	useQuery as useTanstackQuery,
-	useMutation as useTanstackMutation,
-} from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TeamsList } from "./teams-list";
 

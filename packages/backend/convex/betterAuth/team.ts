@@ -1,10 +1,10 @@
-import { api } from "./_generated/api";
-import { mutation, query } from "../_generated/server";
-import { v } from "convex/values";
 import { doc } from "convex-helpers/validators";
-import schema from "./schema";
+import { v } from "convex/values";
 import type { Doc, Id } from "../_generated/dataModel";
+import { mutation, query } from "../_generated/server";
 import { getCurrentUserWithOrganization } from "../helpers/getCurrentUser";
+import { api } from "./_generated/api";
+import schema from "./schema";
 export const addTeamMembers = mutation({
 	args: {
 		teamId: v.id("team"),

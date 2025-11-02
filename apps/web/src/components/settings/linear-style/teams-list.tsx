@@ -109,14 +109,14 @@ export function TeamsList({
 					{/* Members avatars */}
 					{team.members && team.members.length > 0 && (
 						<div className="space-y-2">
-							<div className="flex -space-x-2 *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background">
+							<div className="-space-x-2 flex *:data-[slot=avatar]:ring-2 *:data-[slot=avatar]:ring-background">
 								{team.members.slice(0, 8).map((member) => (
 									<Avatar key={member._id} data-slot="avatar">
 										<AvatarImage
 											src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${member.email}`}
 											alt={member.name}
 										/>
-										<AvatarFallback className="bg-primary/10 text-xs font-medium">
+										<AvatarFallback className="bg-primary/10 font-medium text-xs">
 											{member.name
 												.split(" ")
 												.map((n) => n[0])
@@ -126,7 +126,7 @@ export function TeamsList({
 									</Avatar>
 								))}
 								{team.members.length > 8 && (
-									<div className="flex h-10 w-10 items-center justify-center rounded-full border-2 bg-muted border-background ring-2 ring-background text-xs font-medium">
+									<div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-muted font-medium text-xs ring-2 ring-background">
 										+{team.members.length - 8}
 									</div>
 								)}
@@ -153,10 +153,10 @@ export function TeamsList({
 											</AvatarFallback>
 										</Avatar>
 										<div className="min-w-0 flex-1">
-											<p className="truncate text-xs font-medium">
+											<p className="truncate font-medium text-xs">
 												{member.name}
 											</p>
-											<p className="truncate text-xs text-muted-foreground">
+											<p className="truncate text-muted-foreground text-xs">
 												{member.email}
 											</p>
 										</div>

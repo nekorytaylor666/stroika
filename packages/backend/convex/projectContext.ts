@@ -303,7 +303,7 @@ export const getDocumentContext = query({
 export const sendMessageWithContext = mutation({
 	args: {
 		prompt: v.string(),
-		threadId: v.string(),
+		threadId: v.id("_agent_threads"),
 		contexts: v.optional(
 			v.array(
 				v.object({
@@ -416,11 +416,20 @@ export const sendMessageWithContext = mutation({
 			prompt: enrichedPrompt,
 		});
 
-		// Schedule response generation (the agent will include CSV context)
+		// Get organization for streaming (user already obtained above)
+		const userWithOrg = await getCurrentUserWithOrganization(ctx);
+		if (!userWithOrg.user || !userWithOrg.organization) {
+			throw new Error("User or organization not found");
+		}
+		const organization = userWithOrg.organization;
+
+		// Schedule streaming response generation (the agent will include CSV context)
 		await ctx.scheduler.runAfter(0, internal.agent.threads.generateResponse, {
 			threadId,
 			promptMessageId: messageId,
 			contextData: agentContextData || "",
+			userId: user._id,
+			organizationId: organization.id,
 		});
 	},
 });

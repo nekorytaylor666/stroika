@@ -10,7 +10,7 @@ import {
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
 import { useIssuesStore } from "@/store/issues-store";
-import { api, type Id } from "@stroika/backend";
+import { type Id, api } from "@stroika/backend";
 import { useQuery } from "convex/react";
 import {
 	AlarmClock,

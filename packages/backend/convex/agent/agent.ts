@@ -20,7 +20,8 @@ export const createAgentWithContext = async (
 		organizationId: Id<"organizations">;
 	}>(components.agent, {
 		name: "Stroika Assistant",
-		languageModel: openai.chat("gpt-5"),
+		// Use gpt-4o - reasoning and tool calls are supported
+		languageModel: openai.chat("gpt-4o"),
 		tools: createAgentTools(userId, organizationId),
 		instructions: `You are a helpful AI assistant for the Stroika project management system.
 You help users with:

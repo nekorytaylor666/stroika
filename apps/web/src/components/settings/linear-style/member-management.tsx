@@ -31,11 +31,11 @@ import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
-import { useMutation, useQuery } from "convex/react";
 import {
-	useQuery as useTanstackQuery,
 	useMutation as useTanstackMutation,
+	useQuery as useTanstackQuery,
 } from "@tanstack/react-query";
+import { useMutation, useQuery } from "convex/react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import {
