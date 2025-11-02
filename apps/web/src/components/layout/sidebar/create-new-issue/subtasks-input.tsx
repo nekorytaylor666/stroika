@@ -20,9 +20,12 @@ import { AttachmentUpload, type UploadedAttachment } from "./attachment-upload";
 
 export interface SubtaskData {
 	title: string;
+	description?: string;
 	assigneeId?: Id<"user"> | null;
 	dueDate?: string | null;
 	attachments?: UploadedAttachment[];
+	statusId?: Id<"status"> | null;
+	priorityId?: Id<"priorities"> | null;
 }
 
 interface SubtasksInputProps {

@@ -461,6 +461,36 @@ export default defineSchema({
 		.index("by_mentioned_user", ["mentionedUserId"])
 		.index("by_unread", ["mentionedUserId", "isRead"]),
 
+	// Task templates for reusable task structures
+	taskTemplates: defineTable({
+		organizationId: v.string(), // Better Auth organization ID
+		name: v.string(), // Template name
+		description: v.optional(v.string()), // Template description
+		category: v.optional(v.string()), // Template category (e.g., "Фундамент", "Кровля")
+
+		// Default task values
+		defaultTitle: v.string(),
+		defaultDescription: v.optional(v.string()),
+		defaultStatusId: v.optional(v.string()),
+		defaultPriorityId: v.optional(v.string()),
+		defaultLabelIds: v.array(v.string()),
+		defaultAssigneeId: v.optional(v.string()),
+		defaultProjectId: v.optional(v.string()),
+
+		// Subtasks stored as JSON string
+		subtasks: v.string(), // JSON array of {id, title, description, order, defaultStatusId, defaultPriorityId}
+
+		// Metadata
+		createdBy: v.string(),
+		isPublic: v.boolean(), // Available to all in organization
+		usageCount: v.number(),
+		createdAt: v.number(),
+		updatedAt: v.number(),
+	})
+		.index("by_organization", ["organizationId"])
+		.index("by_category", ["organizationId", "category"])
+		.index("by_creator", ["createdBy"]),
+
 	// Document-Task relationships
 	documentTasks: defineTable({
 		documentId: v.string(),

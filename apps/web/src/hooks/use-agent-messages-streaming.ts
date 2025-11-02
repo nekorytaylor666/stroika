@@ -63,9 +63,9 @@ export function useAgentMessagesStreaming(
 		}
 
 		try {
-			await abortStreamByOrder({ 
-				threadId, 
-				order: streamingMessage.order ?? 0 
+			await abortStreamByOrder({
+				threadId,
+				order: streamingMessage.order ?? 0,
 			});
 		} catch (error) {
 			console.error("Failed to abort stream:", error);

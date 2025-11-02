@@ -81,6 +81,7 @@ import type * as quickSetup from "../quickSetup.js";
 import type * as roles from "../roles.js";
 import type * as seedDatabase from "../seedDatabase.js";
 import type * as subtasks from "../subtasks.js";
+import type * as taskTemplates from "../taskTemplates.js";
 import type * as teams from "../teams.js";
 import type * as updateUserRecords from "../updateUserRecords.js";
 import type * as users from "../users.js";
@@ -173,6 +174,7 @@ declare const fullApi: ApiFromModules<{
   roles: typeof roles;
   seedDatabase: typeof seedDatabase;
   subtasks: typeof subtasks;
+  taskTemplates: typeof taskTemplates;
   teams: typeof teams;
   updateUserRecords: typeof updateUserRecords;
   users: typeof users;

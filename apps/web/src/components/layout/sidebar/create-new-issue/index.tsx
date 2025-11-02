@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogHeader,
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -12,11 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useConstructionData } from "@/hooks/use-construction-data";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCreateIssueStore } from "@/store/create-issue-store";
-import { DialogTitle } from "@radix-ui/react-dialog";
 import { RiEditLine } from "@remixicon/react";
 import { api } from "@stroika/backend";
 import type { Id } from "@stroika/backend";
-import type { UserWithRole } from "better-auth/plugins";
 import { useMutation, useQuery } from "convex/react";
 import { Heart } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -28,6 +25,7 @@ import { LabelSelector } from "./label-selector";
 import { PrioritySelector } from "./priority-selector";
 import { ProjectSelector } from "./project-selector";
 import { type SubtaskData, SubtasksInput } from "./subtasks-input";
+import { TemplateSelector } from "./template-select";
 
 interface ConstructionTaskForm {
 	identifier: string;
@@ -60,7 +58,7 @@ export function CreateNewIssue() {
 	const attachToIssue = useMutation(api.files.attachToIssue);
 
 	const generateUniqueIdentifier = useCallback(() => {
-		const identifiers = tasks?.map((task) => task.identifier) || [];
+		const identifiers = tasks?.map((task: any) => task.identifier) || [];
 		let identifier = Math.floor(Math.random() * 999)
 			.toString()
 			.padStart(3, "0");
@@ -78,10 +76,10 @@ export function CreateNewIssue() {
 		// Use the defaultStatus from store if available, otherwise fallback
 		const defaultStatusId = defaultStatus
 			? defaultStatus.id
-			: statuses?.find((s) => s.name === "К выполнению")?._id ||
+			: statuses?.find((s: any) => s.name === "К выполнению")?._id ||
 				statuses?.[0]?._id;
 		const defaultPriorityId =
-			priorities?.find((p) => p.name === "Средний")?._id ||
+			priorities?.find((p: any) => p.name === "Средний")?._id ||
 			priorities?.[0]?._id;
 
 		return {
@@ -109,10 +107,50 @@ export function CreateNewIssue() {
 	const [addTaskForm, setAddTaskForm] = useState<ConstructionTaskForm>(
 		createDefaultData(),
 	);
+	const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
 	useEffect(() => {
 		setAddTaskForm(createDefaultData());
 	}, [createDefaultData]);
+
+	const applyTemplate = useCallback((template: any) => {
+		if (!template) {
+			// Clear template
+			setSelectedTemplate(null);
+			// Optionally reset form to defaults
+			return;
+		}
+
+		// Apply template values to form
+		setAddTaskForm((prev) => ({
+			...prev,
+			title: template.defaultTitle || "",
+			description: template.defaultDescription || "",
+			statusId: template.defaultStatusId || prev.statusId,
+			priorityId: template.defaultPriorityId || prev.priorityId,
+			labelIds: template.defaultLabelIds?.length > 0 ? template.defaultLabelIds : prev.labelIds,
+			assigneeId: template.defaultAssigneeId || prev.assigneeId,
+			projectId: template.defaultProjectId || prev.projectId,
+			// Convert template subtasks to form subtasks
+			subtasks:
+				template.subtasksParsed?.map((subtask: any) => ({
+					title: subtask.title,
+					description: subtask.description || "",
+					assigneeId: subtask.defaultAssigneeId || template.defaultAssigneeId || null,
+					dueDate: undefined,
+					attachments: [],
+					// Include status and priority from subtask if available
+					statusId: subtask.defaultStatusId || template.defaultStatusId || null,
+					priorityId: subtask.defaultPriorityId || template.defaultPriorityId || null,
+				})) || prev.subtasks,
+			// Preserve other form fields
+			dueDate: prev.dueDate,
+			attachments: prev.attachments,
+		}));
+
+		setSelectedTemplate(template);
+		toast.success(`Шаблон "${template.name}" применен`);
+	}, []);
 
 	const createConstructionTask = async () => {
 		if (!addTaskForm.title.trim()) {
@@ -135,7 +173,7 @@ export function CreateNewIssue() {
 				priorityId: addTaskForm.priorityId,
 				labelIds: addTaskForm.labelIds,
 				cycleId: addTaskForm.cycleId,
-				userId: currentUser?._id as Id<"user">,
+				userId: currentUser?.id as Id<"user">,
 				projectId: addTaskForm.projectId || undefined,
 				rank: addTaskForm.rank,
 				dueDate: addTaskForm.dueDate,
@@ -160,15 +198,16 @@ export function CreateNewIssue() {
 					const subtaskId = await createSubtask({
 						parentTaskId: taskId as Id<"issues">,
 						title: subtask.title,
-						description: "",
-						statusId: addTaskForm.statusId,
+						description: subtask.description || "",
+						// Use subtask's own status/priority if set (from template), otherwise use parent's
+						statusId: subtask.statusId || addTaskForm.statusId,
 						assigneeId:
 							subtask.assigneeId || addTaskForm.assigneeId || undefined,
-						priorityId: addTaskForm.priorityId,
+						priorityId: subtask.priorityId || addTaskForm.priorityId,
 						labelIds: [],
 						projectId: addTaskForm.projectId || undefined,
 						dueDate: subtask.dueDate || undefined,
-						userId: currentUser?._id as Id<"user">,
+						userId: currentUser?.id as Id<"user">,
 					});
 
 					// Attach files to subtask if any
@@ -210,7 +249,15 @@ export function CreateNewIssue() {
 	return (
 		<Dialog
 			open={isOpen}
-			onOpenChange={(value) => (value ? openModal({}) : closeModal())}
+			onOpenChange={(value) => {
+				if (value) {
+					openModal({});
+				} else {
+					closeModal();
+					setSelectedTemplate(null);
+					setAddTaskForm(createDefaultData());
+				}
+			}}
 		>
 			<DialogTrigger asChild>
 				<Button className="size-8 shrink-0" variant="secondary" size="icon">
@@ -218,18 +265,20 @@ export function CreateNewIssue() {
 				</Button>
 			</DialogTrigger>
 			<DialogContent className="top-[30%] w-full p-0 shadow-xl sm:max-w-[750px]">
-				<DialogHeader>
-					<DialogTitle>
-						<div className="flex items-center gap-2 px-4 pt-4">
-							<Button size="sm" variant="outline" className="gap-1.5">
-								<Heart className="size-4 fill-orange-500 text-orange-500" />
-								<span className="font-medium">СТРОИТЕЛЬСТВО</span>
-							</Button>
-						</div>
-					</DialogTitle>
-				</DialogHeader>
+				<div className="flex items-center justify-between px-4 py-2.5 border-b">
+					<div className="flex items-center gap-1.5 text-muted-foreground">
+						<Heart className="size-3.5 fill-orange-500 text-orange-500" />
+						<span className="text-xs font-medium">СТРФ</span>
+					</div>
 
-				<div className="w-full space-y-3 px-4 pb-0">
+					{/* Template Selector */}
+					<TemplateSelector
+						onSelect={applyTemplate}
+						selectedTemplateId={selectedTemplate?._id}
+					/>
+				</div>
+
+				<div className="w-full space-y-3 px-4 py-3">
 					<Input
 						className="h-auto w-full overflow-hidden text-ellipsis whitespace-normal break-words border-none px-0 font-medium text-2xl shadow-none outline-none focus-visible:ring-0"
 						placeholder="Название задачи"
@@ -251,7 +300,7 @@ export function CreateNewIssue() {
 					<div className="flex w-full flex-wrap items-center justify-start gap-1.5">
 						<ConstructionStatusSelector
 							status={
-								statuses?.find((s) => s._id === addTaskForm.statusId) || null
+								statuses?.find((s: any) => s._id === addTaskForm.statusId) || null
 							}
 							onChange={(newStatus) =>
 								setAddTaskForm({
@@ -262,7 +311,7 @@ export function CreateNewIssue() {
 						/>
 						<PrioritySelector
 							priority={
-								priorities?.find((p) => p._id === addTaskForm.priorityId) ||
+								priorities?.find((p: any) => p._id === addTaskForm.priorityId) ||
 								null
 							}
 							onChange={(newPriority) =>
@@ -274,9 +323,9 @@ export function CreateNewIssue() {
 						/>
 						<AssigneeSelector
 							assignee={
-								users?.find((u) => u.id === addTaskForm.assigneeId) || null
+								users?.find((u: any) => u.id === addTaskForm.assigneeId) || null
 							}
-							onChange={(newAssignee) =>
+							onChange={(newAssignee: any) =>
 								setAddTaskForm({
 									...addTaskForm,
 									assigneeId: newAssignee?.id || null,
@@ -285,7 +334,7 @@ export function CreateNewIssue() {
 						/>
 						<ProjectSelector
 							project={
-								projects?.find((p) => p._id === addTaskForm.projectId) || null
+								projects?.find((p: any) => p._id === addTaskForm.projectId) || null
 							}
 							onChange={(newProject) =>
 								setAddTaskForm({
@@ -319,21 +368,21 @@ export function CreateNewIssue() {
 						}
 					/>
 				</div>
-				<div className="flex w-full items-center justify-between border-t px-4 py-2.5">
+				<div className="flex w-full items-center justify-between border-t px-4 py-2">
 					<div className="flex items-center gap-2">
-						<div className="flex items-center space-x-2">
-							<Switch
-								id="create-more"
-								checked={createMore}
-								onCheckedChange={setCreateMore}
-							/>
-							<Label htmlFor="create-more">Создать ещё</Label>
-						</div>
+						<Switch
+							id="create-more"
+							checked={createMore}
+							onCheckedChange={setCreateMore}
+							className="h-4 w-7"
+						/>
+						<Label htmlFor="create-more" className="text-xs">Создать ещё</Label>
 					</div>
 					<Button
 						size="sm"
 						onClick={createConstructionTask}
 						disabled={isLoading}
+						className="h-7 px-3 text-xs"
 					>
 						Создать задачу
 					</Button>

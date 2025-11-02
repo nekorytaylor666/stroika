@@ -1,6 +1,5 @@
 "use client";
 
-import { useSmoothText } from "@convex-dev/agent/react";
 import {
 	Context,
 	ContextCacheUsage,
@@ -50,6 +49,7 @@ import {
 import { useAgentMessagesStreaming } from "@/hooks/use-agent-messages-streaming";
 import { useAgentThreads } from "@/hooks/use-agent-threads";
 import { cn } from "@/lib/utils";
+import { useSmoothText } from "@convex-dev/agent/react";
 import type { Id } from "@stroika/backend";
 import { api } from "@stroika/backend";
 import { useMutation, useQuery } from "convex/react";
@@ -69,19 +69,12 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Response } from "../ai-elements/response";
 import {
 	Reasoning,
 	ReasoningContent,
 	ReasoningTrigger,
 } from "../ai-elements/reasoning";
-import {
-	Tool,
-	ToolContent,
-	ToolHeader,
-	ToolInput,
-	ToolOutput,
-} from "../ai-elements/tool";
+import { Response } from "../ai-elements/response";
 import {
 	Task,
 	TaskContent,
@@ -89,9 +82,19 @@ import {
 	TaskItemFile,
 	TaskTrigger,
 } from "../ai-elements/task";
+import {
+	Tool,
+	ToolContent,
+	ToolHeader,
+	ToolInput,
+	ToolOutput,
+} from "../ai-elements/tool";
 
 // Component for streaming text with smooth animation
-function StreamingMessage({ text, isStreaming }: { text: string; isStreaming: boolean }) {
+function StreamingMessage({
+	text,
+	isStreaming,
+}: { text: string; isStreaming: boolean }) {
 	const [smoothText] = useSmoothText(text, {
 		startStreaming: isStreaming,
 	});
@@ -111,48 +114,66 @@ function TaskDisplay({ taskData }: { taskData: any }) {
 	return (
 		<div className="space-y-3">
 			<Task defaultOpen={true}>
-				<TaskTrigger title={taskData.title || taskData.identifier || 'Новая задача'} />
+				<TaskTrigger
+					title={taskData.title || taskData.identifier || "Новая задача"}
+				/>
 				<TaskContent>
 					<div className="space-y-2">
 						{taskData.identifier && (
 							<TaskItem>
-								<span className="font-medium text-foreground">ID:</span> <code className="rounded bg-muted px-1 py-0.5 text-xs">{taskData.identifier}</code>
+								<span className="font-medium text-foreground">ID:</span>{" "}
+								<code className="rounded bg-muted px-1 py-0.5 text-xs">
+									{taskData.identifier}
+								</code>
 							</TaskItem>
 						)}
 						{taskData.status && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Статус:</span>{' '}
-								<span className={cn(
-									"inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-									taskData.status === "Завершено" && "bg-green-100 text-green-700",
-									taskData.status === "В работе" && "bg-blue-100 text-blue-700",
-									taskData.status === "К выполнению" && "bg-yellow-100 text-yellow-700",
-								)}>
+								<span className="font-medium text-foreground">Статус:</span>{" "}
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs",
+										taskData.status === "Завершено" &&
+											"bg-green-100 text-green-700",
+										taskData.status === "В работе" &&
+											"bg-blue-100 text-blue-700",
+										taskData.status === "К выполнению" &&
+											"bg-yellow-100 text-yellow-700",
+									)}
+								>
 									{taskData.status}
 								</span>
 							</TaskItem>
 						)}
 						{taskData.assignee && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Исполнитель:</span> {taskData.assignee}
+								<span className="font-medium text-foreground">
+									Исполнитель:
+								</span>{" "}
+								{taskData.assignee}
 							</TaskItem>
 						)}
 						{taskData.priority && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Приоритет:</span>{' '}
-								<span className={cn(
-									"inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-									taskData.priority === "Высокий" && "bg-red-100 text-red-700",
-									taskData.priority === "Средний" && "bg-orange-100 text-orange-700",
-									taskData.priority === "Низкий" && "bg-gray-100 text-gray-700",
-								)}>
+								<span className="font-medium text-foreground">Приоритет:</span>{" "}
+								<span
+									className={cn(
+										"inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs",
+										taskData.priority === "Высокий" &&
+											"bg-red-100 text-red-700",
+										taskData.priority === "Средний" &&
+											"bg-orange-100 text-orange-700",
+										taskData.priority === "Низкий" &&
+											"bg-gray-100 text-gray-700",
+									)}
+								>
 									{taskData.priority}
 								</span>
 							</TaskItem>
 						)}
 						{taskData.projectName && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Проект:</span>{' '}
+								<span className="font-medium text-foreground">Проект:</span>{" "}
 								<TaskItemFile>
 									<Building className="h-3 w-3" />
 									{taskData.projectName}
@@ -161,10 +182,13 @@ function TaskDisplay({ taskData }: { taskData: any }) {
 						)}
 						{taskData.labels && taskData.labels.length > 0 && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Метки:</span>{' '}
+								<span className="font-medium text-foreground">Метки:</span>{" "}
 								<div className="inline-flex flex-wrap gap-1">
 									{taskData.labels.map((label: string, idx: number) => (
-										<span key={idx} className="rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 text-xs">
+										<span
+											key={idx}
+											className="rounded-full bg-purple-100 px-2 py-0.5 text-purple-700 text-xs"
+										>
 											{label}
 										</span>
 									))}
@@ -173,17 +197,18 @@ function TaskDisplay({ taskData }: { taskData: any }) {
 						)}
 						{taskData.dueDate && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Срок:</span>{' '}
-								{new Date(taskData.dueDate).toLocaleDateString('ru-RU', {
-									day: 'numeric',
-									month: 'long',
-									year: 'numeric'
+								<span className="font-medium text-foreground">Срок:</span>{" "}
+								{new Date(taskData.dueDate).toLocaleDateString("ru-RU", {
+									day: "numeric",
+									month: "long",
+									year: "numeric",
 								})}
 							</TaskItem>
 						)}
 						{taskData.estimate && (
 							<TaskItem>
-								<span className="font-medium text-foreground">Оценка:</span> {taskData.estimate}
+								<span className="font-medium text-foreground">Оценка:</span>{" "}
+								{taskData.estimate}
 							</TaskItem>
 						)}
 						{taskData.description && (
@@ -207,10 +232,10 @@ function TaskDisplay({ taskData }: { taskData: any }) {
 }
 
 // Component to render message with parts (text, reasoning, and tools)
-function MessageWithParts({ 
-	message, 
-	isLastMessage 
-}: { 
+function MessageWithParts({
+	message,
+	isLastMessage,
+}: {
 	message: any; // UIMessage type from convex-dev/agent
 	isLastMessage: boolean;
 }) {
@@ -220,22 +245,22 @@ function MessageWithParts({
 			<div className="space-y-2">
 				{message.parts.map((part: any, i: number) => {
 					const isLastPart = isLastMessage && i === message.parts.length - 1;
-					
+
 					switch (part.type) {
-						case 'text':
+						case "text":
 							return (
 								<div key={`${message.key}-text-${i}`}>
 									{message.status === "streaming" && isLastPart ? (
-										<StreamingMessage 
-											text={part.text || ""} 
-											isStreaming={true} 
+										<StreamingMessage
+											text={part.text || ""}
+											isStreaming={true}
 										/>
 									) : (
 										<Response>{part.text || ""}</Response>
 									)}
 								</div>
 							);
-						case 'reasoning':
+						case "reasoning":
 							return (
 								<Reasoning
 									key={`${message.key}-reasoning-${i}`}
@@ -246,9 +271,9 @@ function MessageWithParts({
 									<ReasoningTrigger />
 									<ReasoningContent>
 										{message.status === "streaming" && isLastPart ? (
-											<StreamingMessage 
-												text={part.text || ""} 
-												isStreaming={true} 
+											<StreamingMessage
+												text={part.text || ""}
+												isStreaming={true}
 											/>
 										) : (
 											<Response>{part.text || ""}</Response>
@@ -258,41 +283,47 @@ function MessageWithParts({
 							);
 						default:
 							// Handle tool parts
-							if (part.type?.startsWith('tool-')) {
+							if (part.type?.startsWith("tool-")) {
 								// Special handling for task-related tools
 								const isTaskTool = [
-									'tool-createTaskTool', 
-									'tool-updateTaskStatusTool', 
-									'tool-assignTaskTool',
-									'tool-updateTaskPriorityTool'
+									"tool-createTaskTool",
+									"tool-updateTaskStatusTool",
+									"tool-assignTaskTool",
+									"tool-updateTaskPriorityTool",
 								].includes(part.type);
-								
+
 								return (
-									<Tool 
+									<Tool
 										key={`${message.key}-${part.type}-${i}`}
-										defaultOpen={part.state === "output-available" || part.state === "output-error"}
+										defaultOpen={
+											part.state === "output-available" ||
+											part.state === "output-error"
+										}
 									>
-										<ToolHeader 
-											type={part.type} 
-											state={part.state} 
-										/>
+										<ToolHeader type={part.type} state={part.state} />
 										<ToolContent>
-											{(part.state === "input-available" || part.state === "input-streaming") && (
+											{(part.state === "input-available" ||
+												part.state === "input-streaming") && (
 												<ToolInput input={part.input} />
 											)}
-											{(part.state === "output-available" || part.state === "output-error") && (
-												<ToolOutput 
-													output={part.output ? (
-														isTaskTool && part.output && typeof part.output === 'object' ? (
-															<TaskDisplay taskData={part.output} />
-														) : (
-															<Response>
-																{typeof part.output === 'string' 
-																	? part.output 
-																	: JSON.stringify(part.output, null, 2)}
-															</Response>
-														)
-													) : undefined}
+											{(part.state === "output-available" ||
+												part.state === "output-error") && (
+												<ToolOutput
+													output={
+														part.output ? (
+															isTaskTool &&
+															part.output &&
+															typeof part.output === "object" ? (
+																<TaskDisplay taskData={part.output} />
+															) : (
+																<Response>
+																	{typeof part.output === "string"
+																		? part.output
+																		: JSON.stringify(part.output, null, 2)}
+																</Response>
+															)
+														) : undefined
+													}
 													errorText={part.errorText}
 												/>
 											)}
@@ -300,39 +331,47 @@ function MessageWithParts({
 									</Tool>
 								);
 							}
-							
+
 							// Handle task summary parts (if the AI returns task lists)
-							if (part.type === 'tasks' && part.tasks) {
+							if (part.type === "tasks" && part.tasks) {
 								return (
 									<div key={`${message.key}-tasks-${i}`} className="space-y-2">
 										{part.tasks.map((task: any, taskIndex: number) => (
 											<Task key={taskIndex} defaultOpen={taskIndex === 0}>
-												<TaskTrigger title={task.title || task.identifier || 'Задача'} />
+												<TaskTrigger
+													title={task.title || task.identifier || "Задача"}
+												/>
 												<TaskContent>
 													{task.status && (
 														<TaskItem>
-															<span className="font-medium">Статус:</span> {task.status}
+															<span className="font-medium">Статус:</span>{" "}
+															{task.status}
 														</TaskItem>
 													)}
 													{task.assignee && (
 														<TaskItem>
-															<span className="font-medium">Исполнитель:</span> {task.assignee}
+															<span className="font-medium">Исполнитель:</span>{" "}
+															{task.assignee}
 														</TaskItem>
 													)}
 													{task.priority && (
 														<TaskItem>
-															<span className="font-medium">Приоритет:</span> {task.priority}
+															<span className="font-medium">Приоритет:</span>{" "}
+															{task.priority}
 														</TaskItem>
 													)}
 													{task.project && (
 														<TaskItem>
-															<span className="font-medium">Проект:</span> 
+															<span className="font-medium">Проект:</span>
 															<TaskItemFile>{task.project}</TaskItemFile>
 														</TaskItem>
 													)}
 													{task.dueDate && (
 														<TaskItem>
-															<span className="font-medium">Срок:</span> {new Date(task.dueDate).toLocaleDateString('ru-RU')}
+															<span className="font-medium">Срок:</span>{" "}
+															{new Date(task.dueDate).toLocaleDateString(
+																"ru-RU",
+															)}
 														</TaskItem>
 													)}
 												</TaskContent>
@@ -341,22 +380,19 @@ function MessageWithParts({
 									</div>
 								);
 							}
-							
+
 							return null;
 					}
 				})}
 			</div>
 		);
 	}
-	
+
 	// Fallback to simple text rendering for messages without parts
 	return (
 		<>
 			{message.role === "assistant" && message.status === "streaming" ? (
-				<StreamingMessage 
-					text={message.text || ""} 
-					isStreaming={true} 
-				/>
+				<StreamingMessage text={message.text || ""} isStreaming={true} />
 			) : (
 				<Response>{message.text || "..."}</Response>
 			)}
@@ -832,7 +868,7 @@ export function AIAgentSidebar({ isOpen, onClose }: AIAgentSidebarProps) {
 																	: "bg-secondary",
 															)}
 														>
-															<MessageWithParts 
+															<MessageWithParts
 																message={message}
 																isLastMessage={index === messages.length - 1}
 															/>

@@ -1,17 +1,18 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Building, Shield, Users } from "lucide-react";
+import { Building, FileText, Shield, Users } from "lucide-react";
 import { useState } from "react";
 import { LinearMemberManagement } from "./member-management";
 import { LinearPermissionsManagement } from "./permissions-management";
 import { LinearTeamManagement } from "./team-management";
+import { LinearTemplateManagement } from "./template-management";
 
 interface OrganizationSettingsProps {
 	organizationId?: string;
 }
 
-type TabValue = "members" | "teams" | "permissions";
+type TabValue = "members" | "teams" | "permissions" | "templates";
 
 const tabs = [
 	{
@@ -31,6 +32,12 @@ const tabs = [
 		label: "Права доступа",
 		icon: Shield,
 		description: "Настройка ролей и разрешений",
+	},
+	{
+		value: "templates" as TabValue,
+		label: "Шаблоны задач",
+		icon: FileText,
+		description: "Создание шаблонов для типовых задач",
 	},
 ];
 
@@ -88,6 +95,9 @@ export function LinearOrganizationSettings({
 					)}
 					{activeTab === "permissions" && (
 						<LinearPermissionsManagement organizationId={organizationId} />
+					)}
+					{activeTab === "templates" && (
+						<LinearTemplateManagement organizationId={organizationId} />
 					)}
 				</div>
 			</div>
