@@ -20,7 +20,7 @@ export const getProjectFinancialSummary = query({
 		const accounts = await ctx.db
 			.query("accounts")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.collect();
 
@@ -160,13 +160,13 @@ export const getProfitLossStatement = query({
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id).eq("type", "revenue"),
+					q.eq("organizationId", organization.id).eq("type", "revenue"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id).eq("type", "expense"),
+					q.eq("organizationId", organization.id).eq("type", "expense"),
 				)
 				.collect(),
 		]);
@@ -273,19 +273,19 @@ export const getBalanceSheet = query({
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id).eq("type", "asset"),
+					q.eq("organizationId", organization.id).eq("type", "asset"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id).eq("type", "liability"),
+					q.eq("organizationId", organization.id).eq("type", "liability"),
 				)
 				.collect(),
 			ctx.db
 				.query("accounts")
 				.withIndex("by_type", (q) =>
-					q.eq("organizationId", organization._id).eq("type", "equity"),
+					q.eq("organizationId", organization.id).eq("type", "equity"),
 				)
 				.collect(),
 		]);
@@ -294,7 +294,7 @@ export const getBalanceSheet = query({
 		let journalEntries = await ctx.db
 			.query("journalEntries")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.filter((q) =>
 				q.and(
@@ -412,6 +412,8 @@ export const getProjectFinancialOverview = query({
 		projectId: v.id("constructionProjects"),
 	},
 	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
 		// Get project details
 		const project = await ctx.db.get(args.projectId);
 		if (!project) throw new Error("Проект не найден");
@@ -441,7 +443,7 @@ export const getProjectFinancialOverview = query({
 			.filter((p) => p.type === "outgoing")
 			.reduce((sum, p) => sum + p.amount, 0);
 
-		// Get expense statistics
+		// Get traditional expenses from expenses table
 		const expenses = await ctx.db
 			.query("expenses")
 			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
@@ -451,38 +453,62 @@ export const getProjectFinancialOverview = query({
 		const approvedExpenses = expenses.filter((e) => e.status === "approved");
 		const pendingExpenses = expenses.filter((e) => e.status === "pending");
 
-		const totalExpensesPaid = paidExpenses.reduce(
-			(sum, e) => sum + e.amount,
-			0,
-		);
-		const totalExpensesApproved = approvedExpenses.reduce(
-			(sum, e) => sum + e.amount,
-			0,
-		);
-		const totalExpensesPending = pendingExpenses.reduce(
-			(sum, e) => sum + e.amount,
-			0,
-		);
+		const totalPaid = paidExpenses.reduce((sum, e) => sum + e.amount, 0);
+		const totalApproved = approvedExpenses.reduce((sum, e) => sum + e.amount, 0);
+		const totalPending = pendingExpenses.reduce((sum, e) => sum + e.amount, 0);
+		const totalExpenseAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-		// Category breakdown
-		const expensesByCategory = expenses.reduce(
-			(acc, expense) => {
-				if (expense.status === "paid" || expense.status === "approved") {
-					acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+		// Group expenses by category
+		const expensesByCategory: Record<string, number> = {};
+		for (const expense of paidExpenses) {
+			expensesByCategory[expense.category] =
+				(expensesByCategory[expense.category] || 0) + expense.amount;
+		}
+
+		// Get expense accounts from chart of accounts
+		const expenseAccounts = await ctx.db
+			.query("accounts")
+			.withIndex("by_type", (q) =>
+				q.eq("organizationId", organization.id).eq("type", "expense"),
+			)
+			.collect();
+
+		// Calculate expenses from journal entries
+		const journalEntries = await ctx.db
+			.query("journalEntries")
+			.withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+			.filter((q) => q.eq(q.field("status"), "posted"))
+			.collect();
+
+		let totalJournalExpenses = 0;
+		const expensesByAccount: Record<string, number> = {};
+
+		for (const entry of journalEntries) {
+			const lines = await ctx.db
+				.query("journalLines")
+				.withIndex("by_entry", (q) => q.eq("journalEntryId", entry._id))
+				.collect();
+
+			for (const line of lines) {
+				const account = expenseAccounts.find((acc) => acc._id === line.accountId);
+				if (account) {
+					const expenseAmount = line.debit - line.credit;
+					totalJournalExpenses += expenseAmount;
+					expensesByAccount[account.name] =
+						(expensesByAccount[account.name] || 0) + expenseAmount;
 				}
-				return acc;
-			},
-			{} as Record<string, number>,
-		);
+			}
+		}
 
-		// Use outgoing payments as the actual money spent
-		// This represents all cash that has left the project
-		const actualMoneySpent = totalOutgoing;
+		// Use the higher of paid expenses or journal expenses for balance calculation
+		// This ensures we don't underreport expenses
+		const totalExpensesForBalance = Math.max(totalPaid, totalJournalExpenses);
 
-		// Calculate profitability based on actual cash flow
-		const netCashPosition = totalIncoming - actualMoneySpent;
+		// Calculate profitability
+		const netProfit = totalIncoming - totalExpensesForBalance;
+		const netCashPosition = totalIncoming - totalOutgoing;
 		const profitMargin =
-			totalIncoming > 0 ? (netCashPosition / totalIncoming) * 100 : 0;
+			totalIncoming > 0 ? (netProfit / totalIncoming) * 100 : 0;
 
 		return {
 			project: {
@@ -493,7 +519,7 @@ export const getProjectFinancialOverview = query({
 			},
 			payments: {
 				totalIncoming,
-				totalOutgoing, // This may include expense payments
+				totalOutgoing,
 				pendingIncoming,
 				pendingOutgoing,
 				netCashFlow: totalIncoming - totalOutgoing,
@@ -502,21 +528,25 @@ export const getProjectFinancialOverview = query({
 				pendingCount: pendingPayments.length,
 			},
 			expenses: {
-				totalPaid: totalExpensesPaid,
-				totalApproved: totalExpensesApproved,
-				totalPending: totalExpensesPending,
-				totalCommitted: totalExpensesPaid + totalExpensesApproved,
-				byCategory: expensesByCategory,
-				totalCount: expenses.length,
+				// Traditional expense tracking (from expenses table)
+				totalPaid,
+				totalApproved,
+				totalPending,
 				paidCount: paidExpenses.length,
 				approvedCount: approvedExpenses.length,
 				pendingCount: pendingExpenses.length,
+				totalCount: expenses.length,
+				byCategory: expensesByCategory,
+				// Journal-based accounting
+				total: totalJournalExpenses,
+				byAccount: expensesByAccount,
 			},
 			balance: {
-				currentBalance: totalIncoming - actualMoneySpent, // Actual cash position
+				currentBalance: netProfit,
+				netCashFlow: netCashPosition,
 				projectedBalance:
-					totalIncoming + pendingIncoming - actualMoneySpent - pendingOutgoing,
-				profitMargin, // Use calculated profit margin based on cash flow
+					totalIncoming + pendingIncoming - totalExpensesForBalance - totalPending,
+				profitMargin,
 			},
 		};
 	},
@@ -536,7 +566,7 @@ export const getCashFlowStatement = query({
 		const cashAccounts = await ctx.db
 			.query("accounts")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.filter((q) =>
 				q.or(q.eq(q.field("code"), "50"), q.eq(q.field("code"), "51")),
@@ -634,3 +664,679 @@ export const getCashFlowStatement = query({
 		};
 	},
 });
+
+// ================== ORGANIZATION-LEVEL QUERIES ==================
+
+// Get organization-wide financial overview
+export const getOrganizationFinancialOverview = query({
+	args: {
+		period: v.optional(v.string()), // YYYY-MM format
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const period = args.period || new Date().toISOString().slice(0, 7);
+
+		// Get all active construction projects
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		const activeProjects = projects.filter(
+			(p) => p.statusId !== "completed" && p.statusId !== "cancelled",
+		);
+
+		// Aggregate payment data across all projects
+		let totalIncoming = 0;
+		let totalOutgoing = 0;
+		let pendingIncoming = 0;
+		let pendingOutgoing = 0;
+
+		// Get expense accounts from chart of accounts
+		const expenseAccounts = await ctx.db
+			.query("accounts")
+			.withIndex("by_type", (q) =>
+				q.eq("organizationId", organization.id).eq("type", "expense"),
+			)
+			.collect();
+
+		// Aggregate traditional expense data from expenses table
+		let totalPaidExpenses = 0;
+		let totalApprovedExpenses = 0;
+		let totalPendingExpenses = 0;
+		let totalExpenseCount = 0;
+		let paidExpenseCount = 0;
+		let approvedExpenseCount = 0;
+		let pendingExpenseCount = 0;
+
+		// For journal entry expenses
+		let totalJournalExpenses = 0;
+		const expensesByAccount: Record<string, number> = {};
+		const expensesByCategory: Record<string, number> = {};
+
+		// Project financial summaries for ranking
+		const projectSummaries = [];
+
+		for (const project of projects) {
+			// Get payments for this project
+			const payments = await ctx.db
+				.query("payments")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.collect();
+
+			const confirmedPayments = payments.filter(
+				(p) => p.status === "confirmed",
+			);
+			const pendingPayments = payments.filter((p) => p.status === "pending");
+
+			const projectIncoming = confirmedPayments
+				.filter((p) => p.type === "incoming")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			const projectOutgoing = confirmedPayments
+				.filter((p) => p.type === "outgoing")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			totalIncoming += projectIncoming;
+			totalOutgoing += projectOutgoing;
+
+			pendingIncoming += pendingPayments
+				.filter((p) => p.type === "incoming")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			pendingOutgoing += pendingPayments
+				.filter((p) => p.type === "outgoing")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			// Get traditional expenses from expenses table for this project
+			const expenses = await ctx.db
+				.query("expenses")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.collect();
+
+			const paidExpenses = expenses.filter((e) => e.status === "paid");
+			const approvedExpenses = expenses.filter((e) => e.status === "approved");
+			const pendingExpenses = expenses.filter((e) => e.status === "pending");
+
+			const projectPaidExpenses = paidExpenses.reduce((sum, e) => sum + e.amount, 0);
+			const projectApprovedExpenses = approvedExpenses.reduce((sum, e) => sum + e.amount, 0);
+			const projectPendingExpenses = pendingExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+			totalPaidExpenses += projectPaidExpenses;
+			totalApprovedExpenses += projectApprovedExpenses;
+			totalPendingExpenses += projectPendingExpenses;
+			totalExpenseCount += expenses.length;
+			paidExpenseCount += paidExpenses.length;
+			approvedExpenseCount += approvedExpenses.length;
+			pendingExpenseCount += pendingExpenses.length;
+
+			// Group expenses by category
+			for (const expense of paidExpenses) {
+				expensesByCategory[expense.category] =
+					(expensesByCategory[expense.category] || 0) + expense.amount;
+			}
+
+			// Get journal entries for this project to calculate accounting expenses
+			const journalEntries = await ctx.db
+				.query("journalEntries")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.filter((q) => q.eq(q.field("status"), "posted"))
+				.collect();
+
+			// Calculate expenses from journal entries
+			let projectJournalExpenses = 0;
+			for (const entry of journalEntries) {
+				const lines = await ctx.db
+					.query("journalLines")
+					.withIndex("by_entry", (q) => q.eq("journalEntryId", entry._id))
+					.collect();
+
+				for (const line of lines) {
+					const account = expenseAccounts.find((acc) => acc._id === line.accountId);
+					if (account) {
+						const expenseAmount = line.debit - line.credit;
+						projectJournalExpenses += expenseAmount;
+						expensesByAccount[account.name] =
+							(expensesByAccount[account.name] || 0) + expenseAmount;
+					}
+				}
+			}
+
+			totalJournalExpenses += projectJournalExpenses;
+
+			// Use the higher of paid expenses or journal expenses for balance calculation
+			const projectExpensesForBalance = Math.max(projectPaidExpenses, projectJournalExpenses);
+
+			// Calculate project metrics
+			const projectBalance = projectIncoming - projectExpensesForBalance;
+			const projectProfitMargin =
+				projectIncoming > 0 ? (projectBalance / projectIncoming) * 100 : 0;
+
+			projectSummaries.push({
+				projectId: project._id,
+				name: project.name,
+				client: project.client,
+				revenue: projectIncoming,
+				expenses: projectExpensesForBalance,
+				balance: projectBalance,
+				profitMargin: projectProfitMargin,
+				status: project.statusId,
+			});
+		}
+
+		// Sort projects by profitability
+		const topProjects = [...projectSummaries]
+			.sort((a, b) => b.profitMargin - a.profitMargin)
+			.slice(0, 5);
+
+		const projectsAtRisk = projectSummaries
+			.filter((p) => p.balance < 0)
+			.sort((a, b) => a.balance - b.balance)
+			.slice(0, 5);
+
+		// Use the higher of paid expenses or journal expenses for balance calculation
+		const totalExpensesForBalance = Math.max(totalPaidExpenses, totalJournalExpenses);
+
+		// Calculate organization-wide metrics
+		const netProfit = totalIncoming - totalExpensesForBalance;
+		const netCashFlow = totalIncoming - totalOutgoing;
+		const profitMargin =
+			totalIncoming > 0 ? (netProfit / totalIncoming) * 100 : 0;
+
+		return {
+			organization: {
+				name: organization.name,
+				totalProjects: projects.length,
+				activeProjects: activeProjects.length,
+			},
+			revenue: {
+				total: totalIncoming,
+				byProject: projectSummaries.map((p) => ({
+					projectId: p.projectId,
+					amount: p.revenue,
+				})),
+			},
+			expenses: {
+				// Traditional expense tracking (from expenses table)
+				totalPaid: totalPaidExpenses,
+				totalApproved: totalApprovedExpenses,
+				totalPending: totalPendingExpenses,
+				paidCount: paidExpenseCount,
+				approvedCount: approvedExpenseCount,
+				pendingCount: pendingExpenseCount,
+				totalCount: totalExpenseCount,
+				byCategory: expensesByCategory,
+				// Journal-based accounting
+				total: totalJournalExpenses,
+				byAccount: expensesByAccount,
+				// For compatibility
+				paid: totalPaidExpenses,
+				approved: totalApprovedExpenses,
+				pending: totalPendingExpenses,
+				byProject: projectSummaries.map((p) => ({
+					projectId: p.projectId,
+					amount: p.expenses,
+				})),
+			},
+			payments: {
+				totalIncoming,
+				totalOutgoing,
+				pendingIncoming,
+				pendingOutgoing,
+				netCashFlow,
+			},
+			balance: {
+				currentBalance: netProfit,
+				netCashFlow: netCashFlow,
+				profitMargin,
+			},
+			topProjects,
+			projectsAtRisk,
+		};
+	},
+});
+
+// Get organization cash flow by period
+export const getOrganizationCashFlowByPeriod = query({
+	args: {
+		dateFrom: v.string(),
+		dateTo: v.string(),
+		groupBy: v.union(v.literal("day"), v.literal("week"), v.literal("month")),
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Get all payments in the date range
+		const payments = await ctx.db
+			.query("payments")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("status"), "confirmed"),
+					q.gte(q.field("paymentDate"), args.dateFrom),
+					q.lte(q.field("paymentDate"), args.dateTo),
+				),
+			)
+			.collect();
+
+		// Group payments by period
+		const cashFlowByPeriod: Record<
+			string,
+			{ incoming: number; outgoing: number; net: number }
+		> = {};
+
+		payments.forEach((payment) => {
+			let periodKey: string;
+			const date = new Date(payment.paymentDate);
+
+			if (args.groupBy === "day") {
+				periodKey = payment.paymentDate; // YYYY-MM-DD
+			} else if (args.groupBy === "week") {
+				// Get week number
+				const weekNumber = Math.floor(
+					(date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) /
+						(7 * 24 * 60 * 60 * 1000),
+				);
+				periodKey = `${date.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
+			} else {
+				// month
+				periodKey = payment.paymentDate.slice(0, 7); // YYYY-MM
+			}
+
+			if (!cashFlowByPeriod[periodKey]) {
+				cashFlowByPeriod[periodKey] = { incoming: 0, outgoing: 0, net: 0 };
+			}
+
+			if (payment.type === "incoming") {
+				cashFlowByPeriod[periodKey].incoming += payment.amount;
+			} else {
+				cashFlowByPeriod[periodKey].outgoing += payment.amount;
+			}
+
+			cashFlowByPeriod[periodKey].net =
+				cashFlowByPeriod[periodKey].incoming -
+				cashFlowByPeriod[periodKey].outgoing;
+		});
+
+		// Convert to array and sort by period
+		const cashFlowArray = Object.entries(cashFlowByPeriod)
+			.map(([period, data]) => ({
+				period,
+				...data,
+			}))
+			.sort((a, b) => a.period.localeCompare(b.period));
+
+		// Calculate cumulative net cash flow
+		let cumulative = 0;
+		const withCumulative = cashFlowArray.map((item) => {
+			cumulative += item.net;
+			return {
+				...item,
+				cumulative,
+			};
+		});
+
+		return {
+			period: {
+				from: args.dateFrom,
+				to: args.dateTo,
+				groupBy: args.groupBy,
+			},
+			data: withCumulative,
+			summary: {
+				totalIncoming: withCumulative.reduce(
+					(sum, item) => sum + item.incoming,
+					0,
+				),
+				totalOutgoing: withCumulative.reduce(
+					(sum, item) => sum + item.outgoing,
+					0,
+				),
+				netCashFlow:
+					withCumulative.reduce((sum, item) => sum + item.incoming, 0) -
+					withCumulative.reduce((sum, item) => sum + item.outgoing, 0),
+			},
+		};
+	},
+});
+
+// Get organization budget summary
+export const getOrganizationBudgetSummary = query({
+	handler: async (ctx) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Get all projects
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		let totalBudgeted = 0;
+		let totalSpent = 0;
+		const projectBudgets = [];
+		const projectsOverBudget = [];
+		const projectsUnderBudget = [];
+
+		for (const project of projects) {
+			// Get current approved budget for the project
+			const budgets = await ctx.db
+				.query("projectBudgets")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.filter((q) => q.eq(q.field("status"), "approved"))
+				.collect();
+
+			if (budgets.length > 0) {
+				const currentBudget = budgets.sort(
+					(a, b) =>
+						new Date(b.effectiveDate).getTime() -
+						new Date(a.effectiveDate).getTime(),
+				)[0];
+
+				// Get actual expenses
+				const expenses = await ctx.db
+					.query("expenses")
+					.withIndex("by_project", (q) => q.eq("projectId", project._id))
+					.filter((q) => q.eq(q.field("status"), "paid"))
+					.collect();
+
+				const projectSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+				totalBudgeted += currentBudget.totalBudget;
+				totalSpent += projectSpent;
+
+				const utilization = (projectSpent / currentBudget.totalBudget) * 100;
+
+				const budgetInfo = {
+					projectId: project._id,
+					projectName: project.name,
+					budgeted: currentBudget.totalBudget,
+					spent: projectSpent,
+					remaining: currentBudget.totalBudget - projectSpent,
+					utilization,
+					status:
+						utilization > 100
+							? "overbudget"
+							: utilization > 80
+								? "warning"
+								: "ontrack",
+				};
+
+				projectBudgets.push(budgetInfo);
+
+				if (utilization > 100) {
+					projectsOverBudget.push(budgetInfo);
+				} else if (utilization < 50) {
+					projectsUnderBudget.push(budgetInfo);
+				}
+			}
+		}
+
+		const totalUtilization =
+			totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+
+		return {
+			summary: {
+				totalBudgeted,
+				totalSpent,
+				totalRemaining: totalBudgeted - totalSpent,
+				utilization: totalUtilization,
+				projectsWithBudgets: projectBudgets.length,
+				projectsOverBudget: projectsOverBudget.length,
+				projectsUnderBudget: projectsUnderBudget.length,
+			},
+			projectBudgets,
+			projectsOverBudget,
+			projectsUnderBudget,
+		};
+	},
+});
+
+// Get project financial rankings
+export const getProjectFinancialRankings = query({
+	args: {
+		sortBy: v.union(
+			v.literal("profitMargin"),
+			v.literal("revenue"),
+			v.literal("expenses"),
+			v.literal("balance"),
+		),
+		limit: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+		const limit = args.limit || 10;
+
+		// Get all projects
+		const projects = await ctx.db
+			.query("constructionProjects")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			)
+			.collect();
+
+		// Calculate financial metrics for each project
+		const projectMetrics = [];
+
+		for (const project of projects) {
+			// Get payments
+			const payments = await ctx.db
+				.query("payments")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.filter((q) => q.eq(q.field("status"), "confirmed"))
+				.collect();
+
+			const revenue = payments
+				.filter((p) => p.type === "incoming")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			const expenses = payments
+				.filter((p) => p.type === "outgoing")
+				.reduce((sum, p) => sum + p.amount, 0);
+
+			const balance = revenue - expenses;
+			const profitMargin = revenue > 0 ? (balance / revenue) * 100 : 0;
+
+			// Get budget info
+			const budgets = await ctx.db
+				.query("projectBudgets")
+				.withIndex("by_project", (q) => q.eq("projectId", project._id))
+				.filter((q) => q.eq(q.field("status"), "approved"))
+				.collect();
+
+			const currentBudget =
+				budgets.length > 0
+					? budgets.sort(
+							(a, b) =>
+								new Date(b.effectiveDate).getTime() -
+								new Date(a.effectiveDate).getTime(),
+						)[0]
+					: null;
+
+			projectMetrics.push({
+				projectId: project._id,
+				name: project.name,
+				client: project.client,
+				contractValue: project.contractValue,
+				revenue,
+				expenses,
+				balance,
+				profitMargin,
+				budget: currentBudget?.totalBudget || 0,
+				percentComplete: project.percentComplete,
+				status: project.statusId,
+			});
+		}
+
+		// Sort based on requested field
+		projectMetrics.sort((a, b) => {
+			switch (args.sortBy) {
+				case "profitMargin":
+					return b.profitMargin - a.profitMargin;
+				case "revenue":
+					return b.revenue - a.revenue;
+				case "expenses":
+					return b.expenses - a.expenses;
+				case "balance":
+					return b.balance - a.balance;
+				default:
+					return 0;
+			}
+		});
+
+		return projectMetrics.slice(0, limit);
+	},
+});
+
+// Get organization expenses by category
+export const getOrganizationExpensesByCategory = query({
+	args: {
+		period: v.optional(v.string()), // YYYY-MM format
+		status: v.optional(
+			v.union(
+				v.literal("pending"),
+				v.literal("approved"),
+				v.literal("paid"),
+				v.literal("rejected"),
+				v.literal("cancelled"),
+			),
+		),
+	},
+	handler: async (ctx, args) => {
+		const { organization } = await getCurrentUserWithOrganization(ctx);
+
+		// Build filter for expenses
+		let expensesQuery = ctx.db
+			.query("expenses")
+			.withIndex("by_organization", (q) =>
+				q.eq("organizationId", organization.id),
+			);
+
+		// Get all expenses (we'll filter in memory for more flexibility)
+		const allExpenses = await expensesQuery.collect();
+
+		// Apply filters
+		let filteredExpenses = allExpenses;
+
+		if (args.period) {
+			filteredExpenses = filteredExpenses.filter((e) =>
+				e.expenseDate.startsWith(args.period),
+			);
+		}
+
+		if (args.status) {
+			filteredExpenses = filteredExpenses.filter(
+				(e) => e.status === args.status,
+			);
+		}
+
+		// Group by category
+		const categories = [
+			"materials",
+			"labor",
+			"equipment",
+			"transport",
+			"utilities",
+			"permits",
+			"insurance",
+			"taxes",
+			"other",
+		];
+
+		const categoryData = categories.map((category) => {
+			const categoryExpenses = filteredExpenses.filter(
+				(e) => e.category === category,
+			);
+			const total = categoryExpenses.reduce((sum, e) => sum + e.amount, 0);
+			const count = categoryExpenses.length;
+
+			// Get top vendors for this category
+			const vendorTotals: Record<string, number> = {};
+			categoryExpenses.forEach((e) => {
+				vendorTotals[e.vendor] = (vendorTotals[e.vendor] || 0) + e.amount;
+			});
+
+			const topVendors = Object.entries(vendorTotals)
+				.sort(([, a], [, b]) => b - a)
+				.slice(0, 3)
+				.map(([vendor, amount]) => ({ vendor, amount }));
+
+			return {
+				category,
+				displayName: getCategoryDisplayName(category),
+				total,
+				count,
+				percentage: 0, // Will calculate after
+				topVendors,
+			};
+		});
+
+		// Calculate percentages
+		const grandTotal = categoryData.reduce((sum, c) => sum + c.total, 0);
+		categoryData.forEach((c) => {
+			c.percentage = grandTotal > 0 ? (c.total / grandTotal) * 100 : 0;
+		});
+
+		// Sort by total amount
+		categoryData.sort((a, b) => b.total - a.total);
+
+		// Get trend data (last 6 months)
+		const trendData = [];
+		const currentDate = new Date();
+
+		for (let i = 5; i >= 0; i--) {
+			const monthDate = new Date(
+				currentDate.getFullYear(),
+				currentDate.getMonth() - i,
+				1,
+			);
+			const monthKey = monthDate.toISOString().slice(0, 7);
+
+			const monthExpenses = allExpenses.filter((e) =>
+				e.expenseDate.startsWith(monthKey),
+			);
+
+			const monthByCategory: Record<string, number> = {};
+			categories.forEach((cat) => {
+				monthByCategory[cat] = monthExpenses
+					.filter((e) => e.category === cat)
+					.reduce((sum, e) => sum + e.amount, 0);
+			});
+
+			trendData.push({
+				month: monthKey,
+				...monthByCategory,
+				total: monthExpenses.reduce((sum, e) => sum + e.amount, 0),
+			});
+		}
+
+		return {
+			period: args.period || "all",
+			status: args.status || "all",
+			categories: categoryData,
+			total: grandTotal,
+			trend: trendData,
+		};
+	},
+});
+
+// Helper function for category display names
+function getCategoryDisplayName(category: string): string {
+	const names: Record<string, string> = {
+		materials: "Материалы",
+		labor: "Работа",
+		equipment: "Оборудование",
+		transport: "Транспорт",
+		utilities: "Коммунальные услуги",
+		permits: "Разрешения",
+		insurance: "Страхование",
+		taxes: "Налоги",
+		other: "Другое",
+	};
+	return names[category] || category;
+}

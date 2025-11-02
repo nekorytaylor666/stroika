@@ -147,7 +147,7 @@ export const initializeAccounts = mutation({
 		const existingAccounts = await ctx.db
 			.query("accounts")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.first();
 
@@ -158,7 +158,7 @@ export const initializeAccounts = mutation({
 		// Create standard accounts
 		for (const account of STANDARD_ACCOUNTS) {
 			await ctx.db.insert("accounts", {
-				organizationId: organization._id,
+				organizationId: organization.id,
 				code: account.code,
 				name: account.name,
 				type: account.type,
@@ -183,7 +183,7 @@ export const getAccounts = query({
 		return await ctx.db
 			.query("accounts")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.collect();
 	},
@@ -206,7 +206,7 @@ export const getAccountsByType = query({
 		return await ctx.db
 			.query("accounts")
 			.withIndex("by_type", (q) =>
-				q.eq("organizationId", organization._id).eq("type", args.type),
+				q.eq("organizationId", organization.id).eq("type", args.type),
 			)
 			.collect();
 	},
@@ -235,7 +235,7 @@ export const createAccount = mutation({
 		const existing = await ctx.db
 			.query("accounts")
 			.withIndex("by_code", (q) =>
-				q.eq("organizationId", organization._id).eq("code", args.code),
+				q.eq("organizationId", organization.id).eq("code", args.code),
 			)
 			.first();
 
@@ -244,7 +244,7 @@ export const createAccount = mutation({
 		}
 
 		return await ctx.db.insert("accounts", {
-			organizationId: organization._id,
+			organizationId: organization.id,
 			code: args.code,
 			name: args.name,
 			type: args.type,

@@ -41,7 +41,7 @@ export const createPayment = mutation({
 		const existingPayments = await ctx.db
 			.query("payments")
 			.withIndex("by_organization", (q) =>
-				q.eq("organizationId", organization._id),
+				q.eq("organizationId", organization.id),
 			)
 			.collect();
 
@@ -51,7 +51,7 @@ export const createPayment = mutation({
 		);
 
 		const paymentId = await ctx.db.insert("payments", {
-			organizationId: organization._id,
+			organizationId: organization.id,
 			projectId: args.projectId,
 			paymentNumber,
 			type: args.type,
@@ -233,7 +233,7 @@ async function createJournalEntryForPayment(ctx: any, payment: any) {
 		.query("accounts")
 		.withIndex(
 			"by_code",
-			(q) => q.eq("organizationId", organization._id).eq("code", "51"), // Расчетные счета
+			(q: any) => q.eq("organizationId", organization.id).eq("code", "51"), // Расчетные счета
 		)
 		.first();
 
@@ -243,7 +243,7 @@ async function createJournalEntryForPayment(ctx: any, payment: any) {
 			"by_code",
 			(q) =>
 				q
-					.eq("organizationId", organization._id)
+					.eq("organizationId", organization.id)
 					.eq("code", payment.type === "incoming" ? "62" : "60"), // 62 - покупатели, 60 - поставщики
 		)
 		.first();
@@ -257,7 +257,7 @@ async function createJournalEntryForPayment(ctx: any, payment: any) {
 	// Create journal entry
 	const entryNumber = `АВТ-${payment.paymentNumber}`;
 	const journalEntryId = await ctx.db.insert("journalEntries", {
-		organizationId: organization._id,
+		organizationId: organization.id,
 		projectId: payment.projectId,
 		entryNumber,
 		date: payment.paymentDate,
